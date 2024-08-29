@@ -1,0 +1,58 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+# This is a short-term solution. The a9s and a8s will soon share a common XRD.
+metadata:
+  name: xservicebindings.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XServiceBinding
+    plural: xservicebindings
+  claimNames:
+    kind: ServiceBinding
+    plural: servicebindings
+  defaultCompositionRef:
+    name: a8s-servicebinding
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        supported:
+          - region: &region ["eu-central-1", "us-east-1"]
+          - types: &serviceInstanceTypes ["postgresql", "mongodb",
+              "search", "logme2", "prometheus", "messaging", "mariadb",
+              "messaging", "s3"]
+        properties:
+          spec:
+            x-kubernetes-validations:
+                # Validation for compositionRef and serviceInstanceType combination.
+                - rule: "(!(self.compositionRef.name == '') && 
+                    !(self.compositionRef.name == 'a8s-servicebinding')) ||
+                    self.serviceInstanceType == 'postgresql'"
+                  message: "Selected service instance type is not supported."
+            properties:
+              acceptsIncomplete:
+                type: boolean
+              instanceRef:
+                type: string
+              serviceInstanceType:
+                type: string
+                enum: *serviceInstanceTypes
+              region:
+                description: |
+                    The region the object store will be deployed to
+                type: string
+                enum: *region
+              policy:
+                type: string
+            required:
+              - instanceRef
+              - serviceInstanceType
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true

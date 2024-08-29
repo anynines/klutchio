@@ -1,0 +1,63 @@
+name: image
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v3
+      with:
+        go-version: v1.22.0
+        check-latest: true
+    - uses: sigstore/cosign-installer@v2.7.0
+    - name: Install ko
+      run: go install github.com/google/ko@latest
+
+    - name: Set LDFLAGS
+      run: echo LDFLAGS="$(make ldflags)" | tee -a >> $GITHUB_ENV
+
+    # Build ko from HEAD, build and push an image tagged with the commit SHA,
+    # then keylessly sign it with cosign.
+    - name: Publish and sign konnector image
+      env:
+        KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/konnector
+        COSIGN_EXPERIMENTAL: 'true'
+      run: |
+        echo "${{ github.token }}" | ko login ghcr.io --username "${{ github.actor }}" --password-stdin
+        img=$(ko build --bare --platform=all -t latest -t ${{ github.sha }} -t ${{github.ref_name}} ./cmd/konnector)
+        echo "built ${img}"
+        cosign sign ${img} \
+            -a sha=${{ github.sha }} \
+            -a ref=${{ github.ref }} \
+            -a run_id=${{ github.run_id }} \
+            -a run_attempt=${{ github.run_attempt }}
+
+    - name: Publish and sign example-backend image
+      env:
+        KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/example-backend
+        COSIGN_EXPERIMENTAL: 'true'
+      run: |
+        echo "${{ github.token }}" | ko login ghcr.io --username "${{ github.actor }}" --password-stdin
+        img=$(ko build --bare --platform=all -t latest -t ${{ github.sha }} -t ${{github.ref_name}} ./cmd/example-backend)
+        echo "built ${img}"
+        cosign sign ${img} \
+            -a sha=${{ github.sha }} \
+            -a ref=${{ github.ref }} \
+            -a run_id=${{ github.run_id }} \
+            -a run_attempt=${{ github.run_attempt }}
+
+    - uses: actions/delete-package-versions@v3
+      with:
+        package-name: 'kube-bind'
+        min-versions-to-keep: 10
+        delete-only-pre-release-versions: "true"

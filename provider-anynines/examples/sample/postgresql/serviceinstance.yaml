@@ -1,0 +1,19 @@
+apiVersion: dataservices.anynines.com/v1
+kind: ServiceInstance
+metadata:
+  name: example-postgresql-instance-jklasd
+  labels:
+    crossplane.io/claim-name: example-postgresql-instance
+    crossplane.io/claim-namespace: default
+spec:
+  forProvider:
+    acceptsIncomplete: true
+    # when testing with inception a suffix consisting of a '-' and the
+    # name of the deployment must be appended to the service name
+    # e.g. a9s-postgresql10-ms-1686387226
+    serviceName: a9s-postgresql10
+    planName: postgresql-single-nano
+    organizationGuid: a1d46b5c-b639-4f43-85c7-e9a0e5f01f75
+    spaceGuid: 1bf71cf3-9017-4846-bffc-b9b31872bfaf
+  providerConfigRef:
+    name: postgresql-service-broker

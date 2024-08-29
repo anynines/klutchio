@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../bases/configure/kubernetes-providerconfig.yaml
+- ../../bases/configure/kube-bind-configuration.yaml
+- ../../bases/configure/kube-bind-ingress-letsencrypt.yaml
+- ../../bases/configure/common-export-templates.yaml
+- ../../bases/configure/anynines-providerconfig-postgresql.yaml
+- ../../bases/configure/anynines-providerconfig-messaging.yaml
+- ../../bases/configure/anynines-providerconfig-mariadb.yaml
+- ../../bases/configure/anynines-providerconfig-logme2.yaml
+- ../../bases/configure/anynines-providerconfig-mongodb.yaml
+- ../../bases/configure/anynines-providerconfig-prometheus.yaml
+- ../../bases/configure/anynines-providerconfig-search.yaml

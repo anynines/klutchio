@@ -1,0 +1,15 @@
+*.log
+coverage.*
+.vscode
+.idea/
+*.iml
+.DS_Store
+.env
+*.kubeconfig
+.kcp
+.kube-bind
+/dist
+/hack/tools
+/build
+/dex
+/bin

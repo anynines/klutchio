@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dockerhost
+  namespace: crossplane-system
+spec:
+  type: ExternalName
+  externalName: host.docker.internal
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dockerhost
+  namespace: bind
+spec:
+  type: ExternalName
+  externalName: host.docker.internal

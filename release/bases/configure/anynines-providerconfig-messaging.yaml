@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: messaging-service-broker-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_MESSAGING_SERVICE_BROKER_USERNAME
+  password: $BASE64ENCODED_MESSAGING_SERVICE_BROKER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: messaging-service-broker
+spec:
+  url: $MESSAGING_SERVICE_BROKER_URL
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: messaging-service-broker-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: messaging-service-broker-credentials
+        key: password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: messaging-backup-manager-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_MESSAGING_BACKUP_MANAGER_USERNAME
+  password: $BASE64ENCODED_MESSAGING_BACKUP_MANAGER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: messaging-backup-manager
+spec:
+  url: $MESSAGING_BACKUP_MANAGER_URL
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: messaging-backup-manager-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: messaging-backup-manager-credentials
+        key: password
+---
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: messagings
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: messaginginstances
+    group: anynines.com
+  permissionClaims:
+    - group: ""
+      resource: secrets
+      version: v1
+      selector:
+        owner: Provider
+    - group: ""
+      resource: configmaps
+      version: v1
+      selector:
+        owner: Provider

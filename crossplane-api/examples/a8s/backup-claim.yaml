@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: example-a8s-postgresql
+  namespace: default
+spec: 
+  instanceRef: example-a8s-postgresql
+  serviceInstanceType: postgresql
+  # If no compositionRef is provided, the default choice will be a8s-backup.
+  compositionRef:
+    name: a8s-backup

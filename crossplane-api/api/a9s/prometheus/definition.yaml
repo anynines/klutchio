@@ -1,0 +1,81 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+# This is a short-term solution. The a9s and a8s will soon share a common XRD.
+metadata:
+  name: xprometheusinstances.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XPrometheusInstance
+    plural: xprometheusinstances
+  claimNames:
+    kind: PrometheusInstance
+    plural: prometheusinstances
+  defaultCompositionRef:
+    name: a9s-prometheus
+  defaultCompositeDeletePolicy: Foreground
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        supported:
+          - plans: &prometheusPlans ["prometheus-single-small", "prometheus-single-medium", "prometheus-single-big",
+              "promgraf2-single-small", "promgraf2-single-medium", "promgraf2-single-big"]
+          - services: &prometheusServices ["a9s-prometheus"]
+        properties:
+          spec:
+            properties:
+              acceptsIncomplete:
+                type: boolean
+              service:
+                type: string
+                enum: *prometheusServices
+                x-kubernetes-validations:
+                # Validation to check that service can't be updated.
+                - rule: "self == oldSelf"
+                  message: "Service is an immutable field"
+              plan:
+                description: Plan specifies the service plan. There are options
+                  for single or clustered Data Service Instances and options for
+                  different underlying computing resources (e.g.
+                  prometheus-single-small).
+                type: string
+                enum: *prometheusPlans
+                x-kubernetes-validations:
+                - rule: "self == oldSelf"
+                  message: "Upgrade functionality for Prometheus plans is not supported"
+                # Commenting out validation check of upgrade as currently a9s 
+                # does not support upgrades of plans for prometheus(Not sure if
+                # this will change in the future)
+                # # Validate that only upgrades from smaller to bigger DS instance
+                # # sizes are allowed.
+                # - rule: "!(self.contains('small') && oldSelf.contains('medium')) &&
+                #     !(self.contains('small') && oldSelf.contains('big')) &&
+                #     !(self.contains('medium') && oldSelf.contains('big'))"
+                #   message: "Transition from bigger to smaller plan size is not
+                #     supported."
+                # # We must use separate rules to avoid reaching the rule complexity limit
+                # - rule: "!(self.contains('nano') && oldSelf.contains('small')) &&
+                #     !(self.contains('nano') && oldSelf.contains('medium'))&&
+                #     !(self.contains('nano') && oldSelf.contains('big'))"
+                #   message: "Transition from bigger to smaller plan size is not
+                #     supported."
+                # - rule: "oldSelf.contains('ssl') == self.contains('ssl')"
+                #   message: "Plan migrations not possible from Non-SSL to SSL and
+                #     SSL to Non-SSL"
+                
+            required:
+              - service
+              - plan
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+    additionalPrinterColumns:
+    - name: ManagedResource
+      type: string
+      jsonPath: ".status.managed.state"

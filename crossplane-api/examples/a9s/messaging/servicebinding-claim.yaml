@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: example-a9s-messaging
+  namespace: default
+spec:
+  # instanceName indicates the DataServiceInstance claim name
+  instanceRef: example-a9s-messaging
+  serviceInstanceType: messaging # Adjust for each Service Instance type
+  compositionRef:
+    name: a9s-servicebinding

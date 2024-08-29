@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: provider-anynines
+rules:
+- apiGroups: 
+  - dataservices.anynines.com
+  resources: 
+  - backups
+  - restores
+  - servicebindings
+  - serviceinstances
+  verbs: 
+  - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: provider-anynines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: provider-anynines
+subjects:
+- kind: ServiceAccount
+  name: crossplane
+  namespace: crossplane-system

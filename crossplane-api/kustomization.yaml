@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+# a8s
+  - api/a8s/backup/composition.yaml
+  - api/a8s/postgresql/composition.yaml
+  - api/a8s/restore/composition.yaml
+  - api/a8s/servicebinding/composition.yaml
+  - api/a8s/servicebinding/s3-composition.yaml
+  - api/a8s/s3/composition.yaml
+# a9s 
+  - api/a9s/backup/composition.yaml
+  - api/a9s/logme2/composition.yaml
+  - api/a9s/logme2/definition.yaml
+  - api/a9s/mariadb/composition.yaml
+  - api/a9s/mariadb/definition.yaml
+  - api/a9s/messaging/composition.yaml
+  - api/a9s/messaging/definition.yaml
+  - api/a9s/mongodb/composition.yaml
+  - api/a9s/mongodb/definition.yaml
+  - api/a9s/postgresql/composition.yaml
+  - api/a9s/prometheus/composition.yaml
+  - api/a9s/prometheus/definition.yaml
+  - api/a9s/restore/composition.yaml
+  - api/a9s/search/composition.yaml
+  - api/a9s/search/definition.yaml
+  - api/a9s/servicebinding/composition.yaml
+
+# Common
+  - api/common/backup_definition.yaml
+  - api/common/objectstorage_definition.yaml
+  - api/common/postgresql_definition.yaml
+  - api/common/restore_definition.yaml
+  - api/common/servicebinding_definition.yaml
+  
+# IAM
+  - api/iam/policy_composition.yaml
+  - api/iam/policy_definition.yaml

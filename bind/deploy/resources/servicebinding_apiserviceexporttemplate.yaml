@@ -1,0 +1,20 @@
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: "servicebindings"
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: servicebindings
+    group: anynines.com
+  permissionClaims:
+    - group: ""
+      resource: secrets
+      version: v1
+      selector:
+        owner: Provider
+    - group: ""
+      resource: configmaps
+      version: v1
+      selector:
+        owner: Provider

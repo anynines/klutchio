@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: sample-search-servicebinding
+  namespace: search-lifecycle
+spec:
+  instanceRef: sample-search-instance
+  serviceInstanceType: search
+  compositionRef:
+    name: a9s-servicebinding

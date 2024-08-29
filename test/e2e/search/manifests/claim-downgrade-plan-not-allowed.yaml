@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: SearchInstance
+metadata:
+  name: sample-search-instance
+  namespace: search-lifecycle
+spec:
+  service: a9s-search2
+  plan: search-cluster-small-ssl
+  compositionRef:
+    name: a9s-search

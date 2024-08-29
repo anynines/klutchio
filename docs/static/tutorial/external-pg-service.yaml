@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-pg-service
+spec:
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: external-pg-service
+subsets:
+- addresses:
+  - ip: $(sh -c "if command -v ifconfig >/dev/null 2>&1; then ifconfig | grep 'inet ' | grep -v 127.0.0.1 | awk '{print \$2}' | head -n 1; else ip route get 1 | awk '{print \$7;exit}'; fi")
+  ports:
+  - port: 5432

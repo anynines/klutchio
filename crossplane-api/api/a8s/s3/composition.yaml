@@ -1,0 +1,22 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: a8s-s3-bucket
+spec:
+  compositeTypeRef:
+    apiVersion: anynines.com/v1
+    kind: XObjectStorageInstance
+  resources:
+    - name: a8s-s3-bucket
+      base:
+        apiVersion: s3.aws.upbound.io/v1beta1
+        kind: Bucket
+        spec:
+          forProvider:
+            region: "eu-central-1"
+          providerConfigRef:
+            name: aws-s3-provider
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: "spec.region"
+          toFieldPath: "spec.forProvider.region"

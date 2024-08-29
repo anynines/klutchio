@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: backup-messaging-sample
+  namespace: messaging-lifecycle
+spec:
+  instanceRef: sample-messaging
+  serviceInstanceType: messaging
+  compositionRef:
+    name: a9s-backup

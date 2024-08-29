@@ -1,0 +1,110 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anynines-backend
+  namespace: bind
+  labels:
+    app: anynines-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: anynines-backend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: anynines-backend
+    spec:
+      serviceAccountName: anynines-backend
+      containers:
+        - name: anynines-backend
+          image: PLACEHOLDER
+          args:
+            - --namespace-prefix=cluster
+            - --pretty-name=anynines
+            - --consumer-scope=Namespaced
+            - --oidc-issuer-client-id=$(OIDC-ISSUER-CLIENT-ID)
+            - --oidc-issuer-client-secret=$(OIDC-ISSUER-CLIENT-SECRET)
+            - --oidc-issuer-url=$(OIDC-ISSUER-URL)
+            - --oidc-callback-url=$(OIDC-CALLBACK-URL)
+            - --listen-address=0.0.0.0:9443
+            - --cookie-signing-key=$(COOKIE-SIGNING-KEY)
+            - --cookie-encryption-key=$(COOKIE-ENCRYPTION-KEY)
+            - --external-address=$(EXTERNAL_ADDRESS)
+            - --external-ca-file=/certa/ca
+          env:
+            - name: OIDC-ISSUER-CLIENT-ID
+              valueFrom:
+                secretKeyRef:
+                  name: oidc-config
+                  key: oidc-issuer-client-id
+            - name: OIDC-ISSUER-CLIENT-SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oidc-config
+                  key: oidc-issuer-client-secret
+            - name: OIDC-ISSUER-URL
+              valueFrom:
+                secretKeyRef:
+                  name: oidc-config
+                  key: oidc-issuer-url
+            - name: OIDC-CALLBACK-URL
+              valueFrom:
+                secretKeyRef:
+                  name: oidc-config
+                  key: oidc-callback-url
+            - name: COOKIE-SIGNING-KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cookie-config
+                  key: signing-key
+            - name: COOKIE-ENCRYPTION-KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cookie-config
+                  key: encryption-key
+            - name: EXTERNAL_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: anynines-backend
+                  key: external-address
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: "100m"
+              memory: 256Mi
+          volumeMounts:
+            - name: ca
+              mountPath: /certa/
+      volumes:
+        - name: oidc-config
+          secret:
+            secretName: oidc-config
+        - name: cookie-config
+          secret:
+            secretName: cookie-config
+        - name: ca
+          secret:
+            secretName: k8sca
+            items:
+              - key: ca
+                path: ca
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: anynines-backend
+  namespace: bind
+spec:
+  selector:
+    app: anynines-backend
+  ports:
+    - name: http
+      port: 443
+      targetPort: 9443
+      protocol: TCP

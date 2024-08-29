@@ -1,0 +1,9 @@
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: mongodbinstances
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: mongodbinstances
+    group: anynines.com

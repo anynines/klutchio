@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anynines-backend
+  namespace: bind
+data:
+  external-address: $KUBERNETES_API_EXTERNAL_ADDRESS
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cookie-config
+  namespace: bind
+type: Opaque
+stringData:
+  signing-key: $KUBE_BIND_COOKIE_SIGNING_KEY
+  encryption-key: $KUBE_BIND_COOKIE_ENCRYPTION_KEY
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: k8sca
+  namespace: bind
+type: Opaque
+stringData:
+  ca: "$KUBE_BIND_CA_CERTIFICATE"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oidc-config
+  namespace: bind
+type: Opaque
+stringData:
+  oidc-issuer-client-id: "$KUBE_BIND_OIDC_ISSUER_CLIENT_ID"
+  oidc-issuer-client-secret: "$KUBE_BIND_OIDC_ISSUER_CLIENT_SECRET"
+  oidc-issuer-url: "$KUBE_BIND_OIDC_ISSUER_URL"
+  oidc-callback-url: "https://$KUBE_BIND_BACKEND_HOST/callback"
+---

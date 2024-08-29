@@ -1,0 +1,8 @@
+apiVersion: anynines.com/v1
+kind: ObjectStorageInstance
+metadata:
+  name: test-crossplane-bucket
+spec:
+  region: "us-east-1"
+  compositionRef:
+    name: a8s-s3-bucket

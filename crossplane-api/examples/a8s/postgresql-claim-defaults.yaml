@@ -1,0 +1,32 @@
+# This claim contains all possible parameters, with their default values
+# (excluding parameters not supported by a8s)
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: example-a8s-postgresql-defaults
+  namespace: default
+spec:
+  service: "a9s-postgresql13"
+  plan: "postgresql-single-small"
+  # expose is Optional, with the default value set to 'LoadBalancer'
+  expose: "Internal"
+  parameters:
+    maxConnections: 100
+    tempFileLimit: -1
+    # make sure to specify this as a string (`off` in YAML is interpreted as a boolean)
+    trackIoTiming: "off"
+    archiveTimeout: 0
+    statementTimeout: 0
+    walWriterDelay: 200
+    maxReplicationSlots: 10
+    maxWalSenders: 10
+    synchronousCommit: "on"
+    sslCiphers: "HIGH:MEDIUM:+3DES:!aNULL"
+    sslMinProtocolVersion: "TLSv1.2"
+    clientMinMessages: NOTICE
+    logMinMessages: WARNING
+    logMinErrorStatement: ERROR
+    logStatement: none
+    logErrorVerbosity: DEFAULT
+  compositionRef:
+    name: a8s-postgresql

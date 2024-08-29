@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+  namespace: pg-lifecycle
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-replica-small
+  compositionRef:
+    name: a9s-postgresql

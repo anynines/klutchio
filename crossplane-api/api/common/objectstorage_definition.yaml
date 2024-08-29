@@ -1,0 +1,41 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xobjectstorageinstances.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XObjectStorageInstance
+    plural: xobjectstorageinstances
+  claimNames:
+    kind: ObjectStorageInstance
+    plural: objectstorageinstances
+  defaultCompositionRef:
+    name: a8s-objectstorage
+  defaultCompositeDeletePolicy: Foreground
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        supported:
+          - region: &region ["eu-central-1", "us-east-1"]
+        properties:
+          spec:
+            type: object
+            properties:
+              region:
+                description: |
+                    The region the object store will be deployed to
+                type: string
+                enum: *region
+            required:
+              - region
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true

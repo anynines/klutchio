@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: sample-messaging-sb
+  namespace: messaging-lifecycle
+spec:
+  instanceRef: sample-messaging
+  serviceInstanceType: messaging
+  compositionRef:
+    name: a9s-servicebinding

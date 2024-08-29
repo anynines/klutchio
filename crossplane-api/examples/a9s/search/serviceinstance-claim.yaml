@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: SearchInstance
+metadata:
+  name: example-a9s-search
+  namespace: default
+spec:
+  # Use a supported search serviceName and planName
+  service: a9s-search2
+  plan: search-single-small-ssl
+  compositionRef:
+    name: a9s-search

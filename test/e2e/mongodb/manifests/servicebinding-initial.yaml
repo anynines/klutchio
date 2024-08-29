@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: sample-mongodb-sb
+  namespace: mongodb-lifecycle
+spec:
+  instanceRef: sample-mongodb
+  serviceInstanceType: mongodb
+  compositionRef:
+    name: a9s-servicebinding

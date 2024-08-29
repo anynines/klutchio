@@ -1,0 +1,45 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: anynines-backend
+  namespace: bind
+  annotations:
+    cert-manager.io/issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: anynines-backend-tls
+      hosts:
+       - $KUBE_BIND_BACKEND_HOST
+  rules:
+    - host: $KUBE_BIND_BACKEND_HOST
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: anynines-backend
+                port:
+                  number: 443
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+ name: letsencrypt
+ namespace: bind
+spec:
+ acme:
+   # The ACME server URL
+   server: https://acme-v02.api.letsencrypt.org/directory
+   # Email address used for ACME registration
+   email: $LETSENCRYPT_EMAIL_ADDRESS
+   # Name of a secret used to store the ACME account private key
+   privateKeySecretRef:
+     name: letsencrypt
+   # Enable the HTTP-01 challenge provider
+   solvers:
+   - http01:
+       ingress:
+         class:  nginx

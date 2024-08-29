@@ -1,0 +1,28 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-anynines
+spec:
+  # package is provided by patch
+  package: PLACEHOLDER
+  runtimeConfigRef:
+    name: provider-anynines
+---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-anynines
+spec:
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+          - name: package-runtime
+            # Enable health checks
+            readinessProbe:
+              httpGet:
+                path: /healthz
+                port: 8081
+

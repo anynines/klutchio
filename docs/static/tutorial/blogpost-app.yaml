@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  labels:
+    app: demo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+        tier: frontend
+    spec:
+      containers:
+        - name: demo-app
+          image: anyninesgmbh/a9s-postgresql-app:1.1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: "POSTGRESQL_HOST"
+              value: external-pg-service
+            - name: "POSTGRESQL_USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  name: example-a8s-postgresql-service-binding 
+                  key: username
+            - name: "POSTGRESQL_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: example-a8s-postgresql-service-binding 
+                  key: password
+            - name: "POSTGRESQL_PORT"
+              value: "5432"
+            - name: "POSTGRESQL_DATABASE"
+              valueFrom:
+                secretKeyRef:
+                  name: example-a8s-postgresql-service-binding 
+                  key: database
+            - name: "POSTGRESQL_SSLMODE"
+              value: "disable"
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+spec:
+  selector:
+      app: demo-app
+  ports:
+  - port: 3000

@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: example-a9s-logme2
+spec:
+    backupRef: example-a9s-logme2
+    serviceInstanceType: logme2
+    # If no compositionRef is provided, the default choice will be a8s-restore.
+    compositionRef:
+      name: a9s-restore

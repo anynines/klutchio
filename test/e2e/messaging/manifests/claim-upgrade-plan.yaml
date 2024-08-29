@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: MessagingInstance
+metadata:
+  name: sample-messaging
+  namespace: messaging-lifecycle
+spec:
+  # Use a supported messaging service and plan
+  service: a9s-messaging310
+  plan: messaging-single-medium-ssl
+  compositionRef:
+    name: a9s-messaging

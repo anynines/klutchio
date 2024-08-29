@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: restore-messaging-sample
+  namespace: messaging-lifecycle
+spec:
+  backupRef: backup-messaging-sample
+  serviceInstanceType: messaging
+  # If no compositionRef is provided, the default choice will be a8s-restore.
+  compositionRef:
+    name: a9s-restore

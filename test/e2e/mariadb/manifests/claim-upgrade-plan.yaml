@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: MariadbInstance
+metadata:
+  name: sample-mariadb-instance
+  namespace: mariadb-lifecycle
+spec:
+  service: a9s-mariadb106
+  plan: mariadb-cluster-medium-ssl
+  compositionRef:
+    name: a9s-mariadb

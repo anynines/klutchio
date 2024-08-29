@@ -1,0 +1,8 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: sample-backup
+spec:
+  serviceInstanceType: postgresql
+  compositionRef:
+    name: a8s-backup

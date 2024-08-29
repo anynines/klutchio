@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: restore-mongodb-sample
+  namespace: mongodb-lifecycle
+spec:
+  backupRef: backup-mongodb-sample
+  serviceInstanceType: mongodb
+  # If no compositionRef is provided, the default choice will be a8s-restore.
+  compositionRef:
+    name: a9s-restore

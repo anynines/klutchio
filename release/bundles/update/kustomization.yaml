@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../bases/install/configuration-package.yaml
+- ../../bases/install/provider-anynines.yaml
+- ../../bases/install/provider-kubernetes.yaml
+- ../../bases/install/kube-bind-deployment.yaml
+patches:
+- path: "../../patches/release.yaml"

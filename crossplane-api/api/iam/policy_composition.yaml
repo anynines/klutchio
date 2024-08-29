@@ -1,0 +1,17 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: a8s-iam-policy
+spec:
+  compositeTypeRef:
+    apiVersion: anynines.com/v1
+    kind: XPolicy
+  mode: Pipeline
+  pipeline:
+  - step: run-the-template
+    functionRef:
+      name: function-iam-policy
+    input:
+      apiVersion: iam.fn.anynines.com/v1beta1
+      kind: Input
+      providerConfigRef: "aws-iam-provider"

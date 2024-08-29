@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: example-a9s-postgresql
+  namespace: default
+spec:
+  # Use a supported postgresql serviceName and planName
+  service: a9s-postgresql15
+  plan: postgresql-single-nano
+  compositionRef:
+    name: a9s-postgresql

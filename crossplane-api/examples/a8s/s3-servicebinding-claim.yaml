@@ -1,0 +1,28 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: example-a8s-s3
+  namespace: default
+spec:
+  instanceRef: <bucket-name>
+  serviceInstanceType: s3
+  region: "us-east-1"
+  policy: >
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "AllowIAMRolesToAccessBucket",
+                    "Action": "s3:*",
+                    "Effect": "Allow",
+                    "Resource": "arn:aws:s3:::<bucket-name>/*",
+                    "Principal": {
+                      "AWS": [
+                        "arn:aws:iam::<iam-arn>"
+                      ]
+                    }
+                  }
+                ]
+              }
+  compositionRef:
+    name: a8s-s3-servicebinding

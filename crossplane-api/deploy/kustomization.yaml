@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Install provider-kubernetes for a8s Data Services
+  - provider-kubernetes.yaml
+
+  # Install provider-anynines
+  - provider-anynines.yaml
+
+  # Install anynines-configuration package
+  - config-pkg-anynines.yaml

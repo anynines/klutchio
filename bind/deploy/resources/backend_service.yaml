@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: anynines-backend
+  namespace: bind
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      name: anynines-backend
+      port: 443
+      targetPort: 9443
+  selector:
+    app: anynines-backend

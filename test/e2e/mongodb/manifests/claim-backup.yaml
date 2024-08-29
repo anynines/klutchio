@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: backup-mongodb-sample
+  namespace: mongodb-lifecycle
+spec:
+  instanceRef: sample-mongodb
+  serviceInstanceType: mongodb
+  compositionRef:
+    name: a9s-backup

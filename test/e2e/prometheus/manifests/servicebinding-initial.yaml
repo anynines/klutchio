@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: sample-prometheus-servicebinding
+  namespace: prometheus-lifecycle
+spec:
+  instanceRef: sample-prometheus-instance
+  serviceInstanceType: prometheus
+  compositionRef:
+    name: a9s-servicebinding

@@ -1,0 +1,7 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: anynines-dataservices
+spec:
+  crossplane:
+    version: ">=v1.11.0"

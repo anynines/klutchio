@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - backend_service.yaml
+  - backup_apiserviceexporttemplate.yaml
+  - restore_apiserviceexporttemplate.yaml 
+  - servicebinding_apiserviceexporttemplate.yaml
+
+  #[DATASERVICES] To enable a data service, uncomment the data service you want to support
+  # - logme_apiserviceexporttemplate.yaml
+  # - mariadb_apiserviceexporttemplate.yaml
+  # - messaging_apiserviceexporttemplate.yaml
+  # - mongodb_apiserviceexporttemplate.yaml
+  # - postgresql_apiserviceexporttemplate.yaml
+  # - prometheus_apiserviceexporttemplate.yaml
+  # - search_apiserviceexporttemplate.yaml

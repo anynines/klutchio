@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: restore-postgresql-sample
+  namespace: pg-lifecycle
+spec:
+  backupRef: backup-postgresql-sample
+  serviceInstanceType: postgresql
+  # If no compositionRef is provided, the default choice will be a8s-restore.
+  compositionRef:
+    name: a9s-restore

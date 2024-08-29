@@ -1,0 +1,22 @@
+base:
+  apiVersion: anynines.com/v1
+  kind: PostgresqlInstance
+  metadata:
+    # This must be UNIQUE among the `update-*` tests!
+    name: update-a8s-plan-replica-large
+  spec:
+    service: a9s-postgresql13
+    plan: postgresql-replica-large
+    compositionRef:
+      name: a8s-postgresql
+
+invalid_patches:
+# from larger to smaller instances
+- spec: { plan: postgresql-replica-nano }
+- spec: { plan: postgresql-replica-small }
+- spec: { plan: postgresql-replica-medium }
+# from replica to single instances
+- spec: { plan: postgresql-single-nano }
+- spec: { plan: postgresql-single-small }
+- spec: { plan: postgresql-single-medium }
+- spec: { plan: postgresql-single-large }

@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: backup-search-sample
+  namespace: search-lifecycle
+spec:
+  instanceRef: sample-search-instance
+  serviceInstanceType: search
+  compositionRef:
+    name: a9s-backup
