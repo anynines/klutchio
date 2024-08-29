@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: MongodbInstance
+metadata:
+  name: example-a9s-mongodb
+  namespace: default
+spec:
+  # Use a supported mongodb serviceName and planName
+  service: a9s-mongodb50
+  plan: mongodbsspl-single-nano-ssl
+  compositionRef:
+    name: a9s-mongodb

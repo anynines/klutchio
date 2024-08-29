@@ -1,0 +1,56 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-single-nano
+  compositionRef:
+    name: a9s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster1
+spec:
+  service: a9s-postgresql15
+  plan: postgresql-single-nano
+  compositionRef:
+    name: a9s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster2
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-single-nano-ssl
+  compositionRef:
+    name: a9s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster3
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-single-nano-ssl
+  compositionRef:
+    name: a9s-postgresql
+  parameters:
+    # This is not supported for 'nano' instances on a9s' staging:
+    #maxConnections: 200
+    tempFileLimit: 4096
+    trackIoTiming: "on"
+    archiveTimeout: 10
+    statementTimeout: 3000
+    walWriterDelay: 400
+    maxReplicationSlots: 12
+    # This is not supported for "single" instances
+    #maxWalSenders: 12
+    synchronousCommit: "local"
+    clientMinMessages: LOG
+    logMinMessages: NOTICE
+    logMinErrorStatement: WARNING
+    logStatement: ddl
+    logErrorVerbosity: VERBOSE

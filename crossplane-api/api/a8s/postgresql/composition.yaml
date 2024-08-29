@@ -1,0 +1,192 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: a8s-postgresql
+  labels:
+    volumeSizeNano: &volumeSizeNano "3Gi"
+    volumeSizeSmall: &volumeSizeSmall "10Gi"
+    volumeSizeMedium: &volumeSizeMedium "50Gi"
+    volumeSizeLarge: &volumeSizeLarge "100Gi"
+    CPUNano: &CPUNano "2"
+    CPUSmall: &CPUSmall "2"
+    CPUMedium: &CPUMedium "2"
+    CPULarge: &CPULarge "4"
+    MemoryNano: &MemoryNano "1Gi"
+    MemorySmall: &MemorySmall "2Gi"
+    MemoryMedium: &MemoryMedium "4Gi"
+    MemoryLarge: &MemoryLarge "16Gi"
+spec:
+  compositeTypeRef:
+    apiVersion: anynines.com/v1
+    kind: XPostgresqlInstance
+  resources:
+    - name: a8s-postgresql
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: postgresql.anynines.com/v1beta3
+              kind: Postgresql
+              spec:
+                expose: "LoadBalancer"
+          providerConfigRef:
+            name: kubernetes-provider
+      patches:
+        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+          toFieldPath: spec.forProvider.manifest.metadata.namespace
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+          toFieldPath: spec.forProvider.manifest.metadata.name
+        - fromFieldPath: spec.service
+          toFieldPath: spec.forProvider.manifest.spec.version
+          transforms:
+          # If the value of the service is a9s-postgresql13, the value of the 
+          # 'version' field will be 13
+            - type: string
+              string:
+                type: TrimPrefix
+                trim: 'a9s-postgresql'
+            - type: convert
+              convert:
+                toType: int
+        - fromFieldPath: spec.plan
+          toFieldPath: spec.forProvider.manifest.spec.volumeSize
+          transforms:
+          # If the value of the plan is postgresql-single-small, the value of 
+          # the 'volumeSize' field will be 10Gi
+            - type: string
+              string:
+                type: Regexp
+                regexp:
+                  match: '\b(\w+)$'
+            - type: map
+              map:
+                nano: *volumeSizeNano
+                small: *volumeSizeSmall
+                medium: *volumeSizeMedium
+                large: *volumeSizeLarge
+        - fromFieldPath: spec.plan
+          toFieldPath: spec.forProvider.manifest.spec.resources.requests.cpu
+          transforms:
+            - type: string
+              string:
+                type: Regexp
+                regexp:
+                  match: '\b(\w+)$'
+            - type: map
+              map:
+                nano: *CPUNano
+                small: *CPUSmall
+                medium: *CPUMedium
+                large: *CPULarge
+        - fromFieldPath: spec.plan
+          toFieldPath: spec.forProvider.manifest.spec.resources.limits.cpu
+          transforms:
+            - type: string
+              string:
+                type: Regexp
+                regexp:
+                  match: '\b(\w+)$'
+            - type: map
+              map:
+                nano: *CPUNano
+                small: *CPUSmall
+                medium: *CPUMedium
+                large: *CPULarge
+        - fromFieldPath: spec.plan
+          toFieldPath: spec.forProvider.manifest.spec.resources.requests.memory
+          transforms:
+            - type: string
+              string:
+                type: Regexp
+                regexp:
+                  match: '\b(\w+)$'
+            - type: map
+              map:
+                nano: *MemoryNano
+                small: *MemorySmall
+                medium: *MemoryMedium
+                large: *MemoryLarge
+        - fromFieldPath: spec.plan
+          toFieldPath: spec.forProvider.manifest.spec.resources.limits.memory
+          transforms:
+            - type: string
+              string:
+                type: Regexp
+                regexp:
+                  match: '\b(\w+)$'
+            - type: map
+              map:
+                nano: *MemoryNano
+                small: *MemorySmall
+                medium: *MemoryMedium
+                large: *MemoryLarge
+        - fromFieldPath: spec.plan
+          toFieldPath: spec.forProvider.manifest.spec.replicas
+          transforms:
+          # If the value of the plan is postgresql-single-small, the value of 
+          # the 'replica' field will be 1
+            - type: string
+              string:
+                type: Regexp
+                regexp:
+                  match: '-(.*?)-'
+            - type: map
+              map:
+                -single-: "1"
+                -replica-: "3"
+            - type: convert
+              convert:
+                toType: int
+        - fromFieldPath: spec.expose
+          toFieldPath: spec.forProvider.manifest.spec.expose
+
+        - fromFieldPath: spec.parameters.maxConnections
+          toFieldPath: spec.forProvider.manifest.spec.parameters.maxConnections
+        - fromFieldPath: spec.parameters.tempFileLimit
+          toFieldPath: spec.forProvider.manifest.spec.parameters.tempFileLimitKiloBytes
+        - fromFieldPath: spec.parameters.trackIoTiming
+          toFieldPath: spec.forProvider.manifest.spec.parameters.trackIOTiming
+        - fromFieldPath: spec.parameters.archiveTimeout
+          toFieldPath: spec.forProvider.manifest.spec.parameters.archiveTimeoutSeconds
+        - fromFieldPath: spec.parameters.statementTimeout
+          toFieldPath: spec.forProvider.manifest.spec.parameters.statementTimeoutMillis
+        - fromFieldPath: spec.parameters.walWriterDelay
+          toFieldPath: spec.forProvider.manifest.spec.parameters.walWriterDelayMillis
+        - fromFieldPath: spec.parameters.maxLocksPerTransaction
+          toFieldPath: spec.forProvider.manifest.spec.parameters.maxLocksPerTransaction
+        - fromFieldPath: spec.parameters.maxReplicationSlots
+          toFieldPath: spec.forProvider.manifest.spec.parameters.maxReplicationSlots
+        - fromFieldPath: spec.parameters.maxWalSenders
+          toFieldPath: spec.forProvider.manifest.spec.parameters.maxWALSenders
+        - fromFieldPath: spec.parameters.synchronousCommit
+          toFieldPath: spec.forProvider.manifest.spec.parameters.synchronousCommit
+        - fromFieldPath: spec.parameters.sslCiphers
+          toFieldPath: spec.forProvider.manifest.spec.parameters.sslCiphers
+        - fromFieldPath: spec.parameters.sslMinProtocolVersion
+          toFieldPath: spec.forProvider.manifest.spec.parameters.sslMinProtocolVersion
+        - fromFieldPath: spec.parameters.clientMinMessages
+          toFieldPath: spec.forProvider.manifest.spec.parameters.clientMinMessages
+          transforms: &toLowercase
+            - type: string
+              string:
+                type: Convert
+                convert: ToLower
+        - fromFieldPath: spec.parameters.logMinMessages
+          toFieldPath: spec.forProvider.manifest.spec.parameters.logMinMessages
+          transforms: *toLowercase
+        - fromFieldPath: spec.parameters.logMinErrorStatement
+          toFieldPath: spec.forProvider.manifest.spec.parameters.logMinErrorStatement
+          transforms: *toLowercase
+        - fromFieldPath: spec.parameters.logStatement
+          toFieldPath: spec.forProvider.manifest.spec.parameters.logStatement
+        - fromFieldPath: spec.parameters.logErrorVerbosity
+          toFieldPath: spec.forProvider.manifest.spec.parameters.logErrorVerbosity
+
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.clusterStatus
+          toFieldPath: status.managed.clusterStatus
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.readyReplicas
+          toFieldPath: status.managed.readyReplicas

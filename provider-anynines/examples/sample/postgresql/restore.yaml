@@ -1,0 +1,12 @@
+apiVersion: dataservices.anynines.com/v1
+kind: Restore
+metadata:
+  name: restore-postgresql-sample-kjsdfkj
+  labels:
+    crossplane.io/claim-name: restore-postgresql-sample
+    crossplane.io/claim-namespace: default
+spec:
+  forProvider:
+    backupName: backup-postgresql-sample
+  providerConfigRef:
+    name: postgresql-backup-manager

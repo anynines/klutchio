@@ -1,0 +1,9 @@
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: logme2instances
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: logme2instances
+    group: anynines.com

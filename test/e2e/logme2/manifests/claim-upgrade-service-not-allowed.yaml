@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Logme2Instance
+metadata:
+  name: sample-logme2
+  namespace: logme2-lifecycle
+spec:
+  service: a9s-logme22
+  plan: logme-cluster-small-ssl
+  compositionRef:
+    name: a9s-logme2

@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: example-a9s-prometheus
+  namespace: default
+spec:
+  instanceRef: example-a9s-prometheus
+  serviceInstanceType: prometheus
+  # If no compositionRef is provided, the default choice will be a8s-backup.
+  compositionRef:
+    name: a9s-backup

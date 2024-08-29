@@ -1,0 +1,8 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: anynines-provider
+spec:
+  package: public.ecr.aws/w5n9a2g2/anynines/provider-anynines:v1.2.0
+  runtimeConfigRef:
+    name: enable-debug-logging

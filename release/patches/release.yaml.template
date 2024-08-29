@@ -1,0 +1,38 @@
+# This is a template used by `make-release-bundle.sh` to produce the `release.yaml` patch.
+#
+# The patches in here must:
+# - target resources defined within `bases/install`
+# - utilize shell-style variables, which `make-release-bundle.sh` knows about
+#
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: anynines-dataservices
+spec:
+  package: "public.ecr.aws/w5n9a2g2/anynines/dataservices:$CONFIG_VERSION"
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-anynines
+spec:
+  package: "public.ecr.aws/w5n9a2g2/anynines/provider-anynines:$PROVIDER_ANYNINES_VERSION"
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-kubernetes
+spec:
+  package: "xpkg.upbound.io/crossplane-contrib/provider-kubernetes:$PROVIDER_KUBERNETES_VERSION"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anynines-backend
+  namespace: bind
+spec:
+  template:
+    spec:
+      containers:
+      - name: anynines-backend
+        image: "public.ecr.aws/w5n9a2g2/anynines/kubebind-backend:$KUBE_BIND_BACKEND_VERSION"

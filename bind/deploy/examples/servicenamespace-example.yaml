@@ -1,0 +1,5 @@
+apiVersion: klutch.anynines.com/v1alpha1
+kind: APIServiceNamespace
+metadata:
+  name: example
+spec: {}

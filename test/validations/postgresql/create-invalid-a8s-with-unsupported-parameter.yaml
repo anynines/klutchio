@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql14
+  plan: postgresql-single-nano
+  parameters:
+    dataChecksums: enabled
+  compositionRef:
+    name: a8s-postgresql

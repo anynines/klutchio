@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: sample-mariadb-instance-sb
+  namespace: mariadb-lifecycle
+spec:
+  instanceRef: sample-mariadb-instance
+  serviceInstanceType: mariadb
+  compositionRef:
+    name: a9s-servicebinding

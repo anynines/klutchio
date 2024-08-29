@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: backup-prometheus-sample
+  namespace: prometheus-lifecycle
+spec:
+  instanceRef: sample-prometheus-instance
+  serviceInstanceType: prometheus
+  compositionRef:
+    name: a9s-backup

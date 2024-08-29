@@ -1,0 +1,306 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xpostgresqlinstances.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XPostgresqlInstance
+    plural: xpostgresqlinstances
+  claimNames:
+    kind: PostgresqlInstance
+    plural: postgresqlinstances
+  defaultCompositionRef:
+    name: a8s-postgresql
+  defaultCompositeDeletePolicy: Foreground
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        supported:
+          - expose: &expose ["Internal", "LoadBalancer"]
+            # Technically all of these are supported by postgres:
+            #   ["true", "yes", "on", "1", "false", "no", "off", "0"]
+            # Our postgresql operator only supports "on"/"off" though:
+          - postgresBoolean: &postgresBoolean ["on", "off"]
+        properties:
+          spec:
+            x-kubernetes-validations:
+            # Validation for postgresql services.
+            - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
+                (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql15'))
+                || (self.compositionRef.name == 'a8s-postgresql' &&
+                (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql14'))"
+              message: "Unsupported service used for postgresql"
+            # Validation for postgresql plans.
+            - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
+                (self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-nano-bionic' ||
+                self.plan == 'postgresql-single-nano-ssl' || self.plan == 'postgresql-single-nano-ssl-bionic' ||
+                self.plan == 'postgresql-single-small' || self.plan == 'postgresql-single-small-bionic' ||
+                self.plan == 'postgresql-single-small-ssl' || self.plan == 'postgresql-single-small-ssl-bionic' ||
+                self.plan == 'postgresql-single-medium' || self.plan == 'postgresql-single-medium-bionic' ||
+                self.plan == 'postgresql-single-medium-ssl' || self.plan == 'postgresql-single-medium-ssl-bionic' ||
+                self.plan == 'postgresql-replica-small' || self.plan == 'postgresql-replica-small-bionic' ||
+                self.plan == 'postgresql-replica-small-ssl' || self.plan == 'postgresql-replica-small-ssl-bionic' ||
+                self.plan == 'postgresql-replica-medium' || self.plan == 'postgresql-replica-medium-bionic' ||
+                self.plan == 'postgresql-replica-medium-ssl' || self.plan == 'postgresql-replica-medium-ssl-bionic')) ||
+                (self.compositionRef.name == 'a8s-postgresql' &&
+                (self.plan == 'postgresql-replica-nano' || self.plan == 'postgresql-replica-small'||
+                self.plan == 'postgresql-replica-medium' || self.plan == 'postgresql-replica-large' ||
+                self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-small'||
+                self.plan == 'postgresql-single-medium' || self.plan == 'postgresql-single-large'))"
+              message: "Unsupported plan used for postgresql"
+
+            # Validation for parameters ONLY supported by a8s
+            - rule: "!(has(self.parameters) && has(self.parameters.maxLocksPerTransaction)) ||
+                     self.compositionRef.name == 'a8s-postgresql'"
+              message: "parameters.maxLocksPerTransaction is not supported for a9s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.sslCiphers)) ||
+                     self.compositionRef.name == 'a8s-postgresql'"
+              message: "parameters.sslCiphers is not supported for a9s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.sslMinProtocolVersion)) ||
+                     self.compositionRef.name == 'a8s-postgresql'"
+              message: "parameters.sslMinProtocolVersion is not supported for a9s-postgresql"
+
+            # Validation for parameters ONLY supported by a9s
+            - rule: "!(has(self.parameters) && has(self.parameters.dataChecksums)) ||
+                     self.compositionRef.name == 'a9s-postgresql'"
+              message: "parameters.dataChecksums is not supported for a8s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.effectiveCacheSize)) ||
+                     self.compositionRef.name == 'a9s-postgresql'"
+              message: "parameters.effectiveCacheSize is not supported for a8s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.workMem)) ||
+                     self.compositionRef.name == 'a9s-postgresql'"
+              message: "parameters.workMem is not supported for a8s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.maintenanceWorkMem)) ||
+                     self.compositionRef.name == 'a9s-postgresql'"
+              message: "parameters.maintenanceWorkMem is not supported for a8s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.idleInTransactionSessionTimeout)) ||
+                     self.compositionRef.name == 'a9s-postgresql'"
+              message: "parameters.idleInTransactionSessionTimeout is not supported for a8s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.rolePrivileges)) ||
+                     self.compositionRef.name == 'a9s-postgresql'"
+              message: "parameters.rolePrivileges is not supported for a8s-postgresql"
+            - rule: "!(has(self.parameters) && has(self.parameters.walLevelLogical)) ||
+                     self.compositionRef.name == 'a9s-postgresql'"
+              message: "parameters.walLevelLogical is not supported for a8s-postgresql"
+
+            properties:
+              acceptsIncomplete:
+                type: boolean
+              service:
+                x-kubernetes-validations:
+                # Validation to check that service can't be updated.
+                - rule: "self == oldSelf"
+                  message: "Service is an immutable field"
+                description: Service specifies the type and version of the Data 
+                  Service Instance (e.g. a9s-postgresql13). There is a list of 
+                  supported services and supported plans for each service.
+                type: string
+              plan:
+                description: Plan specifies the service plan. There are options 
+                  for single or clustered Data Service Instances and options for 
+                  different underlying computing resources.
+                type: string
+                x-kubernetes-validations:
+                # Validate that only upgrades from smaller to larger DS instance 
+                # sizes are allowed.
+                - rule: "!(self.contains('small') && oldSelf.contains('medium')) &&
+                    !(self.contains('small') && oldSelf.contains('large')) &&
+                    !(self.contains('medium') && oldSelf.contains('large'))"
+                  message: "Transition from bigger to smaller plan size is not
+                    supported."
+                # We must use separate rules to avoid reaching the rule complexity limit
+                - rule: "!(self.contains('nano') && oldSelf.contains('small')) &&
+                    !(self.contains('nano') && oldSelf.contains('medium'))&&
+                    !(self.contains('nano') && oldSelf.contains('large'))"
+                  message: "Transition from bigger to smaller plan size is not
+                    supported."
+                # Validation for plan migrations
+                - rule: "oldSelf.contains('ssl') == self.contains('ssl')"
+                  message: "Plan migrations not possible from Non-SSL to SSL and 
+                    SSL to Non-SSL"
+                - rule: "oldSelf.contains('bionic') == self.contains('bionic')"
+                  message: "Plan migrations not possible from Non-Bionic to Bionic and 
+                    Bionic to Non-Bionic" 
+                # Validation for plan migration from single to replicas 
+                - rule: "!(self.contains('-single-') && oldSelf.contains('-replica-'))"
+                  message: "Migration from clustered to single Data Service
+                    Instance is not supported."
+              expose:
+                description: Expose specifies where (and how) the instances can
+                  be accessed from. There are currently 2 options supported. 
+                  'Internal', this option makes the instances accessible only 
+                  within the K8s cluster. 'LoadBalancer', this option exposes 
+                  the instances outside the K8s cluster they are running in, 
+                  using a load balancer.
+                type: string
+                enum: *expose
+
+              # PostgreSQL configuration parameters
+              parameters:
+                type: object
+                properties:
+                  dataChecksums: # only a9s
+                    description: |
+                      Use checksums on data pages to help detect corruption by the I/O system that would otherwise be silent.
+                    type: string
+                    enum: ["enabled", "disabled"]
+                  maxConnections:
+                    description: Determines the maximum number of concurrent connections to the database server.
+                    type: number
+                  effectiveCacheSize: # only a9s
+                    description: |
+                      Sets the planner's assumption about the effective size of the disk cache that is available to a single query.
+                    type: string
+                  ## `sharedBuffers` IS NOT SUPPORTED CURRENTLY, BECAUSE:
+                  ## - a8s does not support setting this as a string (e.g. "300MB")
+                  ## - when set to an integer, a8s passes it on to postgresql,
+                  ##   which interprets the value as a multiple of the block size
+                  ##   (usually 8KB, but may vary)
+                  ## - a9s on the other hand interprets an integer as a multiple of 1MB.
+                  ##
+                  # sharedBuffers:
+                  #   description: |
+                  #     Sets the amount of memory the database server uses for shared memory buffers.
+                  #   type: string
+                  #   pattern: "^[1-9]\\d*[MG]B$"
+                  workMem: # only a9s
+                    description: |
+                      Specifies the amount of memory to be used by internal sort operations and hash tables before writing to temporary disk files.
+                    type: string
+                  maintenanceWorkMem: # only a9s
+                    description: |
+                      Specifies the maximum amount of memory to be used by maintenance operations, such as VACUUM, CREATE INDEX, and ALTER TABLE ADD FOREIGN KEY.
+                    type: string
+                  tempFileLimit:
+                    description: |
+                      Specifies the maximum amount of disk space that a process can use for temporary files, such as sort and hash temporary files, or the storage file for a held cursor.
+                    type: integer
+                    x-kubernetes-validations:
+                    - rule: "self == -1 || self > 0"
+                      message: "Must be either -1 (no limit) or a limit specified in kilobytes"
+                  trackIoTiming:
+                    description: |
+                      Enables timing of database I/O calls.
+                    type: string
+                    enum: *postgresBoolean
+                  archiveTimeout:
+                    description: |
+                      Enforces the server to switch to a new WAL segment file periodically.
+
+                      The value is interpreted as seconds.
+                    type: integer
+                  statementTimeout:
+                    description: |
+                      Abort any statement that takes more than the specified amount of time.
+
+                      The value is interpreted as milliseconds.
+                      A value of zero (the default) disables the timeout.
+                    type: integer
+                  idleInTransactionSessionTimeout: # only a9s
+                    description: |
+                      Terminate any session with an open transaction that has been idle for longer than the specified duration in milliseconds.
+                    type: integer
+                    x-kubernetes-validations:
+                    - rule: "self >= 0"
+                      message: "Must be greater than or equal to 0"
+                  rolePrivileges: # only a9s
+                    description: |
+                      Configures default privileges for the credentials.
+                    type: array
+                    items:
+                      type: string
+                      enum: ["CREATEDB", "CREATEROLE", "REPLICATION"]
+                  walLevelLogical: # only a9s
+                    description: |
+                      Configures wal_level.
+
+                      This parameter receives a boolean, where true configures the wal_level as logical and false fallback to the default configuration.
+                    type: boolean
+                  walWriterDelay:
+                    description: |
+                      Configures how often the WAL writer flushes WAL.
+
+                      The value is interpreted as milliseconds.
+                    type: integer
+                    x-kubernetes-validations:
+                    - rule: "self > 0"
+                      message: "Must be greater than 0"
+                  maxLocksPerTransaction: # only a8s
+                    description: |
+                      Sets the maximum number of locks per transaction.
+                    type: integer
+                    x-kubernetes-validations:
+                    - rule: "self >= 10"
+                      message: "Must be greater than or equal to 10"
+                  maxReplicationSlots:
+                    description: |
+                      Configures the maximum amount of replication slots.
+                    type: integer
+                    x-kubernetes-validations:
+                    - rule: "self >= 0"
+                      message: "Must be greater than or equal to 0"
+                  maxWalSenders:
+                    description: |
+                      Configures the maximum amount of WAL sender fore each node of the service instance.
+                    type: integer
+                    x-kubernetes-validations:
+                    - rule: "self >= 0"
+                      message: "Must be greater than or equal to 0"
+                  synchronousCommit:
+                    description: |
+                      Configures synchronous_commit.
+
+                      This value specifies how much WAL processing must complete before the database server returns a 'success' indication to the client.
+                    type: string
+                    enum: ["on", "off", "local", "remote_write", "remote_apply"]
+                  sslCiphers: # only a8s
+                    description: |
+                      Specify the allowed SSL ciphers
+                    type: string
+                  sslMinProtocolVersion: # only a8s
+                    description: |
+                      Sets the minimum SSL/TLS protocol version to use
+                    type: string
+                    enum: ["TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"]
+                  clientMinMessages:
+                    description: |
+                      Controls which message levels are sent to the client.
+                    type: string
+                    # Must be all lowercase for a8s, all uppercase for a9s.
+                    # The postgresql documentation uses upper case as well, so that's what we'll use here:
+                    enum: ["DEBUG5", "DEBUG4", "DEBUG3", "DEBUG2", "DEBUG1", "LOG", "NOTICE", "WARNING", "ERROR"]
+                  logMinMessages: # prefixed with pg_ in a9s
+                    description: |
+                      Controls which message levels are written to the server log.
+                    type: string
+                    # Must be all lowercase for a8s, all uppercase for a9s.
+                    # The postgresql documentation uses upper case as well, so that's what we'll use here:
+                    enum: &logLevels ["DEBUG5", "DEBUG4", "DEBUG3", "DEBUG2", "DEBUG1", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"]
+                  logMinErrorStatement: # prefixed with pg_ in a9s
+                    description: |
+                      Controls which SQL statements that cause an error condition are recorded in the server log.
+                    type: string
+                    enum: *logLevels
+                  logStatement:
+                    description: |
+                      Controls which SQL statements are logged.
+                    type: string
+                    enum: ["none", "ddl", "mod", "all"]
+                  logErrorVerbosity:
+                    description: |
+                      Controls the amount of detail written in the server log for each message that is logged.
+                    type: string
+                    enum: ["DEFAULT", "VERBOSE", "TERSE"]
+            required:
+              - service
+              - plan
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true

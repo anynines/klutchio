@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  # only supported in a9s
+  service: a9s-postgresql15
+  plan: postgresql-single-nano
+  compositionRef:
+    name: a8s-postgresql

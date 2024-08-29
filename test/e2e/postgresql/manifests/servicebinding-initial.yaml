@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: sample-pg-servicebinding
+  namespace: pg-lifecycle
+spec:
+  instanceRef: sample-pg-cluster
+  serviceInstanceType: postgresql
+  compositionRef:
+    name: a9s-servicebinding

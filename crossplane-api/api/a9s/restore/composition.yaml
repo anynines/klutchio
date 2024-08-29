@@ -1,0 +1,41 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: a9s-restore
+spec:
+  compositeTypeRef:
+    apiVersion: anynines.com/v1
+    kind: XRestore
+  resources:
+    - name: a9s-restore
+      base:
+        apiVersion: dataservices.anynines.com/v1
+        kind: Restore
+      patches:
+        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+          toFieldPath: spec.forProvider.manifest.metadata.namespace
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+          toFieldPath: spec.forProvider.manifest.metadata.name
+        - fromFieldPath: spec.backupRef
+          toFieldPath: spec.forProvider.backupName
+        - fromFieldPath: spec.serviceInstanceType
+          toFieldPath: spec.providerConfigRef.name
+          transforms:
+          - type: string
+            string:
+              fmt: "%s-backup-manager"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.finishedAt
+          toFieldPath: status.managed.finishedAt
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.restoreId
+          toFieldPath: status.managed.restoreId
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.state
+          toFieldPath: status.managed.state   
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.triggeredAt
+          toFieldPath: status.managed.triggeredAt   
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.conditions
+          toFieldPath: status.managed.conditions  

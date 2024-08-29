@@ -1,0 +1,9 @@
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: messaginginstances
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: messaginginstances
+    group: anynines.com

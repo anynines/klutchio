@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../bases/install/configuration-package.yaml
+  - ../../bases/install/provider-anynines.yaml
+  - ../../bases/install/provider-kubernetes.yaml
+  - ../../bases/install/kube-bind-common.yaml
+  - ../../../bind/deploy/crd/klutch.anynines.com_apiservicebindings.yaml
+  - ../../../bind/deploy/crd/klutch.anynines.com_apiserviceexportrequests.yaml
+  - ../../../bind/deploy/crd/klutch.anynines.com_apiserviceexports.yaml
+  - ../../../bind/deploy/crd/klutch.anynines.com_apiservicenamespaces.yaml
+  - ../../../bind/deploy/crd/klutch.anynines.com_clusterbindings.yaml
+  - ../../bases/install/kube-bind-crds.yaml
+  - ../../bases/install/kube-bind-deployment.yaml
+patches:
+  - path: "../../patches/release.yaml"

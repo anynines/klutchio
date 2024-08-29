@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Logme2Instance
+metadata:
+  name: example-a9s-logme2
+  namespace: default
+spec:
+  # Use a supported logme2 serviceName and planName
+  service: a9s-logme2
+  plan: logme-single-small-ssl
+  compositionRef:
+    name: a9s-logme2

@@ -1,0 +1,17 @@
+kind: APIServiceExportTemplate
+apiVersion: example-backend.klutch.anynines.com/v1alpha1
+metadata:
+  name: "foos"
+  namespace: default
+spec:
+  APIServiceSelector:
+    resource: foos
+    group: bar.io
+  permissionClaims:
+    - group: ""
+      resource: secrets
+      version: v1
+      selector:
+        owner: Provider
+        namespaces:
+          - "*"

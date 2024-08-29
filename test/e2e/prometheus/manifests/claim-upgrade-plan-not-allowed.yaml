@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: PrometheusInstance
+metadata:
+  name: sample-prometheus-instance
+  namespace: prometheus-lifecycle
+spec:
+  service: a9s-prometheus
+  plan: prometheus-single-medium
+  compositionRef:
+    name: a9s-prometheus

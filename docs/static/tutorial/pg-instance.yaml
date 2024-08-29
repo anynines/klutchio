@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: example-pg-instance
+  namespace: default
+spec:
+  service: "a9s-postgresql13"
+  plan: "postgresql-single-nano"
+  expose: "Internal"
+  compositionRef:
+    name: a8s-postgresql

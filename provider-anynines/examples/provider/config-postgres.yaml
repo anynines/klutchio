@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: postgresql-service-broker-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_POSTGRESQL_SERVICE_BROKER_USERNAME
+  password: $BASE64ENCODED_POSTGRESQL_SERVICE_BROKER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: postgresql-service-broker
+spec:
+  url: $PG_SERVICEBROKER_HOST # Connect to k8s service
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: postgresql-service-broker-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: postgresql-service-broker-credentials
+        key: password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: postgresql-backup-manager-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_POSTGRESQL_BACKUP_MANAGER_USERNAME
+  password: $BASE64ENCODED_POSTGRESQL_BACKUP_MANAGER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: postgresql-backup-manager
+spec:
+  url: $PG_BACKUP_MANAGER_HOST # Connect to k8s service
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: postgresql-backup-manager-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: postgresql-backup-manager-credentials
+        key: password

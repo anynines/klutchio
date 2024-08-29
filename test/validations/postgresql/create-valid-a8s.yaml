@@ -1,0 +1,121 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-single-nano
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql14
+  plan: postgresql-single-nano
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-single-small
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-single-medium
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-single-large
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-replica-small
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-replica-medium
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-replica-large
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-replica-large
+  parameters:
+    maxConnections: 250
+  compositionRef:
+    name: a8s-postgresql
+---
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: sample-pg-cluster
+spec:
+  service: a9s-postgresql13
+  plan: postgresql-replica-large
+  parameters:
+    maxConnections: 120
+    tempFileLimit: 1024
+    # make sure to specify this as a string (`on` in YAML is interpreted as a boolean)
+    trackIoTiming: "on"
+    archiveTimeout: 1000
+    statementTimeout: 3000
+    walWriterDelay: 400
+    maxReplicationSlots: 12
+    maxWalSenders: 12
+    synchronousCommit: "local"
+    sslCiphers: "NULL-MD5" # (bad example, but should work)
+    sslMinProtocolVersion: "TLSv1"
+    clientMinMessages: LOG
+    logMinMessages: NOTICE
+    logMinErrorStatement: WARNING
+    logStatement: ddl
+    logErrorVerbosity: TERSE
+    maxLocksPerTransaction: 128
+  compositionRef:
+    name: a8s-postgresql
+

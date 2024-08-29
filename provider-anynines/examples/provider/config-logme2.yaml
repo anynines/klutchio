@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: logme2-service-broker-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_LOGME2_SERVICE_BROKER_USERNAME
+  password: $BASE64ENCODED_LOGME2_SERVICE_BROKER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: logme2-service-broker
+spec:
+  url: "http://dockerhost:9489" # Connect to k8s service
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: logme2-service-broker-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: logme2-service-broker-credentials
+        key: password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: logme2-backup-manager-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_LOGME2_BACKUP_MANAGER_USERNAME
+  password: $BASE64ENCODED_LOGME2_BACKUP_MANAGER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: logme2-backup-manager
+spec:
+  url: "http://dockerhost:9488" # Connect to k8s service
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: logme2-backup-manager-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: logme2-backup-manager-credentials
+        key: password

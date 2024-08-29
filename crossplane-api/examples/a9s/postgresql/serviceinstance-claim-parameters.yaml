@@ -1,0 +1,26 @@
+apiVersion: anynines.com/v1
+kind: PostgresqlInstance
+metadata:
+  name: example-a9s-postgresql-with-parameters
+  namespace: default
+spec:
+  # Use a supported postgresql serviceName and planName
+  service: a9s-postgresql15
+  plan: postgresql-replica-small
+  compositionRef:
+    name: a9s-postgresql
+  parameters:
+    maxConnections: 200
+    tempFileLimit: 4096
+    trackIoTiming: "on"
+    archiveTimeout: 10
+    statementTimeout: 3000
+    walWriterDelay: 400
+    maxReplicationSlots: 12
+    maxWalSenders: 12
+    synchronousCommit: "local"
+    clientMinMessages: LOG
+    logMinMessages: NOTICE
+    logMinErrorStatement: WARNING
+    logStatement: ddl
+    logErrorVerbosity: VERBOSE

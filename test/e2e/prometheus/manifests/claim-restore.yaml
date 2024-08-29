@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: restore-prometheus-sample
+  namespace: prometheus-lifecycle
+spec:
+  backupRef: backup-prometheus-sample
+  serviceInstanceType: prometheus
+  # If no compositionRef is provided, the default choice will be a8s-restore.
+  compositionRef:
+    name: a9s-restore

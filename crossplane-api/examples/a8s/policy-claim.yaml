@@ -1,0 +1,13 @@
+apiVersion: anynines.com/v1
+kind: Policy
+metadata:
+  name: example-a8s-policy
+  namespace: default
+spec: 
+  actions:
+  - s3:GetObject
+  - s3:PutObject
+  - s3:ListBucket
+  - s3:DeleteObject
+  resource: arn:aws:s3:::*/*
+  description: this is a test policy created by a composite function

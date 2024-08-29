@@ -1,0 +1,27 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-anynines
+spec:
+  package: "public.ecr.aws/w5n9a2g2/anynines/provider-anynines:v1.2.0-c4316f2b85fb54edcc4852e2a7e503bb09354159"
+  runtimeConfigRef:
+    name: provider-anynines
+---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-anynines
+spec:
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+          - name: package-runtime
+            # Enable health checks
+            readinessProbe:
+              httpGet:
+                path: /healthz
+                port: 8081
+

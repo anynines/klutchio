@@ -1,0 +1,9 @@
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: prometheusinstances
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: prometheusinstances
+    group: anynines.com

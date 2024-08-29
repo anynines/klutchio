@@ -1,0 +1,68 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+# This is a short-term solution. The a9s and a8s will soon share a common XRD.
+metadata:
+  name: xlogme2instances.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XLogme2Instance
+    plural: xlogme2instances
+  claimNames:
+    kind: Logme2Instance
+    plural: logme2instances
+  defaultCompositionRef:
+    name: a9s-logme2
+  defaultCompositeDeletePolicy: Foreground
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        supported:
+          - plans: &logme2Plans ["logme-cluster-small-ssl", "logme-single-small-ssl"]
+          - services: &logme2Services ["a9s-logme2"]
+        properties:
+          spec:
+            properties:
+              acceptsIncomplete:
+                type: boolean
+              service:
+                type: string
+                enum: *logme2Services
+                x-kubernetes-validations:
+                # Validation to check that service can't be updated.
+                - rule: "self == oldSelf"
+                  message: "Service is an immutable field"
+              plan:
+                description: Plan specifies the service plan. There are options
+                  for single or clustered Data Service Instances and options for
+                  different underlying computing resources (e.g.
+                  logme2-cluster-small).
+                type: string
+                enum: *logme2Plans
+                x-kubernetes-validations:
+                # Validate that only migrations from single to clustered DS
+                # instance are allowed.
+                - rule: "!(self.contains('-single-') && oldSelf.contains('-cluster-'))"
+                  message: "Migration from clustered to single Data Service
+                    Instance is not supported."
+                # Validate that only migrations from single to clustered DS
+                # instance are allowed.
+                - rule: "!(self.contains('-cluster-') && oldSelf.contains('-single-'))"
+                  message: "Migration from single to clustered Data Service
+                    Instance is not supported."
+            required:
+              - service
+              - plan
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+    additionalPrinterColumns:
+    - name: ManagedResource
+      type: string
+      jsonPath: ".status.managed.state"

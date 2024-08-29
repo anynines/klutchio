@@ -1,0 +1,47 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+# This is a short-term solution. The a9s and a8s will soon share a common XRD. 
+metadata:
+  name: xbackups.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XBackup
+    plural: xbackups
+  claimNames:
+    kind: Backup
+    plural: backups
+  defaultCompositionRef:
+    name: a8s-backup     
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        supported:
+          - types: &serviceInstanceTypes ["postgresql", "mongodb",
+              "search", "logme2", "prometheus", "messaging", "mariadb"]
+        properties:
+          spec:
+            x-kubernetes-validations:
+                # Validation for compositionRef and serviceInstanceType combination.
+                - rule: "(!(self.compositionRef.name == '') && 
+                    !(self.compositionRef.name == 'a8s-backup')) ||
+                    self.serviceInstanceType == 'postgresql'"
+                  message: "Selected service instance type is not supported."
+            properties:
+              instanceRef:
+                type: string
+              serviceInstanceType:
+                type: string
+                enum: *serviceInstanceTypes
+            required:
+              - instanceRef
+              - serviceInstanceType
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true

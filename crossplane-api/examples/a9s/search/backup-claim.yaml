@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: example-a9s-search
+  namespace: default
+spec:
+  instanceRef: example-a9s-search
+  serviceInstanceType: search
+  # If no compositionRef is provided, the default choice will be a8s-backup.
+  compositionRef:
+    name: a9s-backup

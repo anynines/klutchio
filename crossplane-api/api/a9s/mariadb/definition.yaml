@@ -1,0 +1,82 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xmariadbinstances.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XMariadbInstance
+    plural: xmariadbinstances
+  claimNames:
+    kind: MariadbInstance
+    plural: mariadbinstances
+  defaultCompositionRef:
+    name: a9s-mariadb
+  defaultCompositeDeletePolicy: Foreground
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        supported:
+          - plans: &mariadbPlans ["mariadb-single-big-ssl", "mariadb-single-medium", 
+             "mariadb-single-medium-ssl", "mariadb-single-nano", "mariadb-single-nano-ssl", 
+             "mariadb-single-small", "mariadb-single-small-ssl", "mariadb-cluster-big",
+             "mariadb-cluster-big-ssl","mariadb-cluster-medium","mariadb-cluster-medium-ssl",
+             "mariadb-cluster-small","mariadb-cluster-small-ssl","mariadb-single-big"]
+          - services: &mariadbServices ["a9s-mariadb106"]
+        properties:
+          spec:
+            properties:
+              acceptsIncomplete:
+                type: boolean
+              service:
+                type: string
+                enum: *mariadbServices
+                x-kubernetes-validations:
+                # Validation to check that service can't be updated.
+                - rule: "self == oldSelf"
+                  message: "Service is an immutable field"
+              plan:
+                description: Plan specifies the service plan. There are options
+                  for single or clustered Data Service Instances and options for
+                  different underlying computing resources (e.g.
+                  mariadb-cluster-small).
+                type: string
+                enum: *mariadbPlans
+                x-kubernetes-validations:
+                # Validate that only upgrades from smaller to bigger DS instance
+                # sizes are allowed.
+                - rule: "!(self.contains('small') && oldSelf.contains('medium')) &&
+                    !(self.contains('small') && oldSelf.contains('big')) &&
+                    !(self.contains('medium') && oldSelf.contains('big'))"
+                  message: "Transition from bigger to smaller plan size is not
+                    supported."
+                # We must use separate rules to avoid reaching the rule complexity limit
+                - rule: "!(self.contains('nano') && oldSelf.contains('small')) &&
+                    !(self.contains('nano') && oldSelf.contains('medium'))&&
+                    !(self.contains('nano') && oldSelf.contains('big'))"
+                  message: "Transition from bigger to smaller plan size is not
+                    supported."
+                # Validate that only migrations from single to replicated DS
+                # instance are allowed.
+                - rule: "!(self.contains('-single-') && oldSelf.contains('-cluster-'))"
+                  message: "Migration from replicated to single Data Service
+                    Instance is not supported."
+                - rule: "oldSelf.contains('ssl') == self.contains('ssl')"
+                  message: "Plan migrations not possible from Non-SSL to SSL and
+                    SSL to Non-SSL"
+            required:
+              - service
+              - plan
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+    additionalPrinterColumns:
+    - name: ManagedResource
+      type: string
+      jsonPath: ".status.managed.state"

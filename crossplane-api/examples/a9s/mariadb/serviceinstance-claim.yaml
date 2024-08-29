@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: MariadbInstance
+metadata:
+  name: example-a9s-mariadb
+  namespace: default
+spec:
+  # Use a supported mariadb serviceName and planName
+  service: a9s-mariadb106
+  plan: mariadb-single-nano-ssl
+  compositionRef:
+    name: a9s-mariadb

@@ -1,0 +1,24 @@
+// Package v1alpha1 contains the v1alpha1 group Sample resources of the {{ .Env.PROVIDER }} provider.
+// +kubebuilder:object:generate=true
+// +groupName={{ .Env.GROUP | strings.ToLower }}.{{ .Env.PROVIDER | strings.ToLower }}.crossplane.io
+// +versionName={{ .Env.APIVERSION | strings.ToLower }}
+package {{ .Env.APIVERSION | strings.ToLower }}
+
+import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
+)
+
+// Package type metadata.
+const (
+	Group   = "{{ .Env.GROUP | strings.ToLower }}.{{ .Env.PROVIDER | strings.ToLower }}.crossplane.io"
+	Version = "{{ .Env.APIVERSION | strings.ToLower }}"
+)
+
+var (
+	// SchemeGroupVersion is group version used to register these objects
+	SchemeGroupVersion = schema.GroupVersion{Group: Group, Version: Version}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+)

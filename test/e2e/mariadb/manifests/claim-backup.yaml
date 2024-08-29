@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: backup-mariadb-sample
+  namespace: mariadb-lifecycle
+spec:
+  instanceRef: sample-mariadb-instance
+  serviceInstanceType: mariadb
+  # If no compositionRef is provided, the default choice will be a8s-backup.
+  compositionRef:
+    name: a9s-backup

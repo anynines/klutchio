@@ -1,0 +1,47 @@
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: "servicebindings"
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: servicebindings
+    group: anynines.com
+  permissionClaims:
+    - group: ""
+      resource: secrets
+      version: v1
+      selector:
+        owner: Provider
+---
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: "backups"
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: backups
+    group: anynines.com
+  permissionClaims:
+    - group: ""
+      resource: secrets
+      version: v1
+      selector:
+        owner: Provider
+---
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: "restores"
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: restores
+    group: anynines.com
+  permissionClaims:
+    - group: ""
+      resource: secrets
+      version: v1
+      selector:
+        owner: Provider

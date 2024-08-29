@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: example-a8s-postgresql
+  namespace: default
+spec:
+  instanceRef: example-a8s-postgresql
+  serviceInstanceType: postgresql
+  compositionRef:
+    name: a8s-servicebinding

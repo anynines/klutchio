@@ -1,0 +1,9 @@
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: "restores"
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: restores
+    group: anynines.com

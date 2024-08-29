@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: example-a9s-logme2
+  namespace: default
+spec:
+  instanceRef: example-a9s-logme2
+  serviceInstanceType: logme2
+  # If no compositionRef is provided, the default choice will be a8s-backup.
+  compositionRef:
+    name: a9s-backup

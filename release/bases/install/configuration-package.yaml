@@ -1,0 +1,7 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: anynines-dataservices
+spec:
+  # package is provided by patch
+  package: PLACEHOLDER

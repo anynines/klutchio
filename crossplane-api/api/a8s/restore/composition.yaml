@@ -1,0 +1,59 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: a8s-restore
+spec:
+  compositeTypeRef:
+    apiVersion: anynines.com/v1
+    kind: XRestore
+  resources:
+    - name: a8s-restore
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: backups.anynines.com/v1beta3
+              kind: Restore
+          providerConfigRef:
+            name: kubernetes-provider
+      patches:
+        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+          toFieldPath: spec.forProvider.manifest.metadata.namespace
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+          toFieldPath: spec.forProvider.manifest.metadata.name
+        - fromFieldPath: spec.serviceInstanceType
+          toFieldPath: spec.forProvider.manifest.spec.serviceInstance.apiGroup
+          transforms:
+            - type: map
+              map:
+                postgresql: postgresql.anynines.com
+        - fromFieldPath: spec.serviceInstanceType
+          toFieldPath: spec.forProvider.manifest.spec.serviceInstance.kind
+          transforms:
+            - type: map
+              map:
+                postgresql: PostgreSQL
+        - fromFieldPath: spec.instanceRef
+          toFieldPath: spec.forProvider.manifest.spec.serviceInstance.name
+        - fromFieldPath: spec.backupRef
+          toFieldPath: spec.forProvider.manifest.spec.backupName
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.conditions
+          toFieldPath: status.managed.conditions          
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.lastObservationTime
+          toFieldPath: status.managed.lastObservationTime
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.podToPoll.ip
+          toFieldPath: status.managed.podToPoll.ip                   
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.podToPoll.namespacedName
+          toFieldPath: status.managed.podToPoll.namespacedName
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.podToPoll.uid
+          toFieldPath: status.managed.podToPoll.uid
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.status.restoreID
+          toFieldPath: status.managed.restoreID         

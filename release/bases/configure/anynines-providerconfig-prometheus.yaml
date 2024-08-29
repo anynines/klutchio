@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: prometheus-service-broker-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_PROMETHEUS_SERVICE_BROKER_USERNAME
+  password: $BASE64ENCODED_PROMETHEUS_SERVICE_BROKER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: prometheus-service-broker
+spec:
+  url: $PROMETHEUS_SERVICE_BROKER_URL
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: prometheus-service-broker-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: prometheus-service-broker-credentials
+        key: password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: prometheus-backup-manager-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_PROMETHEUS_BACKUP_MANAGER_USERNAME
+  password: $BASE64ENCODED_PROMETHEUS_BACKUP_MANAGER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: prometheus-backup-manager
+spec:
+  url: $PROMETHEUS_BACKUP_MANAGER_URL
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: prometheus-backup-manager-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: prometheus-backup-manager-credentials
+        key: password
+---
+kind: APIServiceExportTemplate
+apiVersion: bind.anynines.com/v1alpha1
+metadata:
+  name: prometheis
+  namespace: crossplane-system
+spec:
+  APIServiceSelector:
+    resource: prometheusinstances
+    group: anynines.com
+  permissionClaims:
+    - group: ""
+      resource: secrets
+      version: v1
+      selector:
+        owner: Provider
+    - group: ""
+      resource: configmaps
+      version: v1
+      selector:
+        owner: Provider
