@@ -1,0 +1,3 @@
+[submodule "provider-anynines/build"]
+	path = provider-anynines/build
+	url = https://github.com/crossplane/build
