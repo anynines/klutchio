@@ -12,7 +12,7 @@ service and only need a lightweight adapter in their cluster.
 
 ## Getting started
 
-Pleae refer to our documentation [for platform operators](https://klutch.io/docs/platform-operator/)
+Please refer to our documentation [for platform operators](https://klutch.io/docs/platform-operator/)
 if you want to enable your users to use various managed resources. If you're a software developer
 then please read [our documentation for developers](https://klutch.io/docs/for-developers/).
 
