@@ -35,7 +35,7 @@ Note: _If you face problems executing the commands mentioned above you can tempo
 
 To add a new type to the API by run the following command:
 
-```
+``` shell
 make provider.addtype provider={provider-anynines} group={group} kind={type}
 ```
 
@@ -75,8 +75,8 @@ by simply deleting and recreating the corresponding object.
 
 The chance of such a collision however is extremely low. More information can be found in:
 
-- https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/identifiers.md
-- https://www.ietf.org/rfc/rfc4122.txt
+- <https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/identifiers.md>
+- <https://www.ietf.org/rfc/rfc4122.txt>
 
 [provider-dev]:
   https://github.com/crossplane/crossplane/blob/master/contributing/guide-provider-development.md
