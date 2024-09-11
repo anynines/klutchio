@@ -13,58 +13,6 @@ keywords:
 
 This page documents the update process for all Klutch components.
 
-## Updating tenant cluster
-
-The tenant cluster contains only one component: the `konnector` deployment. To update the
-`konnector`, simply change it's container image to the new one. The latest image can be found by
-checking out the tab "Image tags" for this image in our
-[image registry](https://gallery.ecr.aws/w5n9a2g2/anynines/konnector).
-
-### Example using kubectl
-
-```bash
-kubectl set image --namespace bind deployment/konnector konnector=public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0
-```
-
-### Example using a manifest
-
-Apply this updated deployment manifest:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: konnector
-  namespace: bind
-  labels:
-    app: konnector
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: konnector
-  template:
-    metadata:
-      labels:
-        app: konnector
-    spec:
-      restartPolicy: Always
-      serviceAccountName: konnector
-      containers:
-        - name: konnector
-          # This image should point to the new version:
-          image: public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-```
-
 ## Updating provider cluster
 
 ### Crossplane runtime
@@ -119,3 +67,55 @@ deletion) that were made while an update is in progress will be applied as soon 
 complete.
 
 :::
+
+## Updating tenant cluster
+
+The tenant cluster contains only one component: the `konnector` deployment. To update the
+`konnector`, simply change it's container image to the new one. The latest image can be found by
+checking out the tab "Image tags" for this image in our
+[image registry](https://gallery.ecr.aws/w5n9a2g2/anynines/konnector).
+
+### Example using kubectl
+
+```bash
+kubectl set image --namespace bind deployment/konnector konnector=public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0
+```
+
+### Example using a manifest
+
+Apply this updated deployment manifest:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konnector
+  namespace: bind
+  labels:
+    app: konnector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: konnector
+  template:
+    metadata:
+      labels:
+        app: konnector
+    spec:
+      restartPolicy: Always
+      serviceAccountName: konnector
+      containers:
+        - name: konnector
+          # This image should point to the new version:
+          image: public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+```
