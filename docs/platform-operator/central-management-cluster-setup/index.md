@@ -77,7 +77,7 @@ You can install Klutch by following the given instructions:
 1. Install Klutch components by executing:
 
    ```bash
-   kubectl apply --kustomize https://github.com/anynines/klutch
+   kubectl apply --kustomize https://github.com/anynines/klutchio
    ```
 
 2. Wait for the providers to become healthy:
@@ -95,7 +95,7 @@ You can install Klutch by following the given instructions:
 4. Now add configuration for `provider-kubernetes` by executing the following command:
 
    ```bash
-   kubectl apply -f https://github.com/anynines/klutch/blob/main/crossplane-api/deploy/config-in-cluster.yaml
+   kubectl apply -f https://github.com/anynines/klutchio/blob/main/crossplane-api/deploy/config-in-cluster.yaml
    ```
 
 ### Deploy klutch-bind
@@ -110,13 +110,13 @@ You can install Klutch by following the given instructions:
 The following command deploys Klutch to the (newly created) namespace `bind`:
 
 ```sh
-kubectl apply --kustomize https://github.com/anynines/klutch/bind/deploy/resources
+kubectl apply --kustomize https://github.com/anynines/klutchio/tree/main/bind/deploy/resources
 ```
 
 :::info
 
 Note that you can clone the repository and modify the
-[Kustomize file](https://github.com/anynines/klutch/tree/main/bind/deploy/resources/kustomization.yaml)
+[Kustomize file](https://github.com/anynines/klutchio/tree/main/bind/deploy/resources/kustomization.yaml)
 to support the desired data services.
 
 :::
