@@ -1,6 +1,6 @@
 ---
 id: klutch-po-data-services
-title: Setting up Central Management and Tenant Clusters
+title: Setting up Central Management and Developer Clusters
 tags:
   - central management cluster
   - kubernetes
@@ -44,11 +44,11 @@ Crossplane provider `provider-anynines` is installed in the management cluster. 
 installing both the provider itself and configuration that the provider needs to run properly.
 
 Then, the klutch-bind backend is deployed in the management cluster. The installation for
-klutch-bind includes permission configuration that needs to be set up so the tenant cluster can
+klutch-bind includes permission configuration that needs to be set up so the developer cluster can
 properly access the backend.
 
-Lastly, Konnector must be [installed on the tenant cluster](./setup-developer-cluster.md). After
-installation, Konnector is bound to the klutch-bind backend. This is how the tenant cluster can call
+Lastly, Konnector must be [installed on the developer cluster](./setup-developer-cluster.md). After
+installation, Konnector is bound to the klutch-bind backend. This is how the developer cluster can call
 Klutch in the management cluster.
 
 The current instructions only include deployment of `provider-anynines`. This product is currently
@@ -194,7 +194,7 @@ Kubernetes API server's external hostname can be found in kubeConfig `clusters.s
 #### backend-host
 
 During the [deployment of Klutch](#deployment) a service of type `LoadBalancer` was created. This
-load balancer can be used to connect to Klutch from a tenant (or consumer) cluster. To obtain the
+load balancer can be used to connect to Klutch from a developer (or consumer) cluster. To obtain the
 required information about the service, execute the following command:
 
 ```bash

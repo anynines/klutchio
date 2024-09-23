@@ -156,7 +156,7 @@ NAME               READY   UP-TO-DATE   AVAILABLE   AGE
 anynines-backend   1/1     1            1           1h
 ```
 
-## Tenant cluster
+## Developer cluster
 
 ### Konnector
 

@@ -1,5 +1,4 @@
 ---
-id: klutch-developers
 title: Deploy Klutch locally 
 tags:
   - Klutch

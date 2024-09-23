@@ -1,6 +1,6 @@
 ---
-id: klutch-developers
-title: For developers
+title: For Developers
+sidebar_position: 3
 tags:
   - Klutch
   - open source

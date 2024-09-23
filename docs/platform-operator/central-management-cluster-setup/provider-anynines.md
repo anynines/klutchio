@@ -1,6 +1,6 @@
 ---
-id: klutch-po-configure-provider-anynines
 title: Configuring Crossplane Provider provider-anynines
+sidebar_position: 2
 tags:
   - central management cluster
   - kubernetes

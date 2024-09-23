@@ -1,6 +1,7 @@
 ---
 id: klutch-po-index
-title: Platform Operator
+title: For Platform Operators
+sidebar_position: 4
 tags:
   - kubernetes
   - documentation
@@ -19,7 +20,7 @@ keywords:
 
 Klutch enables central, Kubernetes-native management of data services. Simply put, it adds the
 capability “central management of (data) service instances in Kubernetes” to an existing Kubernetes
-consumer (tenant) cluster.
+developer (consumer) cluster.
 
 Klutch provides Platform Operators with a way to manage infrastructure-agnostic data services that
 they can offer on their Kubernetes-based application development platforms. Data service instances
