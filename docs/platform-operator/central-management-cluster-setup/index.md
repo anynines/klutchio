@@ -47,7 +47,7 @@ Then, the klutch-bind backend is deployed in the management cluster. The install
 klutch-bind includes permission configuration that needs to be set up so the tenant cluster can
 properly access the backend.
 
-Lastly, Konnector must be [installed on the tenant cluster](./klutch-po-setup-tenant-cluster). After
+Lastly, Konnector must be [installed on the tenant cluster](./setup-developer-cluster.md). After
 installation, Konnector is bound to the klutch-bind backend. This is how the tenant cluster can call
 Klutch in the management cluster.
 
