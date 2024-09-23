@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: <data-service>-service-broker-creds
+  namespace: crossplane-system
+type: Opaque
+data:
+  username: <service-broker-username-base64-encoded>
+  password: <service-broker-password-base64-encoded>
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: <data-service>-service-broker
+spec:
+  url: <service-broker-url> # e.g. http://example.com:3000
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: <data-service>-service-broker-creds
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: <data-service>-service-broker-creds
+        key: password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: <data-service>-backup-manager-creds
+  namespace: crossplane-system
+type: Opaque
+data:
+  username: <backup-manager-username-base64-encoded>
+  password: <backup-manager-password-base64-encoded>
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: <data-service>-backup-manager
+spec:
+  url: <backup-manager-url> # e.g. http://example.com:3000
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: <data-service>-backup-manager-creds
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: <data-service>-backup-manager-creds
+        key: password

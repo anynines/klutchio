@@ -103,8 +103,7 @@ spec:
         key: password
 ```
 
-<a href="pathname:///examples/platform-operator/providerconfig.yaml" target="_blank" download>Download
-providerconfig.yaml</a>
+<a href="/po_files/providerconfig.yaml" target="_blank" download>Download providerconfig.yaml</a>
 
 To verify that the providerconfigs are correct, check their status and wait for them to all be
 "healthy":

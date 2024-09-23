@@ -413,7 +413,7 @@ spec:
             class: nginx # Adjust if not Nginx Ingress Controller
 ```
 
-<a href="pathname:///examples/platform-operator/backend-anynines.template.yaml" target="_blank" download>Download
+<a href="/po_files/backend-anynines.template.yaml" target="_blank" download>Download
 backend-anynines.template.yaml</a>
 
 After downloading the `backend-anynines.template.yaml` file, replace the indicated placeholder

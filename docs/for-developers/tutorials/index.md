@@ -295,7 +295,7 @@ spec:
     name: a8s-postgresql
 ```
 
-<a href="pathname:///tutorial/pg-instance.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/pg-instance.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the file to your developer cluster:
 
@@ -322,7 +322,7 @@ spec:
     name: a8s-servicebinding
 ```
 
-<a href="pathname:///tutorial/service-binding.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/service-binding.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the ServiceBinding:
 
@@ -359,7 +359,7 @@ subsets:
   - port: 5432
 ```
 
-<a href="pathname:///tutorial/external-pg-service.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/external-pg-service.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the file:
 
@@ -463,7 +463,7 @@ spec:
   - port: 3000
 ```
 
-<a href="pathname:///tutorial/blogpost-app.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/blogpost-app.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the file:
 

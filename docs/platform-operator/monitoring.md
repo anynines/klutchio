@@ -118,6 +118,8 @@ spec:
       protocol: TCP
 ```
 
+<a href="/po_files/health-service.yaml" target="_blank" download>Download health-service.yaml</a>
+
 This service can be made accessible from outside of the cluster, by the usual kubernetes means (e.g.
 LoadBalancer service, Ingress, ...).
 

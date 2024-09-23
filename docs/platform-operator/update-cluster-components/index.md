@@ -118,3 +118,6 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
 ```
+
+<a href="/po_files/update-konnector.yaml" target="_blank" download>Download
+update-connector.yaml</a>

@@ -267,6 +267,8 @@ spec:
                   fieldPath: metadata.namespace
 ```
 
+<a href="/po_files/konnector.yaml" target="_blank" download>Download konnector.yaml</a>
+
 ## Updating Konnector
 
 In order to update an existing Konnector deployment with a new version, simply reapply the
