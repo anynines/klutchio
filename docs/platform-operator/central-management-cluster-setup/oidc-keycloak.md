@@ -1,5 +1,7 @@
 ---
+id: oidc-keycloak
 title: "Example OpenID Connect (OIDC) Setup: Keycloak"
+sidebar_position: 3
 tags:
   - configuration
   - documentation

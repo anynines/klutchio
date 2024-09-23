@@ -110,7 +110,7 @@ You can install Klutch by following the given instructions:
 The following command deploys Klutch to the (newly created) namespace `bind`:
 
 ```sh
-kubectl apply --kustomize https://github.com/anynines/klutchio/tree/main/bind/deploy/resources
+kubectl apply --kustomize https://github.com/anynines/klutchio/bind/deploy/resources
 ```
 
 :::info

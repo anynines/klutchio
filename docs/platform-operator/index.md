@@ -1,5 +1,4 @@
 ---
-id: klutch-po-index
 title: For Platform Operators
 sidebar_position: 4
 tags:

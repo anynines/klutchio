@@ -1,5 +1,4 @@
 ---
-id: a9s-po-monitoring
 title: Monitoring
 ---
 
