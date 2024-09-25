@@ -47,7 +47,7 @@ If you work with Kubernetes regularly, you probably have these standard tools al
 
 To follow along with this tutorial, you need to install the following specialized tools:
 
-1. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/central-management-cluster-setup/#binding-a-consumer-cluster-interactive)
+1. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/central-management-cluster-setup/#binding-an-app-cluster-interactive)
 2. [a9s cli](https://docs.a9s-cli.anynines.com/docs/a9s-cli/)
 
 ### Network Access
@@ -125,7 +125,7 @@ You'll see progress updates and YAML files being applied for each component.
 
 After setting up the management cluster, the CLI:
 
-- Creates a new Kind cluster named "klutch-consumer"
+- Creates a new Kind cluster named "klutch-app"
 
 At the moment this is an empty Kind cluster. Klutch components will be added in the next step, when the  App Cluster is
 "bound" to the Control Plane Cluster. Stay tuned!
@@ -142,7 +142,7 @@ Checking Prerequisites...
 ✅ Found kind at path /opt/homebrew/bin/kind.
 ...
 
-Creating cluster "klutch-management"...
+Creating cluster "klutch-control-plane"...
 • Ensuring node image (kindest/node:v1.31.0) 🖼  ...
 ✓ Ensuring node image (kindest/node:v1.31.0) 🖼
 • Preparing nodes 📦   ...
@@ -162,8 +162,8 @@ Applying the a8s Data Service manifests...
 ✅ The a8s System appears to be ready.
 ...
 
-Deploying a Consumer Kind cluster...
-Creating cluster "klutch-consumer" ...
+Deploying an App Cluster with Kind...
+Creating cluster "klutch-app" ...
 • Ensuring node image (kindest/node:v1.31.0) 🖼  ...
 ✓ Ensuring node image (kindest/node:v1.31.0) 🖼
 • Preparing nodes 📦   ...
@@ -172,14 +172,14 @@ Creating cluster "klutch-consumer" ...
 
 Summary
 You've successfully accomplished the followings steps:
-✅ Deployed a Klutch management Kind cluster.
+✅ Deployed a Klutch Control Plane Cluster with Kind.
 ✅ Deployed Dex Idp and the anynines klutch-bind backend.
 ✅ Deployed Crossplane and the Kubernetes provider.
 ✅ Deployed the Klutch Crossplane configuration package.
-✅ Deployed Klutch API Service Export Templates to make the Klutch Crossplane APIs available to consumer clusters.
+✅ Deployed Klutch API Service Export Templates to make the Klutch Crossplane APIs available to App Clusters.
 ✅ Deployed the a8s Stack.
-✅ Deployed a consumer cluster.
-🎉 You are now ready to bind APIs from the consumer cluster using the `a9s klutch bind` command.
+✅ Deployed an App Cluster.
+🎉 You are now ready to bind APIs from the App Cluster using the `a9s klutch bind` command.
 
 ```
 
@@ -220,7 +220,7 @@ Checking Prerequisites...
 ...
 
 The following command will be executed for you:
-/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0 --context kind-klutch-consumer
+/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0 --context kind-klutch-app
 ```
 
 Next, a browser window will open for authentication. Use these demo credentials:
@@ -251,7 +251,7 @@ Do you accept this Permission? [No,Yes]
 
 You've successfully accomplished the following steps:
 ✅ Called the kubectl bind plugin to start the interactive binding process
-✅ Authorized the management cluster to manage the selected API on your consumer cluster.
+✅ Authorized the management cluster to manage the selected API on your App Cluster.
 ✅ You've bound the postgresqlinstances resource. You can now apply instances of this resource, for example with the
 following yaml:
 
@@ -268,7 +268,7 @@ spec:
     name: a8s-postgresql
 ```
 
-To bind to `servicebinding`, repeat the [same process](#step-2-bind-resource-apis-from-the-consumer-cluster), but click
+To bind to `servicebinding`, repeat the [same process](#step-2-bind-resource-apis-from-the-app-cluster), but click
 on `Bind` under the `servicebinding` API in the web UI.
 
 ## Step 3: Create and Use a PostgreSQL Instance
