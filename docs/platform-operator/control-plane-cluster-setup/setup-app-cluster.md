@@ -1,21 +1,21 @@
 ---
-title: Set up developer (consumer) clusters
+title: Set up App Clusters
 sidebar_position: 1
 tags:
-  - central management cluster
+  - app cluster
   - kubernetes
   - a9s data services
-  - platform operator
+  - application developer
 keywords:
   - a9s data services
-  - platform operator
+  - application developer
 ---
 
 import Tabs from '@theme/Tabs'; import TabItem from '@theme/TabItem';
 
-## Set up a developer cluster
+## Set up an App Cluster
 
-We use klutch-bind to make the a9s Kubernetes API available inside a developer cluster. In order to
+We use klutch-bind to make the a9s Kubernetes API available inside an App Cluster. In order to
 utilize the `kubectl bind` command, you'll need to have the `kubectl-bind` binary installed and
 properly added to your system's path. Download the appropriate `kubectl-bind` binary for your
 system's architecture from the provided options:
@@ -155,8 +155,8 @@ kubectl bind
 
 ---
 
-We proceed by binding the developer cluster with the Klutch backend. This will allow users of the
-developer cluster to set up new data service instances in the environment managed by the Klutch
+We proceed by binding the App Cluster with the Klutch backend. This will allow users of the
+App Cluster to set up new data service instances in the environment managed by the Klutch
 backend. To create this binding, execute the following commands:
 
 1. In the following line, replace `<backend-host>` with the hostname of the Klutch backend:
@@ -173,18 +173,18 @@ You can select the service to bind by using the web UI, as shown in the followin
 
 ![Bind an a9s Data Service using the web UI](klutch-bind-ui.png)
 
-And that's it, you have now successfully configured both the provider and developer clusters.
+And that's it, you have now successfully configured both the Control Plane and App clusters.
 
 # Install Konnector without klutch-bind CLI
 
-When provisioning a developer cluster from an automated CI flow, it may be desirable to avoid
+When provisioning an App Cluster from an automated CI flow, it may be desirable to avoid
 additional dependencies like the `kubectl bind` CLI binary or the anynines `helper` CLI. For those
 cases it is possible to deploy the `Konnector` component using a plain Kubernetes manifest.
 
 :::note
 
-These steps will only install the generic Konnector component. They will not bind the developer cluster
-to the central management cluster yet.
+These steps will only install the generic Konnector component. They will not bind the App Cluster
+to the Control Plane Cluster yet.
 
 :::
 

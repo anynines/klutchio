@@ -2,7 +2,7 @@
 title: Configuring Crossplane Provider provider-anynines
 sidebar_position: 2
 tags:
-  - central management cluster
+  - control plane cluster
   - kubernetes
   - a9s data services
   - platform operator
@@ -18,7 +18,7 @@ Klutch, you can use `provider-anynines` to talk to the service broker.
 
 In order to follow along with this manual, you need a working installation of the CloudFoundry 
 service broker and a pair of credentials. The service broker must be reachable from the network of 
-the Central Management Cluster's worker nodes.
+the Control Plane Cluster's worker nodes.
 
 ### Install ProviderConfig
 

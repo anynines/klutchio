@@ -1,7 +1,7 @@
 ---
 title: Updating cluster components
 tags:
-  - developer cluster
+  - app cluster
   - kubernetes
   - a9s data services
   - platform operator
@@ -12,7 +12,7 @@ keywords:
 
 This page documents the update process for all Klutch components.
 
-## Updating provider cluster
+## Updating Control Plane Cluster
 
 ### Crossplane runtime
 
@@ -39,7 +39,7 @@ kubectl patch configurations/anynines-dataservices \
   --type merge -p '{"spec":{"package":"public.ecr.aws/w5n9a2g2/anynines/dataservices:v1.3.0"}}'
 ```
 
-### Provider backend
+### Control Plane Cluster backend
 
 :::warning
 
@@ -48,11 +48,11 @@ Please read the change log before updating, and follow any migration instruction
 :::
 
 1. Install the latest CRDs for the backend according to the
-   [backend installation instructions](../central-management-cluster-setup/index.md#prerequisites-2)
+   [backend installation instructions](../control-plane-cluster-setup/index.md#prerequisites-2)
 2. Update the Klutch backend deployment according to the
-   [installation instructions](../central-management-cluster-setup/index.md#deploy-the-klutch-backend)
+   [installation instructions](../control-plane-cluster-setup/index.md#deploy-the-klutch-backend)
 3. If the new version also introduces new data service types, follow the binding creation steps
-   [follow the binding creation steps](../central-management-cluster-setup/setup-developer-cluster.md)
+   [follow the binding creation steps](../control-plane-cluster-setup/setup-app-cluster.md)
    to install them in consumer clusters.
 
 ## Downtime during update
@@ -67,9 +67,9 @@ complete.
 
 :::
 
-## Updating developer cluster
+## Updating App Cluster
 
-The developer cluster contains only one component: the `konnector` deployment. To update the
+The App Cluster contains only one component: the `konnector` deployment. To update the
 `konnector`, simply change it's container image to the new one. The latest image can be found by
 checking out the tab "Image tags" for this image in our
 [image registry](https://gallery.ecr.aws/w5n9a2g2/anynines/konnector).

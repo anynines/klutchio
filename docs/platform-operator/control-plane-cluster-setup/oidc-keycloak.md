@@ -17,8 +17,8 @@ Keycloak.
 
 ## OpenID Connect (OIDC) client for the backend
 
-The Klutch backend needs to be configured as an OIDC client so that consumers can authenticate
-against it and set up service accounts for [developer (consumer) clusters](./setup-developer-cluster.md)
+The Klutch backend needs to be configured as an OIDC client so that developers can authenticate
+against it and set up service accounts for [App Clusters](./setup-app-cluster)
 to connect (bind) to data services. For this purpose, create a new OIDC client for the Klutch
 backend. In our example we call the client `klutch-bind-backend`.
 

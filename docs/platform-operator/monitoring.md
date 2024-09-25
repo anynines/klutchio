@@ -7,7 +7,7 @@ title: Monitoring
 The platform components contain facilities to monitor their health. This page describes these
 facilities and how to use them.
 
-## Central Management Cluster
+## Control Plane Cluster
 
 ### Crossplane providers
 
@@ -100,7 +100,7 @@ details about the cause of the failure.
 For easier integration in monitoring systems, the anynines provider exposes an HTTP endpoint
 accumulating the healthiness of all `ProviderConfigs`. The endpoint is called `/backend-status` and
 is reachable on port **8081** of the `provider-anynines` pods. By default the endpoint is not
-exposed in any way. To make it reachable from inside the central management cluster, create a
+exposed in any way. To make it reachable from inside the Control Plane Cluster, create a
 service such as this:
 
 ```yaml
@@ -157,7 +157,7 @@ NAME               READY   UP-TO-DATE   AVAILABLE   AGE
 anynines-backend   1/1     1            1           1h
 ```
 
-## Developer cluster
+## App Cluster
 
 ### Konnector
 
