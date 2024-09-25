@@ -5,7 +5,7 @@
 ### Changed
 
 - renamed backend resources for bindings.
-  Changed the namespace used for bindings on the consumer clusters from `kube-bind` to `klutch-bind`.
+  Changed the namespace used for bindings on the App Clusters from `kube-bind` to `klutch-bind`.
 
   This change automatically applies to new bindings.
 
