@@ -1,5 +1,4 @@
 ---
-id: klutch-developers
 title: Deploy Klutch locally 
 tags:
   - Klutch
@@ -48,10 +47,8 @@ If you work with Kubernetes regularly, you probably have these standard tools al
 
 To follow along with this tutorial, you need to install the following specialized tools:
 
-1. [cert-manager's cmctl](https://cert-manager.io/docs/reference/cmctl/)
-2. [Crossplane](https://docs.crossplane.io/latest/software/install/)
-3. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/central-management-cluster-setup/#binding-a-consumer-cluster-interactive)
-4. [a9s cli](https://docs.a9s-cli.anynines.com/docs/a9s-cli/)
+1. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/central-management-cluster-setup/#binding-a-consumer-cluster-interactive)
+2. [a9s cli](https://docs.a9s-cli.anynines.com/docs/a9s-cli/)
 
 ### Network Access
 
@@ -141,36 +138,36 @@ Here's a trimmed example of what you might see during the deployment:
 ```bash
 ...
 Checking Prerequisites...
-✅ Found docker at path /usr/local/bin/docker
-✅ Found kind at path /usr/local/bin/kind
-✅ Found kubectl at path /usr/local/bin/kubectl
+✅ Found git at path /usr/bin/git.
+✅ Found docker at path /opt/homebrew/bin/docker.
+✅ Found kind at path /opt/homebrew/bin/kind.
 ...
 
 Creating cluster "klutch-management"...
-Ensuring node image (kindest/node:v1.29.2) 🖼
-✓ Ensuring node image (kindest/node:v1.29.2) 🖼
-Preparing nodes 📦
+• Ensuring node image (kindest/node:v1.31.0) 🖼  ...
+✓ Ensuring node image (kindest/node:v1.31.0) 🖼
+• Preparing nodes 📦   ...
 ✓ Preparing nodes 📦
 ...
 
-#<Deploying core components>
 Applying ingress-nginx manifests...
 [YAML content will be displayed here]
-✅ ingress-nginx deployed successfully
+✅ ingress-nginx appears to be ready.
 Deploying Dex IdP...
 [YAML content will be displayed here]
-✅ Dex IdP deployed successfully
+✅ Dex appears to be ready.
 ...
 
-Installing a8s framework and PostgreSQL operator...
-[YAML content will be displayed here]
-✅ a8s framework and PostgreSQL operator installed successfully
+Applying the a8s Data Service manifests...
+...
+✅ The a8s System appears to be ready.
 ...
 
-Creating developer cluster "klutch-consumer"...
-Ensuring node image (kindest/node:v1.29.2) 🖼
-✓ Ensuring node image (kindest/node:v1.29.2) 🖼
-Preparing nodes 📦
+Deploying a Consumer Kind cluster...
+Creating cluster "klutch-consumer" ...
+• Ensuring node image (kindest/node:v1.31.0) 🖼  ...
+✓ Ensuring node image (kindest/node:v1.31.0) 🖼
+• Preparing nodes 📦   ...
 ✓ Preparing nodes 📦
 ...
 
@@ -218,9 +215,9 @@ bind APIs:
 
 ```bash
 Checking Prerequisites...
-✅ Found cmctl at path /opt/homebrew/bin/cmctl
-✅ Found git at path /usr/bin/git
-✅ Found docker at path /usr/local/bin/docker
+✅ Found kubectl at path /opt/homebrew/bin/kubectl.
+✅ Found kubectl-bind at path /usr/local/bin/kubectl-bind.
+🎉 All necessary commands are present.
 ...
 
 The following command will be executed for you:
@@ -298,7 +295,7 @@ spec:
     name: a8s-postgresql
 ```
 
-<a href="pathname:///tutorial/pg-instance.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/pg-instance.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the file to your developer cluster:
 
@@ -325,7 +322,7 @@ spec:
     name: a8s-servicebinding
 ```
 
-<a href="pathname:///tutorial/service-binding.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/service-binding.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the ServiceBinding:
 
@@ -362,7 +359,7 @@ subsets:
   - port: 5432
 ```
 
-<a href="pathname:///tutorial/external-pg-service.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/external-pg-service.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the file:
 
@@ -466,7 +463,7 @@ spec:
   - port: 3000
 ```
 
-<a href="pathname:///tutorial/blogpost-app.yaml" target="_blank" download>OR download the yaml manifest</a>
+<a href="/dev_files/blogpost-app.yaml" target="_blank" download>OR download the yaml manifest</a>
 
 Apply the file:
 

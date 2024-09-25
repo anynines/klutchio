@@ -1,6 +1,6 @@
 ---
-id: klutch-po-configure-provider-anynines
 title: Configuring Crossplane Provider provider-anynines
+sidebar_position: 2
 tags:
   - central management cluster
   - kubernetes
@@ -11,9 +11,18 @@ keywords:
   - platform operator
 ---
 
-#### Install ProviderConfig
+### Prerequisites
 
-To configure the Crossplan provider `provider-anynines`, you will need to update and apply the
+If you want to use [a9s Data Services](https://www.anynines.com/data-services) in conjunction with 
+Klutch, you can use `provider-anynines` to talk to the service broker.
+
+In order to follow along with this manual, you need a working installation of the CloudFoundry 
+service broker and a pair of credentials. The service broker must be reachable from the network of 
+the Central Management Cluster's worker nodes.
+
+### Install ProviderConfig
+
+To configure the Crossplane provider `provider-anynines`, you will need to update and apply the
 following YAML file for each a9s Data Service you want to be able to use. Replace the
 `<data-service>` placeholder in the following YAML file with the corresponding value from the table
 below for the Data Service you want to deploy:
@@ -94,8 +103,7 @@ spec:
         key: password
 ```
 
-<a href="pathname:///examples/platform-operator/providerconfig.yaml" target="_blank" download>Download
-providerconfig.yaml</a>
+<a href="/po_files/providerconfig.yaml" target="_blank" download>Download providerconfig.yaml</a>
 
 To verify that the providerconfigs are correct, check their status and wait for them to all be
 "healthy":

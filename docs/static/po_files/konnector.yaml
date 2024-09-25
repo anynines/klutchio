@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: klutch-bind
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: klutch-bind-konnector
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: klutch-bind-konnector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: klutch-bind-konnector
+subjects:
+  - kind: ServiceAccount
+    name: konnector
+    namespace: klutch-bind
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: konnector
+  namespace: klutch-bind
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konnector
+  namespace: klutch-bind
+  labels:
+    app: konnector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: konnector
+  template:
+    metadata:
+      labels:
+        app: konnector
+    spec:
+      restartPolicy: Always
+      serviceAccountName: konnector
+      containers:
+        - name: konnector
+          # Make sure to use the latest image version here:
+          image: public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

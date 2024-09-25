@@ -1,6 +1,6 @@
 ---
-id: klutch-po-setup-tenant-cluster
-title: Set up tenant (consumer) clusters
+title: Set up developer (consumer) clusters
+sidebar_position: 1
 tags:
   - central management cluster
   - kubernetes
@@ -13,9 +13,9 @@ keywords:
 
 import Tabs from '@theme/Tabs'; import TabItem from '@theme/TabItem';
 
-## Set up a tenant cluster
+## Set up a developer cluster
 
-We use klutch-bind to make the a9s Kubernetes API available inside a tenant cluster. In order to
+We use klutch-bind to make the a9s Kubernetes API available inside a developer cluster. In order to
 utilize the `kubectl bind` command, you'll need to have the `kubectl-bind` binary installed and
 properly added to your system's path. Download the appropriate `kubectl-bind` binary for your
 system's architecture from the provided options:
@@ -155,8 +155,8 @@ kubectl bind
 
 ---
 
-We proceed by binding the tenant cluster with the Klutch backend. This will allow users of the
-tenant cluster to set up new data service instances in the environment managed by the Klutch
+We proceed by binding the developer cluster with the Klutch backend. This will allow users of the
+developer cluster to set up new data service instances in the environment managed by the Klutch
 backend. To create this binding, execute the following commands:
 
 1. In the following line, replace `<backend-host>` with the hostname of the Klutch backend:
@@ -173,17 +173,17 @@ You can select the service to bind by using the web UI, as shown in the followin
 
 ![Bind an a9s Data Service using the web UI](klutch-bind-ui.png)
 
-And that's it, you have now successfully configured both the provider and tenant clusters.
+And that's it, you have now successfully configured both the provider and developer clusters.
 
 # Install Konnector without klutch-bind CLI
 
-When provisioning a tenant cluster from an automated CI flow, it may be desirable to avoid
+When provisioning a developer cluster from an automated CI flow, it may be desirable to avoid
 additional dependencies like the `kubectl bind` CLI binary or the anynines `helper` CLI. For those
 cases it is possible to deploy the `Konnector` component using a plain Kubernetes manifest.
 
 :::note
 
-These steps will only install the generic Konnector component. They will not bind the tenant cluster
+These steps will only install the generic Konnector component. They will not bind the developer cluster
 to the central management cluster yet.
 
 :::
@@ -266,6 +266,8 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
 ```
+
+<a href="/po_files/konnector.yaml" target="_blank" download>Download konnector.yaml</a>
 
 ## Updating Konnector
 

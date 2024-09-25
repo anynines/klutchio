@@ -1,6 +1,6 @@
 ---
-id: klutch-core-concepts
 title: Core Concepts
+sidebar_position: 2
 tags:
   - Klutch
   - open source

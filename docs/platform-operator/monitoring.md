@@ -1,5 +1,4 @@
 ---
-id: a9s-po-monitoring
 title: Monitoring
 ---
 
@@ -118,6 +117,8 @@ spec:
       protocol: TCP
 ```
 
+<a href="/po_files/health-service.yaml" target="_blank" download>Download health-service.yaml</a>
+
 This service can be made accessible from outside of the cluster, by the usual kubernetes means (e.g.
 LoadBalancer service, Ingress, ...).
 
@@ -156,7 +157,7 @@ NAME               READY   UP-TO-DATE   AVAILABLE   AGE
 anynines-backend   1/1     1            1           1h
 ```
 
-## Tenant cluster
+## Developer cluster
 
 ### Konnector
 
