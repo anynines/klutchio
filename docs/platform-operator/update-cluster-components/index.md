@@ -32,7 +32,7 @@ kubectl patch providers/provider-anynines \
   --type merge -p '{"spec":{"package":"public.ecr.aws/w5n9a2g2/anynines/provider-anynines:v1.3.0"}}'
 ```
 
-1. Finally update anynines configuration package
+2. Finally update anynines configuration package
 
 ```bash
 kubectl patch configurations/anynines-dataservices \
