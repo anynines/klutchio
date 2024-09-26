@@ -1,8 +1,8 @@
 ---
 id: klutch-po-data-services
-title: Setting up Central Management and Developer Clusters
+title: Setting up Control Plane and App Clusters
 tags:
-  - central management cluster
+  - control plane cluster
   - kubernetes
   - data services
   - platform operator
@@ -11,18 +11,17 @@ keywords:
   - platform operator
 ---
 
-Below are the instructions for setting up Klutch's central management cluster, which includes
+Below are the instructions for setting up Klutch's Control Plane Cluster, which includes
 deploying [Crossplane](https://www.crossplane.io/). While other cloud providers are supported as
 well, for the purpose of this example, we will use [AWS](https://aws.amazon.com/). These
-instructions also cover the configuration of the consumer cluster - i.e. the cluster from which data
-services will be consumed or used - with bindings to services exported in the central management
-cluster.
+instructions also cover the configuration of the App Cluster - i.e. the cluster from which data
+services will be used - with bindings to services exported in the Control Plane Cluster.
 
 ## Prerequisites
 
 - Provision an EKS cluster
-  - Use a minimum of 3 nodes if you want to host highly available services on the central management
-    cluster, each node should at least be t3a.xlarge or equivalent.
+  - Use a minimum of 3 nodes if you want to host highly available services on the Control Plane
+    Cluster, each node should at least be t3a.xlarge or equivalent.
   - In general, the Klutch control plane itself can also run with just one worker node.
 - Set up a VPC with 3 subnets.
 - Make sure [eksctl](https://eksctl.io/introduction/#getting-started) is installed and configured
@@ -31,32 +30,32 @@ cluster.
 ## Overview
 
 To successfully manage data services using Klutch, several components must be deployed. Konnector is
-deployed on each consumer cluster that wants to manage its data services with Klutch. Klutch itself
-is deployed on a central management cluster. Konnector is configured to correctly interact with
-klutch-bind running in Klutch so each service running on the consumer cluster doesn't need to be
+deployed on each App Cluster that wants to manage its data services with Klutch. Klutch itself
+is deployed on a Control Plane Cluster. Konnector is configured to correctly interact with
+klutch-bind running in Klutch so each service running on the App Cluster doesn't need to be
 configured to call Klutch. Instead, the services can use Klutch to manage their data services by
 interacting with Konnector.
 
 ![Deploy Klutch and its related components](klutch-deployment.png)
 
 The following instructions will install the services that are necessary to use Klutch. First, the
-Crossplane provider `provider-anynines` is installed in the management cluster. This is done by
+Crossplane provider `provider-anynines` is installed in the Control Plane Cluster. This is done by
 installing both the provider itself and configuration that the provider needs to run properly.
 
-Then, the klutch-bind backend is deployed in the management cluster. The installation for
-klutch-bind includes permission configuration that needs to be set up so the developer cluster can
+Then, the klutch-bind backend is deployed in the Control Plane Cluster. The installation for
+klutch-bind includes permission configuration that needs to be set up so the App Cluster can
 properly access the backend.
 
-Lastly, Konnector must be [installed on the developer cluster](./setup-developer-cluster.md). After
-installation, Konnector is bound to the klutch-bind backend. This is how the developer cluster can call
-Klutch in the management cluster.
+Lastly, Konnector must be [installed on the App Cluster](./setup-app-cluster.md). After
+installation, Konnector is bound to the klutch-bind backend. This is how the App Cluster can call
+Klutch in the Control Plane Cluster.
 
 The current instructions only include deployment of `provider-anynines`. This product is currently
 in development and more providers can be expected soon!
 
-## Setup Klutch central management cluster
+## Setup Klutch Control Plane Cluster
 
-We will now set up the central management Kubernetes cluster that you've set up in the previous step
+We will now set up the Kubernetes Control Plane Cluster that you've set up in the previous step
 so that we can deploy Klutch on it.
 
 ### Deploy Crossplane and provider-anynines
@@ -152,8 +151,8 @@ values that require updating include:
 | -------------------------------- | ----------------------------------------------------------------------------- |
 | `<signing-key>`                  | Cookies signing key - run `openssl rand -base64 32` to create it              |
 | `<encryption-key>`               | Cookies encryption key - run `openssl rand -base64 32` to create it           |
-| `<certificate>`                  | The base64 encoded certificate of the central management Kubernetes cluster   |
-| `<kubernetes-api-external-name>` | URL of the Kubernetes API server of the central management Kubernetes cluster |
+| `<certificate>`                  | The base64 encoded certificate of the Control Plane Cluster   |
+| `<kubernetes-api-external-name>` | URL of the Kubernetes API server of the Control Plane Cluster |
 | `<oidc-issuer-client-url>`       | OIDC client url                                                               |
 | `<oidc-issuer-client-secret>`    | OIDC client secret                                                            |
 | `<backend-host>`                 | the URL of the Klutch backend service, see [backend-host](#backend-host)      |
@@ -183,18 +182,18 @@ ACME protocol. If a different approach is preferred, please update the `Issuer` 
 
 #### Kubernetes cluster certificate
 
-The base64 encoded certificate of the central management Kubernetes cluster can be found in the
+The base64 encoded certificate of the Control Plane Cluster can be found in the
 KubeConfig of that cluster, specifically in `clusters.certificate-authority-data`.
 
 #### Kubernetes api external name
 
-The URL of the Kubernetes API server of the central management Kubernetes cluster, .i.e. the
+The URL of the Kubernetes API server of the Control Plane Cluster, .i.e. the
 Kubernetes API server's external hostname can be found in kubeConfig `clusters.server`.
 
 #### backend-host
 
 During the [deployment of Klutch](#deployment) a service of type `LoadBalancer` was created. This
-load balancer can be used to connect to Klutch from a developer (or consumer) cluster. To obtain the
+load balancer can be used to connect to Klutch from an App Cluster. To obtain the
 required information about the service, execute the following command:
 
 ```bash

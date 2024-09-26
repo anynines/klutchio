@@ -24,16 +24,16 @@ manage cloud or on-premise resources directly from your Kubernetes cluster using
 
 Before you begin, ensure you have:
 
-1. [kubectl](https://kubernetes.io/docs/tasks/tools/) installed and configured to interact with your developer cluster.
+1. [kubectl](https://kubernetes.io/docs/tasks/tools/) installed and configured to interact with your App Cluster.
 2. Access to a Klutch-enabled Kubernetes cluster.
 
-   If your cluster wasn't set up by a platform operator, you need to use the klutch-bind CLI to connect to the central
-   management cluster and bind to the resources you intend to use. For instructions on using the klutch-bind CLI, refer
+   If your cluster wasn't set up by a platform operator, you need to use the klutch-bind CLI to connect to the Control
+   Plane Cluster and bind to the resources you intend to use. For instructions on using the klutch-bind CLI, refer
    to the ["For Platform Operators"](../platform-operator/index.md) section.
 
 ## Available Resource Types
 
-The types of resources you can create depend on the service bindings configured in your developer cluster. These can
+The types of resources you can create depend on the service bindings configured in your App Cluster. These can
 include databases, message queues, storage solutions, or any other services available in supported cloud providers or
 on-premise infrastructure.
 
@@ -133,7 +133,7 @@ If you encounter issues while creating or managing resources, the following step
 resolve the problem. Depending on your specific situation and level of access, some or all of these steps may be
 applicable:
 
-1. Check the resource status and events in your developer cluster:
+1. Check the resource status and events in your App Cluster:
 
    ```bash
    kubectl describe <resource-type> <resource-name>
@@ -141,16 +141,16 @@ applicable:
 
    Look for events or status messages that might indicate the issue.
 
-2. Examine the logs of konnector (the component of Klutch running in your developer cluster):
+2. Examine the logs of konnector (the component of Klutch running in your App Cluster):
 
    ```bash
    kubectl logs -n klutch-bind deployment/konnector
    ```
 
-   This may show issues related to the communication between your developer cluster and the central management cluster.
+   This may show issues related to the communication between your App Cluster and the Control Plane Cluster.
 
-3. If you have access to the central management cluster and are familiar with the Crossplane setup and configuration,
-   you can perform additional troubleshooting steps in the central management cluster. Refer to the latest [official Crossplane troubleshooting guide](https://docs.crossplane.io/latest/guides/troubleshoot-crossplane/) for comprehensive instructions.
+3. If you have access to the Control Plane Cluster and are familiar with the Crossplane setup and configuration,
+   you can perform additional troubleshooting steps in the Control Plane Cluster. Refer to the latest [official Crossplane troubleshooting guide](https://docs.crossplane.io/latest/guides/troubleshoot-crossplane/) for comprehensive instructions.
 
    Some key steps you can take include:
 
@@ -196,7 +196,7 @@ applicable:
       kubectl get packages
       ```
 
-Remember that as a developer, your access is typically limited to your developer cluster. Many advanced troubleshooting
-steps, especially those involving the central management cluster or Crossplane configuration, may require collaboration
+Remember that as a developer, your access is typically limited to your App Cluster. Many advanced troubleshooting
+steps, especially those involving the Control Plane Cluster or Crossplane configuration, may require collaboration
 with your platform operators or additional permissions. If you suspect a bug in Klutch, please consider opening an issue
 in the relevant GitHub repository with a detailed description of the problem and steps to reproduce it.

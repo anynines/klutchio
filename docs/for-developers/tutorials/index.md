@@ -13,18 +13,18 @@ keywords:
 ## Local Klutch Deployment
 
 This tutorial guides you through deploying Klutch locally using two interconnected local clusters that simulate a
-developer and a central management cluster. It covers setting up both clusters, connecting them using Klutch, and
-showcases how developers can request and utilize resources in the developer cluster that are actually provisioned in the
-central management cluster.
+App and a Control Plane Cluster. It covers setting up both clusters, connecting them using Klutch, and showcases how
+developers can request and utilize resources in the App Cluster that are actually provisioned in the Control Plane
+Cluster.
 
 ### Overview
 
 In this tutorial, you'll perform the following steps in your local environment:
 
-1. Deploy a central management cluster (which will also host resources)
-2. Set up a developer cluster
-3. Bind APIs from the development to Central management cluster
-4. Create and use remote resources from the development cluster (in this case Postgresql service)
+1. Deploy a Control Plane Cluster (which will also host resources)
+2. Set up an App Cluster
+3. Bind APIs from the App Cluster to Control Plane Cluster
+4. Create and use remote resources from the App Cluster (in this case Postgresql service)
 
 We'll use the open source [a9s CLI](https://github.com/anynines/a9s-cli-v2) to streamline this process, making it easy
 to follow along and understand each step.
@@ -47,7 +47,7 @@ If you work with Kubernetes regularly, you probably have these standard tools al
 
 To follow along with this tutorial, you need to install the following specialized tools:
 
-1. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/central-management-cluster-setup/#binding-a-consumer-cluster-interactive)
+1. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/central-management-cluster-setup/#binding-an-app-cluster-interactive)
 2. [a9s cli](https://docs.a9s-cli.anynines.com/docs/a9s-cli/)
 
 ### Network Access
@@ -63,14 +63,13 @@ Ensure your machine can reach the following external resources:
 
 ## Step 1: Run the Deployment Command
 
-In this step, we'll set up both the central management cluster and the developer cluster for Klutch using **a single
-command**. This command will install all components needed by Klutch, including the a8s framework with the PostgreSQL
-operator.
+In this step, we'll set up both the Control Plane Cluster and the App Cluster for Klutch using **a single command**.
+This command will install all components needed by Klutch, including the a8s framework with the PostgreSQL operator.
 
 :::note
 
-This step does not automatically create bindings between the developer cluster and the resources in the central
-management cluster. You'll need to create these bindings using a web UI in a later step.
+This step does not automatically create bindings between the App Cluster and the resources in the Control Plane Cluster.
+You'll need to create these bindings using a web UI in a later step.
 
 :::
 
@@ -82,7 +81,7 @@ a9s klutch deploy --port 8080 --yes
 
 :::note
 
-- The ```--port 8080``` flag specifies the port on which the central management cluster's ingress will listen. You can 
+- The ```--port 8080``` flag specifies the port on which the Control Plane Cluster's ingress will listen. You can
   change this if needed.
 - The ```--yes``` flag skips all confirmation prompts, speeding up the process.
 
@@ -90,9 +89,9 @@ a9s klutch deploy --port 8080 --yes
 
 What this command does:
 
-1. Deploys the central management (producer) cluster with all required components.
+1. Deploys the Control Plane Cluster with all required components.
 2. Installs the [a8s framework](https://k8s.anynines.com/for-postgres/) with the PostgreSQL Kubernetes operator.
-3. Creates a developer (consumer) Kind cluster.
+3. Creates an App Cluster with Kind.
 
 :::tip
 
@@ -103,7 +102,7 @@ For a hands-off deployment, keep the `--yes` flag to skip all prompts.
 
 :::
 
-### 1.1 Central Management (Producer) Cluster Deployment
+### 1.1 Control Plane Cluster Deployment
 
 The CLI automatically:
 
@@ -126,10 +125,10 @@ You'll see progress updates and YAML files being applied for each component.
 
 After setting up the management cluster, the CLI:
 
-- Creates a new Kind cluster named "klutch-consumer"
+- Creates a new Kind cluster named "klutch-app"
 
-At the moment this is an empty Kind cluster. Klutch components will be added in the next step, when the consumer 
-cluster is "bound" to the central management cluster. Stay tuned!
+At the moment this is an empty Kind cluster. Klutch components will be added in the next step, when the  App Cluster is
+"bound" to the Control Plane Cluster. Stay tuned!
 
 ### Deployment Output
 
@@ -143,7 +142,7 @@ Checking Prerequisites...
 ✅ Found kind at path /opt/homebrew/bin/kind.
 ...
 
-Creating cluster "klutch-management"...
+Creating cluster "klutch-control-plane"...
 • Ensuring node image (kindest/node:v1.31.0) 🖼  ...
 ✓ Ensuring node image (kindest/node:v1.31.0) 🖼
 • Preparing nodes 📦   ...
@@ -163,8 +162,8 @@ Applying the a8s Data Service manifests...
 ✅ The a8s System appears to be ready.
 ...
 
-Deploying a Consumer Kind cluster...
-Creating cluster "klutch-consumer" ...
+Deploying an App Cluster with Kind...
+Creating cluster "klutch-app" ...
 • Ensuring node image (kindest/node:v1.31.0) 🖼  ...
 ✓ Ensuring node image (kindest/node:v1.31.0) 🖼
 • Preparing nodes 📦   ...
@@ -173,24 +172,24 @@ Creating cluster "klutch-consumer" ...
 
 Summary
 You've successfully accomplished the followings steps:
-✅ Deployed a Klutch management Kind cluster.
+✅ Deployed a Klutch Control Plane Cluster with Kind.
 ✅ Deployed Dex Idp and the anynines klutch-bind backend.
 ✅ Deployed Crossplane and the Kubernetes provider.
 ✅ Deployed the Klutch Crossplane configuration package.
-✅ Deployed Klutch API Service Export Templates to make the Klutch Crossplane APIs available to consumer clusters.
+✅ Deployed Klutch API Service Export Templates to make the Klutch Crossplane APIs available to App Clusters.
 ✅ Deployed the a8s Stack.
-✅ Deployed a consumer cluster.
-🎉 You are now ready to bind APIs from the consumer cluster using the `a9s klutch bind` command.
+✅ Deployed an App Cluster.
+🎉 You are now ready to bind APIs from the App Cluster using the `a9s klutch bind` command.
 
 ```
 
-## Step 2: Bind Resource APIs from the Consumer Cluster
+## Step 2: Bind Resource APIs from the App Cluster
 
-After setting up both clusters, the next step is to bind APIs from the consumer cluster to the management cluster. We'll
+After setting up both clusters, the next step is to bind APIs from the App Cluster to the Control Plane Cluster. We'll
 bind two APIs: `postgresqlinstance` and `servicebinding`.
 
-This operation also sets up an agent in the cluster to keep resources in sync between the consumer cluster and the 
-central management cluster.
+This operation also sets up an agent in the cluster to keep resources in sync between the App Cluster and the Control
+Plane Cluster.
 
 Execute the following command to initiate the binding process:
 
@@ -221,7 +220,7 @@ Checking Prerequisites...
 ...
 
 The following command will be executed for you:
-/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0 --context kind-klutch-consumer
+/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0 --context kind-klutch-app
 ```
 
 Next, a browser window will open for authentication. Use these demo credentials:
@@ -252,7 +251,7 @@ Do you accept this Permission? [No,Yes]
 
 You've successfully accomplished the following steps:
 ✅ Called the kubectl bind plugin to start the interactive binding process
-✅ Authorized the management cluster to manage the selected API on your consumer cluster.
+✅ Authorized the management cluster to manage the selected API on your App Cluster.
 ✅ You've bound the postgresqlinstances resource. You can now apply instances of this resource, for example with the
 following yaml:
 
@@ -269,12 +268,12 @@ spec:
     name: a8s-postgresql
 ```
 
-To bind to `servicebinding`, repeat the [same process](#step-2-bind-resource-apis-from-the-consumer-cluster), but click
+To bind to `servicebinding`, repeat the [same process](#step-2-bind-resource-apis-from-the-app-cluster), but click
 on `Bind` under the `servicebinding` API in the web UI.
 
 ## Step 3: Create and Use a PostgreSQL Instance
 
-After binding the PostgresqlInstance, you can create and use PostgreSQL instances in your consumer cluster. This section
+After binding the PostgresqlInstance, you can create and use PostgreSQL instances in your App Cluster. This section
 will guide you through creating an instance and using it with a simple blogpost application.
 
 ### 3.1 Create a PostgreSQL Instance
@@ -297,7 +296,7 @@ spec:
 
 <a href="/dev_files/pg-instance.yaml" target="_blank" download>OR download the yaml manifest</a>
 
-Apply the file to your developer cluster:
+Apply the file to your App Cluster:
 
 ```bash
 kubectl apply -f pg-instance.yaml
@@ -333,7 +332,7 @@ kubectl apply -f service-binding.yaml
 ### 3.3 Configure Local Network for Testing
 
 Before deploying our application, we need to configure the local network to make the PostgreSQL service available in the
-developer cluster. This step is for local testing purposes and may vary significantly in a production environment.
+App Cluster. This step is for local testing purposes and may vary significantly in a production environment.
 
 Create a file named `external-pg-service.yaml` with the following content:
 
@@ -367,11 +366,11 @@ Apply the file:
 kubectl apply -f <(eval "echo \"$(cat external-pg-service.yaml)\"")
 ```
 
-#### Set up port forwarding in the management cluster
+#### Set up port forwarding in the Control Plane Cluster
 
   a. Open a new terminal window.
 
-  b. Switch the kubectl context to the management cluster:
+  b. Switch the kubectl context to the Control Plane Cluster:
 
   ```bash
   kubectl config use-context kind-klutch-management
@@ -397,7 +396,7 @@ kubectl apply -f <(eval "echo \"$(cat external-pg-service.yaml)\"")
 ### 3.4 Deploy a Blogpost Application
 
 Now, let's deploy a simple blogpost application that uses our PostgreSQL service. Return to the terminal window where
-your **kubectl context** is set to the **developer cluster**.
+your **kubectl context** is set to the **App Cluster**.
 
 Create a file named `blogpost-app.yaml` with the following content:
 
@@ -495,12 +494,12 @@ If you need to start over or remove the clusters created by Klutch, use the foll
 a9s klutch delete
 ```
 
-This command will remove both the management and developer clusters that were created during the Klutch deployment
+This command will remove both the Control Plane Cluster and App Clusters that were created during the Klutch deployment
 process.
 
 :::note
 
-Use this command with caution as it will delete all resources and data in both the management and developer clusters.
+Use this command with caution as it will delete all resources and data in both the Control Plane and App clusters.
 Make sure to back up any important data before proceeding.
 
 :::
