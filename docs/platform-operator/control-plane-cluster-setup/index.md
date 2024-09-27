@@ -94,7 +94,7 @@ You can install Klutch by following the given instructions:
 4. Now add configuration for `provider-kubernetes` by executing the following command:
 
    ```bash
-   kubectl apply -f https://github.com/anynines/klutchio/blob/main/crossplane-api/deploy/config-in-cluster.yaml
+   kubectl apply -f https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/crossplane-api/deploy/config-in-cluster.yaml
    ```
 
 ### Deploy klutch-bind
