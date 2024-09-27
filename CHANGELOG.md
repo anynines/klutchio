@@ -4,6 +4,8 @@
 
 ### Changed
 
+- updated naming conventions. `Consumer Cluster` is now `App Cluster` and `Management Cluster` is now `Control Plane Cluster`.
+
 - renamed backend resources for bindings.
   Changed the namespace used for bindings on the App Clusters from `kube-bind` to `klutch-bind`.
 
