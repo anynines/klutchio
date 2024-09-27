@@ -53,7 +53,7 @@ Please read the change log before updating, and follow any migration instruction
    [installation instructions](../control-plane-cluster-setup/index.md#deploy-the-klutch-backend)
 3. If the new version also introduces new data service types, follow the binding creation steps
    [follow the binding creation steps](../control-plane-cluster-setup/setup-app-cluster.md)
-   to install them in consumer clusters.
+   to install them in App Clusters.
 
 ## Downtime during update
 

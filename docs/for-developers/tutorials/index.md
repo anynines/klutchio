@@ -47,7 +47,7 @@ If you work with Kubernetes regularly, you probably have these standard tools al
 
 To follow along with this tutorial, you need to install the following specialized tools:
 
-1. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/central-management-cluster-setup/#binding-an-app-cluster-interactive)
+1. [kubectl-bind](https://docs.k8s.anynines.com/docs/develop/platform-operator/control-plane-cluster-setup/#binding-an-app-cluster-interactive)
 2. [a9s cli](https://docs.a9s-cli.anynines.com/docs/a9s-cli/)
 
 ### Network Access
@@ -107,7 +107,7 @@ For a hands-off deployment, keep the `--yes` flag to skip all prompts.
 The CLI automatically:
 
 1. Checks prerequisites
-2. Creates a Kind cluster named "klutch-management"
+2. Creates a Kind cluster named "klutch-control-plane"
 3. Deploys core components:
    - ingress-nginx
    - Dex IdP (for authentication)
@@ -121,9 +121,9 @@ The CLI automatically:
 
 You'll see progress updates and YAML files being applied for each component.
 
-### 1.2 Developer (Consumer) Cluster Deployment
+### 1.2 App Cluster Deployment
 
-After setting up the management cluster, the CLI:
+After setting up the Control Plane Cluster, the CLI:
 
 - Creates a new Kind cluster named "klutch-app"
 
@@ -251,7 +251,7 @@ Do you accept this Permission? [No,Yes]
 
 You've successfully accomplished the following steps:
 ✅ Called the kubectl bind plugin to start the interactive binding process
-✅ Authorized the management cluster to manage the selected API on your App Cluster.
+✅ Authorized the Control Plane Cluster to manage the selected API on your App Cluster.
 ✅ You've bound the postgresqlinstances resource. You can now apply instances of this resource, for example with the
 following yaml:
 
@@ -373,7 +373,7 @@ kubectl apply -f <(eval "echo \"$(cat external-pg-service.yaml)\"")
   b. Switch the kubectl context to the Control Plane Cluster:
 
   ```bash
-  kubectl config use-context kind-klutch-management
+  kubectl config use-context kind-klutch-control-plane
   ```
 
   c. Set up port forwarding using one of the following methods:
