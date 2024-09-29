@@ -77,7 +77,7 @@ checking out the tab "Image tags" for this image in our
 ### Example using kubectl
 
 ```bash
-kubectl set image --namespace bind deployment/konnector konnector=public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0
+kubectl set image --namespace kube-bind deployment/konnector konnector=public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0
 ```
 
 ### Example using a manifest
@@ -89,7 +89,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: konnector
-  namespace: bind
+  namespace: kube-bind
   labels:
     app: konnector
 spec:

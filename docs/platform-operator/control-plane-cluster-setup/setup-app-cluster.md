@@ -200,7 +200,7 @@ our [image registry](https://gallery.ecr.aws/w5n9a2g2/anynines/konnector).
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: klutch-bind
+  name: kube-bind
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -225,19 +225,19 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: konnector
-    namespace: klutch-bind
+    namespace: kube-bind
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: konnector
-  namespace: klutch-bind
+  namespace: kube-bind
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: konnector
-  namespace: klutch-bind
+  namespace: kube-bind
   labels:
     app: konnector
 spec:
@@ -281,7 +281,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: konnector
-  namespace: klutch-bind
+  namespace: kube-bind
   labels:
     app: konnector
 spec:
