@@ -23,7 +23,7 @@ It's not necessary to run any crossplane provider.
 Copy & paste instructions for the above are:
 ```
 helm repo add crossplane-stable https://charts.crossplane.io/stable && helm repo update
-helm install crossplane --namespace crossplane-system --create-namespace crossplane-stable/crossplane --version 1.14.1
+helm install crossplane --namespace crossplane-system --create-namespace crossplane-stable/crossplane --version 1.17.1
 kubectl -n crossplane-system wait --for=condition=available deployment/crossplane deployment/crossplane-rbac-manager
 kubectl apply --recursive -f ./crossplane-api/api/common
 kubectl apply --recursive -f ./crossplane-api/api/a8s

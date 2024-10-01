@@ -17,7 +17,7 @@ This page documents the update process for all Klutch components.
 ### Crossplane runtime
 
 To update the crossplane runtime, please refer to the
-[upstream documentation](https://docs.crossplane.io/v1.14/software/install/). The exact process will
+[upstream documentation](https://docs.crossplane.io/latest/software/upgrade/). The exact process will
 depend on your installation method.
 
 ### Crossplane providers and configuration packages

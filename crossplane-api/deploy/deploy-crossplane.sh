@@ -5,13 +5,13 @@ helm repo add crossplane-stable https://charts.crossplane.io/stable && helm repo
 
 # Install Crossplane.
 # For --enable-ssa-claims alpha tag see
-# server side apply in release v1.15.0
-# https://github.com/crossplane/crossplane/releases/tag/v1.15.0
+# server side apply in release v1.17.1
+# https://github.com/crossplane/crossplane/releases/tag/v1.17.1
 helm install crossplane \
 --namespace crossplane-system \
 --create-namespace crossplane-stable/crossplane \
 --set args='{"--enable-ssa-claims"}' \
---version 1.15.0
+--version 1.17.1
 
 
 # Check if Crossplane developments are ready
