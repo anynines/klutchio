@@ -26,7 +26,7 @@ machine for development and testing purposes.
     [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) or [minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [Helm](https://helm.sh/docs/intro/install/) version v3.2.0 or later
 - [Crossplane](https://docs.crossplane.io/v1.11/software/install/) version
-1.11.0 or later.
+1.17.1 or later.
   - You can deploy the *latest* version of Crossplane using helm by executing
     the following command:
 
