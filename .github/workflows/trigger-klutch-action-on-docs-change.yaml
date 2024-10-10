@@ -1,0 +1,25 @@
+name: Trigger Klutch Action on Docs Change
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+
+jobs:
+  dispatch-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR URL
+        id: get_pr_url
+        run: |
+          # This retrieves the pull request number from the context of the event
+          echo "PR_URL=${{ github.event.repository.html_url }}/pull/${{ github.event.number }}" >> $GITHUB_ENV
+
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PAT }}
+          repository: anynines/klutch
+          event-type: create-ticket
+          client-payload: '{"pr_url": "${{ env.PR_URL }}"}'
