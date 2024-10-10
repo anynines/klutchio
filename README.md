@@ -19,7 +19,7 @@ then please read [our documentation for developers](https://klutch.io/docs/for-d
 ## Getting Involved
 
 If you want to contact the Klutch authors or you're looking for support, please read
-[this](https://klutch.io/docs/community.)
+[this](https://klutch.io/docs/community).
 
 ## What can Klutch do for you?
 
