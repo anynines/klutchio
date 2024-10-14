@@ -5,14 +5,37 @@ on:
       - main
     paths:
       - 'docs/**'
+  pull_request:
+    paths:
+      - 'docs/**'      
 
 jobs:
-  send-event:
+  # Dispatch event for production build on docs changes in main branch
+  production-build:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
-    - name: Repository Dispatch
+    - name: Dispatch Production Build Event
       uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ secrets.PAT }}
         repository: anynines/klutchio-website
         event-type: klutch-docs-updated-on-main
+
+  # Dispatch event for PR preview on docs
+  preview-build:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Dispatch PR Preview Event
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.PAT }}
+        repository: anynines/klutchio-website
+        event-type: preview-docs-pr
+        client-payload: >
+          {
+            "pr_number": "${{ github.event.number }}",
+            "repo": "${{ github.repository }}",
+            "sha": "${{ github.event.pull_request.head.sha }}"
+          }

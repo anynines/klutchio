@@ -83,6 +83,22 @@ Advantages include:
 
 [go.work docs]: https://go.dev/doc/tutorial/workspaces
 
+## Documentation Workflow
+
+We use GitHub Actions to automate our documentation process:
+
+- Pull requests modifying `docs/` trigger preview builds.
+- Previews are deployed to PR-specific URLs for easy review.
+- Merges to main automatically update the production documentation.
+- Preview environments are cleaned up after PR merges.
+
+When contributing to documentation:
+
+1. Create a PR with your changes.
+2. Check the automatically posted comment for the preview link.
+3. Review your changes in the preview environment.
+4. After approval and merge, changes will go live on the main site.
+
 ## Credits
 
 - The Klutch Authors
