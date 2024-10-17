@@ -25,7 +25,7 @@ is defined in a Crossplane Configuration Package. When this package is installed
 Plane Cluster, the API definitions are extracted by Crossplane. To make the resource packages
 available for App Clusters, the Platform Operator defines an `APIServiceExporttemplate`. When a
 binding is created the App Cluster will create an `APIServiceExportRequest` on the Control
-Plane Cluster.
+Plane Cluster. 
 
 Upon creation of the `APIServiceExportRequest` the Klutch backend will grant the App Cluster's
 Kubernetes service account the necessary permissions to interact with the requested API and its
