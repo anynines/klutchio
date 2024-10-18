@@ -1,4 +1,4 @@
-name: Trigger klutchio-website build on docs change
+name: Trigger website build on docs change
 on:
   push:
     branches:
@@ -7,22 +7,44 @@ on:
       - 'docs/**'
   pull_request:
     paths:
-      - 'docs/**'      
-
+      - 'docs/**'
+  
 jobs:
-  # Dispatch event for production build on docs changes in main branch
+  # Job to dispatch a production build event when changes are pushed to the 'main' branch
   production-build:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2  # Fetch the last two commits for context
+
+    - name: Get merged PR number
+      id: get-pr-number
+      run: |
+        # Extract the PR number from the latest commit message if available
+        PR_NUMBER=$(git log -1 --pretty=format:'%s' | grep -oP '#\K\d+' || echo "")
+        if [ -n "$PR_NUMBER" ]; then
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        else
+          echo "No PR number found in the commit message"
+        fi
+
     - name: Dispatch Production Build Event
       uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ secrets.PAT }}
         repository: anynines/klutchio-website
-        event-type: klutch-docs-updated-on-main
+        event-type: docs-updated-on-main
+        client-payload: >
+          {
+            "pr_number": "${{ steps.get-pr-number.outputs.pr_number }}",
+            "repo": "${{ github.repository }}",
+            "sha": "${{ github.sha }}"
+          }
 
-  # Dispatch event for PR preview on docs
+  # Job to dispatch a preview build event for PRs affecting the docs
   preview-build:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
