@@ -202,7 +202,12 @@ In a separate terminal start an ssh tunnel to Service Broker
 ```bash
 export SERVICE_INSTANCE_NAME=<dataservice name> #e.g. postgresql-ms-1686299661
 
-export SERVICEBROKER_IP=$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $SERVICE_INSTANCE_NAME instances | grep broker/" | awk '{print $4}')
+```
+
+**NOTE:** You would have to load the credentials to execute the bosh cli cmd in the BOSH director env.
+
+```bash
+export SERVICEBROKER_IP=$(ssh {IP of the virtual machine from where you can access the BOSH director};bosh -d $SERVICE_INSTANCE_NAME instances | grep broker/" | awk '{print $4}')
 
 echo $SERVICEBROKER_IP
 
@@ -215,8 +220,12 @@ In a separate terminal start an ssh tunnel to Backup Manager
 
 ```bash
 export SERVICE_INSTANCE_NAME=<dataservice name> #e.g. postgresql-ms-1686299661
+```
 
-export BACKUP_MANAGER_IP=$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $SERVICE_INSTANCE_NAME instances | grep backup-manager/" | awk '{print $4}')
+**NOTE:** You would have to load the credentials to execute the bosh cli cmd in the BOSH director env.
+
+```bash
+export BACKUP_MANAGER_IP=$(ssh {IP of the virtual machine from where you can access the BOSH director};bosh -d $SERVICE_INSTANCE_NAME instances | grep backup-manager/" | awk '{print $4}')
 
 echo $BACKUP_MANAGER_IP
 
@@ -485,84 +494,6 @@ you can restore a PostgreSQL Backup with the following command:
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore-claim.yaml
-```
-
-## Usage - aws s3 provider
-
-The aws s3 provider does require the helm and crossplane pre-requisites in order to be deployed
-
-### AWS Access
-
-Some of the pipelines require access to AWS EKS in order to be able to create clusters for testing
-purposes. For these pipelines please apply a manifest using the following template:
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: aws-secret
-  namespace: crossplane-system
-type: Opaque
-stringData:
-  creds: |-
-    [default]
-    AWS_ACCESS_KEY_ID: #<AWS_ACCESS_KEY_ID>
-    AWS_SECRET_ACCESS_KEY: #<AWS_SECRET_ACCESS_KEY>
-  config: |-
-    [default]
-    AWS_DEFAULT_REGION: eu-central-1
-```
-
-### Provision the aws s3 provider
-
-The provider itself can be run by applying the provider file
-
-```bash
-kubectl apply -f ./crossplane-api/deploy/provider-aws.yaml
-```
-
-Verify the providers were created successfully. There should be 2 providers: provider-aws-s3 and upboard-provider-family-aws
-```bash
-kubectl get providers
-```
-
-Apply the provider config
-```bash
-kubectl apply -f ./crossplane-api/deploy/provider-aws-config.yaml
-```
-
-### Managing an s3 bucket
-
-To create an s3 bucket, use the example object store yaml. This generates a hash for the name
-
-```bash
-kubectl create -f ./crossplane-api/examples/a8s/objectstore-claim.yaml
-```
-
-Check that the bucket was created successfully
-```bash
-kubectl get buckets
-```
-
-To delete the s3 bucket:
-
-```bash
-kubectl delete bucket <bucketname>
-```
-
-### Creating an s3 bucket policy
-
-To add an s3 bucket policy as a service binding, use the example s3 service binding claim.
-Make sure to update the claim with the bucket name and the iam role arn.
-
-```bash
-kubectl apply -f ./crossplane-api/examples/a8s/s3-servicebinding-claim.yaml
-```
-
-To remove the service binding
-
-```bash
-kubectl delete servicebinding/example-a8s-s3
 ```
 
 ## Update or Add a Service or Plan in a8s
