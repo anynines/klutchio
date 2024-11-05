@@ -7,8 +7,6 @@ resources:
   - api/a8s/postgresql/composition.yaml
   - api/a8s/restore/composition.yaml
   - api/a8s/servicebinding/composition.yaml
-  - api/a8s/servicebinding/s3-composition.yaml
-  - api/a8s/s3/composition.yaml
 # a9s 
   - api/a9s/backup/composition.yaml
   - api/a9s/logme2/composition.yaml
@@ -33,7 +31,3 @@ resources:
   - api/common/postgresql_definition.yaml
   - api/common/restore_definition.yaml
   - api/common/servicebinding_definition.yaml
-  
-# IAM
-  - api/iam/policy_composition.yaml
-  - api/iam/policy_definition.yaml
