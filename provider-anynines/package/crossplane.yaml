@@ -10,4 +10,4 @@ metadata:
 
 spec:
   controller:
-    image: "public.ecr.aws/w5n9a2g2/anynines/provider-anynines-controller:VERSION"
+    image: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines-controller:VERSION"
