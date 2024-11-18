@@ -90,9 +90,9 @@ aws ecr-public get-login-password --region us-east-1 --profile=ECR | docker logi
 ### Push images to ECR
 
 There are two ECR repositories, one is used to store provider images
-(`public.ecr.aws/w5n9a2g2/anynines/provider-anynines`) and the other
+(`public.ecr.aws/w5n9a2g2/klutch/provider-anynines`) and the other
 one is used for the provider controller images
-(`public.ecr.aws/w5n9a2g2/anynines/provider-anynines-controller`).
+(`public.ecr.aws/w5n9a2g2/klutch/provider-anynines-controller`).
 
 
 > **Important Note!**
@@ -286,7 +286,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/anynines/dataservices:v1.3.0
+crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.0
 ```
 
 2. Install files directly:
