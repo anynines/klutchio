@@ -29,7 +29,6 @@ below for the Data Service you want to deploy:
 
 | Data Service   | Data-service Value |
 | -------------- | ------------------ |
-| a9s Redis      | redis              |
 | a9s Messaging  | messaging          |
 | a9s Logme2     | logme2             |
 | a9s Prometheus | prometheus         |
