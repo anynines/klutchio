@@ -6,45 +6,51 @@ spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
     kind: XServiceBinding
-  resources:
-    - name: a9s-servicebinding
-      base:
-        apiVersion: dataservices.anynines.com/v1
-        kind: ServiceBinding
-        spec:
-          forProvider:
-            # acceptsIncomplete indicates if the service broker can fulfill a
-            # request asynchronously. Since the anynines-provider controller
-            # reconciles the resources asynchronously, if 'acceptsIncomplete' is
-            # not specified by the user, it will default to 'true'.
-            acceptsIncomplete: true
-      patches:
-        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-          toFieldPath: spec.forProvider.manifest.metadata.namespace
-        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-          toFieldPath: spec.forProvider.manifest.metadata.name
-        - fromFieldPath: spec.instanceRef
-          toFieldPath: spec.forProvider.instanceName
-        - fromFieldPath: spec.serviceInstanceType
-          toFieldPath: spec.providerConfigRef.name
-          transforms:
-          - type: string
-            string:
-              fmt: "%s-service-broker"
-        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-          toFieldPath: spec.writeConnectionSecretToRef.namespace
-        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-          toFieldPath: spec.writeConnectionSecretToRef.name
-          transforms:
-          - type: string
-            string:
-              fmt: "%s-creds"
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.serviceBindingID
-          toFieldPath: status.managed.serviceBindingID
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.state
-          toFieldPath: status.managed.state
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.conditions
-          toFieldPath: status.managed.conditions
+  mode: Pipeline
+  pipeline:
+  - step: patch-and-transform
+    functionRef:
+      name: function-patch-and-transform
+    input:
+      apiVersion: pt.fn.crossplane.io/v1beta1
+      kind: Resources
+      resources:
+        - name: a9s-servicebinding
+          base:
+            apiVersion: dataservices.anynines.com/v1
+            kind: ServiceBinding
+            spec:
+              forProvider:
+                # acceptsIncomplete indicates if the service broker can fulfill a
+                # request asynchronously. Since the anynines-provider controller
+                # reconciles the resources asynchronously, if 'acceptsIncomplete' is
+                # not specified by the user, it will default to 'true'.
+                acceptsIncomplete: true
+          patches:
+            - fromFieldPath: spec.instanceRef
+              toFieldPath: spec.forProvider.instanceName
+            - fromFieldPath: spec.serviceInstanceType
+              toFieldPath: spec.providerConfigRef.name
+              transforms:
+              - type: string
+                string:
+                  type: Format
+                  fmt: "%s-service-broker"
+            - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              toFieldPath: spec.writeConnectionSecretToRef.namespace
+            - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+              toFieldPath: spec.writeConnectionSecretToRef.name
+              transforms:
+              - type: string
+                string:
+                  type: Format              
+                  fmt: "%s-creds"
+            - type: ToCompositeFieldPath
+              fromFieldPath: status.atProvider.serviceBindingID
+              toFieldPath: status.managed.serviceBindingID
+            - type: ToCompositeFieldPath
+              fromFieldPath: status.atProvider.state
+              toFieldPath: status.managed.state
+            - type: ToCompositeFieldPath
+              fromFieldPath: status.conditions
+              toFieldPath: status.managed.conditions
