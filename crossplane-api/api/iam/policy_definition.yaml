@@ -23,31 +23,44 @@ spec:
           spec:
             type: object
             properties:
-              resource:
-                description: |
-                  The Resource defines the object or objects that the statement applies to. Statements must include either a Resource or a NotResource element
-                type: string
-              path:
-                description: |
-                    Path in which to create the policy
-                type: string
-              description:
-                description: |
-                    Description of the policy
-                type: string
-              actions:
-                description: |
-                    Action describes the specific action or actions that will be allowed like Get, List, etc..
-                type: array
-                items:
-                  type: string
+              policy:
+                properties:
+                  path:
+                    description: |
+                        Path in which to create the policy
+                    type: string
+                  description:
+                    description: Description of the policy
+                    type: string
+                  name:
+                    description: Name of the policy
+                    type: string
+                  statements:
+                    description: The Statement element can contain a single statement or an array of individual statements
+                    items:
+                      properties:
+                        actions:
+                          description: Action describes the specific action or actions that will be allowed like list, get, update, delete
+                          items:
+                            type: string
+                          type: array
+                        buckets:
+                          description: Buckets defines the object or objects that the statement applies to.
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    type: array
+                required:
+                - name
+                - statements
+                type: object
               tags:
                 description: |
                     Key-value map of resource tags.
                 type: object
             required:
-              - resource
-              - actions
+              - policy
           status:
             type: object
             properties:
