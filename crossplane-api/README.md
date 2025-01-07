@@ -308,6 +308,21 @@ Crossplane won't be able to manage RBAC dynamically. As a result, Compositions
 will not be able to configure the provider-anynines managed resources due to
 authorization issues.
 
+### Install Crossplane Functions
+
+Additionally, we install composition functions. Composition functions (or simply “functions”) are Crossplane extensions that template Crossplane resources. Crossplane uses these functions to determine which resources to create when a composite resource (XR) is created. To verify that the composition functions are correctly installed, use the following command:
+
+```bash
+kubectl get function
+```
+
+Expected output:
+
+```text
+NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
+function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.1.4
+```
+
 #### Install ProviderConfig for provider-anynines
 
 To configure the provider, based on your development environment, make sure to
