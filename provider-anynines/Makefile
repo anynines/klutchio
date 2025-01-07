@@ -9,6 +9,7 @@ BUILDX_NAME := provider-builder
 
 PLATFORMS ?= linux_amd64 linux_arm64
 -include build/makelib/common.mk
+-include ci/common.mk
 
 # ====================================================================================
 # Setup Output
@@ -41,6 +42,7 @@ KIND_NODE_IMAGE_TAG ?= v1.23.4
 DOCKER_REGISTRY ?= crossplane
 IMAGES = $(PROJECT_NAME) 
 -include build/makelib/imagelight.mk
+-include ci/imagelight.mk
 
 fallthrough: submodules
 	@echo Initial setup complete. Running make again . . .
