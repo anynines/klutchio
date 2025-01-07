@@ -3,5 +3,10 @@ kind: Kustomization
 
 resources:
   - crossplane-api/deploy
-  - https://anynines-artifacts.s3.eu-central-1.amazonaws.com/central-management/v1.3.0/crds.yaml
+  - https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/bind/deploy/crd/klutch.anynines.com_apiservicebindings.yaml
+  - https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/bind/deploy/crd/klutch.anynines.com_apiserviceexportrequests.yaml
+  - https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/bind/deploy/crd/klutch.anynines.com_apiserviceexports.yaml
+  - https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/bind/deploy/crd/klutch.anynines.com_apiservicenamespaces.yaml
+  - https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/bind/deploy/crd/klutch.anynines.com_clusterbindings.yaml
+  - https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/bind/contrib/deploy/crd/example-backend.klutch.anynines.com_apiserviceexporttemplates.yaml
   - bind/contrib/example-backend/deploy/01-clusterrole.yaml
