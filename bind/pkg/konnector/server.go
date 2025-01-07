@@ -23,9 +23,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 
-	"github.com/anynines/klutch/bind/deploy/crd"
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	healthz "github.com/anynines/klutch/bind/pkg/konnector/healthz"
+	"github.com/anynines/klutchio/bind/deploy/crd"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	healthz "github.com/anynines/klutchio/bind/pkg/konnector/healthz"
 )
 
 type Server struct {

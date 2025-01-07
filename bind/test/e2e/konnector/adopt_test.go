@@ -32,9 +32,9 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"sigs.k8s.io/yaml"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	providerfixtures "github.com/anynines/klutch/bind/test/e2e/bind/fixtures/provider"
-	"github.com/anynines/klutch/bind/test/e2e/framework"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	providerfixtures "github.com/anynines/klutchio/bind/test/e2e/bind/fixtures/provider"
+	"github.com/anynines/klutchio/bind/test/e2e/framework"
 )
 
 func TestKonnectorAdopt(t *testing.T) {

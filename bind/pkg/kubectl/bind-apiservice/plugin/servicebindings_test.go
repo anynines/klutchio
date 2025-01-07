@@ -23,7 +23,7 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 func TestHumanReadablePromt(t *testing.T) {

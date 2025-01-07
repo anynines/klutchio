@@ -22,7 +22,7 @@ import (
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 
-	v1alpha1 "github.com/anynines/klutch/bind/pkg/client/clientset/versioned/typed/bind/v1alpha1"
+	v1alpha1 "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned/typed/bind/v1alpha1"
 )
 
 type FakeKlutchBindV1alpha1 struct {

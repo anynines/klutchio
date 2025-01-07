@@ -28,7 +28,7 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
 
-	v1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 // FakeClusterBindings implements ClusterBindingInterface

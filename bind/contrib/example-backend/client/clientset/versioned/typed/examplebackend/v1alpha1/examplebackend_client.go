@@ -23,8 +23,8 @@ import (
 
 	rest "k8s.io/client-go/rest"
 
-	v1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
-	"github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned/scheme"
 )
 
 type ExampleBackendV1alpha1Interface interface {

@@ -24,7 +24,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/anynines/klutch/bind/contrib/example-backend/options"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/options"
 )
 
 type Server struct {

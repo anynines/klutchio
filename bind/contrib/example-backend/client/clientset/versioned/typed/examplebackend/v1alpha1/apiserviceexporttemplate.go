@@ -27,8 +27,8 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
 
-	v1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
-	scheme "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	scheme "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned/scheme"
 )
 
 // APIServiceExportTemplatesGetter has a method to return a APIServiceExportTemplateInterface.

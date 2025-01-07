@@ -35,12 +35,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 
-	backendcrd "github.com/anynines/klutch/bind/contrib/deploy/crd"
-	backend "github.com/anynines/klutch/bind/contrib/example-backend"
-	backendv1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
-	"github.com/anynines/klutch/bind/contrib/example-backend/options"
-	"github.com/anynines/klutch/bind/deploy/crd"
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	backendcrd "github.com/anynines/klutchio/bind/contrib/deploy/crd"
+	backend "github.com/anynines/klutchio/bind/contrib/example-backend"
+	backendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/options"
+	"github.com/anynines/klutchio/bind/deploy/crd"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 func StartBackend(t *testing.T, clientConfig *rest.Config, args ...string) (net.Addr, *backend.Server) {

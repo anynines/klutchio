@@ -1,4 +1,4 @@
-module github.com/anynines/klutch/bind
+module github.com/anynines/klutchio/bind
 
 go 1.22.0
 

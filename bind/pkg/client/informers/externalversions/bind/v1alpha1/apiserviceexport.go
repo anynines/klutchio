@@ -27,10 +27,10 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	versioned "github.com/anynines/klutch/bind/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/anynines/klutch/bind/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/anynines/klutch/bind/pkg/client/listers/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	versioned "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
 )
 
 // APIServiceExportInformer provides access to a shared informer and lister for
