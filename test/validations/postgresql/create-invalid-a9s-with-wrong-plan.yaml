@@ -5,6 +5,6 @@ metadata:
 spec:
   service: a9s-postgresql15
   # only supported in a8s
-  plan: postgresql-single-large
+  plan: postgresql-single-medium
   compositionRef:
     name: a9s-postgresql

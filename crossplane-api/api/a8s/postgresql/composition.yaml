@@ -6,15 +6,15 @@ metadata:
     volumeSizeNano: &volumeSizeNano "3Gi"
     volumeSizeSmall: &volumeSizeSmall "10Gi"
     volumeSizeMedium: &volumeSizeMedium "50Gi"
-    volumeSizeLarge: &volumeSizeLarge "100Gi"
+    volumeSizeBig: &volumeSizeBig "100Gi"
     CPUNano: &CPUNano "2"
     CPUSmall: &CPUSmall "2"
     CPUMedium: &CPUMedium "2"
-    CPULarge: &CPULarge "4"
+    CPUBig: &CPUBig "4"
     MemoryNano: &MemoryNano "1Gi"
     MemorySmall: &MemorySmall "2Gi"
     MemoryMedium: &MemoryMedium "4Gi"
-    MemoryLarge: &MemoryLarge "16Gi"
+    MemoryBig: &MemoryBig "16Gi"
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
@@ -73,7 +73,7 @@ spec:
                       nano: *volumeSizeNano
                       small: *volumeSizeSmall
                       medium: *volumeSizeMedium
-                      large: *volumeSizeLarge
+                      big: *volumeSizeBig
               - fromFieldPath: spec.plan
                 toFieldPath: spec.forProvider.manifest.spec.resources.requests.cpu
                 transforms:
@@ -87,7 +87,7 @@ spec:
                       nano: *CPUNano
                       small: *CPUSmall
                       medium: *CPUMedium
-                      large: *CPULarge
+                      big: *CPUBig
               - fromFieldPath: spec.plan
                 toFieldPath: spec.forProvider.manifest.spec.resources.limits.cpu
                 transforms:
@@ -101,7 +101,7 @@ spec:
                       nano: *CPUNano
                       small: *CPUSmall
                       medium: *CPUMedium
-                      large: *CPULarge
+                      big: *CPUBig
               - fromFieldPath: spec.plan
                 toFieldPath: spec.forProvider.manifest.spec.resources.requests.memory
                 transforms:
@@ -115,7 +115,7 @@ spec:
                       nano: *MemoryNano
                       small: *MemorySmall
                       medium: *MemoryMedium
-                      large: *MemoryLarge
+                      big: *MemoryBig
               - fromFieldPath: spec.plan
                 toFieldPath: spec.forProvider.manifest.spec.resources.limits.memory
                 transforms:
@@ -129,7 +129,7 @@ spec:
                       nano: *MemoryNano
                       small: *MemorySmall
                       medium: *MemoryMedium
-                      large: *MemoryLarge
+                      big: *MemoryBig
               - fromFieldPath: spec.plan
                 toFieldPath: spec.forProvider.manifest.spec.replicas
                 transforms:

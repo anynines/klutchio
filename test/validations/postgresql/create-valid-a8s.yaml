@@ -44,7 +44,7 @@ metadata:
   name: sample-pg-cluster
 spec:
   service: a9s-postgresql13
-  plan: postgresql-single-large
+  plan: postgresql-single-big
   compositionRef:
     name: a8s-postgresql
 ---
@@ -74,7 +74,7 @@ metadata:
   name: sample-pg-cluster
 spec:
   service: a9s-postgresql13
-  plan: postgresql-replica-large
+  plan: postgresql-replica-big
   compositionRef:
     name: a8s-postgresql
 ---
@@ -84,7 +84,7 @@ metadata:
   name: sample-pg-cluster
 spec:
   service: a9s-postgresql13
-  plan: postgresql-replica-large
+  plan: postgresql-replica-big
   parameters:
     maxConnections: 250
   compositionRef:
@@ -96,7 +96,7 @@ metadata:
   name: sample-pg-cluster
 spec:
   service: a9s-postgresql13
-  plan: postgresql-replica-large
+  plan: postgresql-replica-big
   parameters:
     maxConnections: 120
     tempFileLimit: 1024
@@ -118,4 +118,3 @@ spec:
     maxLocksPerTransaction: 128
   compositionRef:
     name: a8s-postgresql
-
