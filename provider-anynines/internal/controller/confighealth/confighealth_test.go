@@ -33,15 +33,15 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
-	fakeosb "github.com/anynines/klutch/clients/a9s-open-service-broker/fake"
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	a9stest "github.com/anynines/klutch/provider-anynines/internal/controller/test"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	fakeosb "github.com/anynines/klutchio/clients/a9s-open-service-broker/fake"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
 )
 
 func TestMain(m *testing.M) {
 	if err := apisv1.AddToScheme(scheme.Scheme); err != nil {
-		panic("failed to add API github.com/anynines/klutch/provider-anynines/apis/v1 to scheme")
+		panic("failed to add API github.com/anynines/klutchio/provider-anynines/apis/v1 to scheme")
 	}
 
 	os.Exit(m.Run())

@@ -1,7 +1,7 @@
 # ====================================================================================
 # Setup Project
 PROJECT_NAME := provider-anynines
-PROJECT_REPO := github.com/anynines/klutch/$(PROJECT_NAME)
+PROJECT_REPO := github.com/anynines/klutchio/$(PROJECT_NAME)
 ECR_ACCOUNT := public.ecr.aws/w5n9a2g2
 ECR_FOLDER_PATH := klutch
 ECR_REPO := $(ECR_ACCOUNT)/$(ECR_FOLDER_PATH)

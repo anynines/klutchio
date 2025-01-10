@@ -17,9 +17,9 @@ limitations under the License.
 package serviceinstance
 
 import (
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
-	v1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	"github.com/anynines/klutch/provider-anynines/pkg/utils"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	"github.com/anynines/klutchio/provider-anynines/pkg/utils"
 	"github.com/google/go-cmp/cmp"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"

@@ -14,7 +14,7 @@ Use alias for kubectl
 alias k=kubectl
 ```
 
-Using [provider-anynines](https://github.com/anynines/klutch/tree/main/provider-anynines) execute the following commands.
+Using [provider-anynines](https://github.com/anynines/klutchio/tree/main/provider-anynines) execute the following commands.
 
 Install CRDs
 
@@ -28,7 +28,7 @@ Create crossplane-system namespace
 k create ns crossplane-system
 ```
 
-Use [Setup tunnel to service-broker](https://anynines.atlassian.net/browse/A8S-1205) to configure port-forward to anynines service-broker and backup-manager. 
+Use [Setup tunnel to service-broker](https://anynines.atlassian.net/browse/A8S-1205) to configure port-forward to anynines service-broker and backup-manager.
 
 Update `examples/provider/config.yaml` to use the username and password for the service-broker and backup-manager derived using the scripts from [Setup tunnel to service-broker](https://anynines.atlassian.net/browse/A8S-1205). URL should be `http://localhost:8989`.
 
@@ -110,7 +110,7 @@ provider-anynines will create a secret for you named `example-sb-creds` in the `
 watch kubectl apply -f examples/sample/sb-example.yaml  -o yaml
 ```
 
-ssh onto Inception and then onto the service broker. The service-broker can be accessed using `bosh -d <SERVICE-BROKER-NAME> ssh broker`. Then install the postgresql-client using `sudo apt update && sudo apt install -y postgresql-client`. 
+ssh onto Inception and then onto the service broker. The service-broker can be accessed using `bosh -d <SERVICE-BROKER-NAME> ssh broker`. Then install the postgresql-client using `sudo apt update && sudo apt install -y postgresql-client`.
 
 Use this script to fetch and decode the ENDPOINT.
 

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,13 +35,13 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	v1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	util "github.com/anynines/klutch/provider-anynines/internal/controller/utils"
-	anynines "github.com/anynines/klutch/provider-anynines/pkg/client"
-	client "github.com/anynines/klutch/provider-anynines/pkg/client/osb"
-	"github.com/anynines/klutch/provider-anynines/pkg/client/serviceinstance"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	util "github.com/anynines/klutchio/provider-anynines/internal/controller/utils"
+	anynines "github.com/anynines/klutchio/provider-anynines/pkg/client"
+	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
+	"github.com/anynines/klutchio/provider-anynines/pkg/client/serviceinstance"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 )
 
 const (

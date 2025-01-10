@@ -29,13 +29,13 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	a9stest "github.com/anynines/klutch/provider-anynines/internal/controller/test"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
 )
 
 func TestMain(m *testing.M) {
 	if err := apisv1.AddToScheme(scheme.Scheme); err != nil {
-		panic("failed to add API github.com/anynines/klutch/provider-anynines/apis/v1 to scheme")
+		panic("failed to add API github.com/anynines/klutchio/provider-anynines/apis/v1 to scheme")
 	}
 
 	os.Exit(m.Run())
