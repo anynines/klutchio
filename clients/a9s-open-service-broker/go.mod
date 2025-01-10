@@ -1,4 +1,4 @@
-module github.com/anynines/klutch/clients/a9s-open-service-broker
+module github.com/anynines/klutchio/clients/a9s-open-service-broker
 
 go 1.22
 

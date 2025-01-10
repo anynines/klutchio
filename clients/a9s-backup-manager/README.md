@@ -7,14 +7,15 @@
 ## Testing the client
 
 [//]: # (TODO: Add more details or link to provider-anynines for more details.)
+
 * Create a data service by executing the `/create postgresql` command in
  [create-data-service slack channel].
 * After which create a postgres service instance using the crossplane Postgresql managed resource
-or by any other method. 
+or by any other method.
 * Once service broker has been successfully created run the following cmds in
 a terminal to expose the backup-manager-api port locally on your system
 (*do not close the terminal else the connection would be closed*).
-    * Set the values of {service-instance-name}(the name of the service instance you want to connect 
+  * Set the values of {service-instance-name}(the name of the service instance you want to connect
     to e.g. postgresql-ms-1234567890) and {localport}(the local port you want to expose e.g. 8989).
 
 ``` bash
@@ -50,42 +51,39 @@ echo bkp-mgr-password=$BACKUP_MANAGER_PASSWORD
 package main
 
 import (
-	"fmt"
+ "fmt"
 
-	backupmanager "github.com/anynines/klutch/clients/a9s-backup-manager"
+ backupmanager "github.com/anynines/klutchio/clients/a9s-backup-manager"
 )
 
 func main() {
-	config := &backupmanager.ClientConfiguration{
-		URL: "http://localhost:8989",
-		AuthConfig: &backupmanager.AuthConfig{
-			BasicAuthConfig: &backupmanager.BasicAuthConfig{
-				Username: "username",
-				Password: "password",
-			},
-		},
-		TimeoutSeconds: 10,
-		Verbose:        true,
-	}
-	client, err := backupmanager.NewClient(config)
-	if err != nil {
-		panic(err)
-	}
+ config := &backupmanager.ClientConfiguration{
+  URL: "http://localhost:8989",
+  AuthConfig: &backupmanager.AuthConfig{
+   BasicAuthConfig: &backupmanager.BasicAuthConfig{
+    Username: "username",
+    Password: "password",
+   },
+  },
+  TimeoutSeconds: 10,
+  Verbose:        true,
+ }
+ client, err := backupmanager.NewClient(config)
+ if err != nil {
+  panic(err)
+ }
 
-	req := backupmanager.CreateBackupRequest{
-		InstanceID: "<Insert instanceID here e.g. asdasd34-5d89-8564-7af9-isg87fko85k67>",
-	}
+ req := backupmanager.CreateBackupRequest{
+  InstanceID: "<Insert instanceID here e.g. asdasd34-5d89-8564-7af9-isg87fko85k67>",
+ }
 
-	resp, err := client.CreateBackup(&req)
-	if err != nil {
-		panic(err)
-	}
+ resp, err := client.CreateBackup(&req)
+ if err != nil {
+  panic(err)
+ }
 
-	fmt.Println(resp)
+ fmt.Println(resp)
 }
 ```
 
-[epo-deployments-a9s]: https://github.com/anynines/epo-deployments-a9s/pull/1650
-[ds-epo slack channel]: https://anynines-gmbh.slack.com/archives/C02BNGWD2L8
 [create-data-service slack channel]: https://anynines-gmbh.slack.com/archives/C02EJBT3947
-[ssh]: https://anynines.atlassian.net/wiki/spaces/DS/pages/2428043267/a9s+System+Environments#SSH-Access
