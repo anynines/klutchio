@@ -36,7 +36,7 @@ machine for development and testing purposes.
 
   - Alternately, you can install a *specific* Crossplane version using helm's
     [*--version <version>*](https://docs.crossplane.io/v1.11/software/install/)
-    option, and then deploy the [Crossplane Provider for Kubernetes](https://github.com/anynines/klutch/blob/main/crossplane-api/deploy/provider-kubernetes.yaml).
+    option, and then deploy the [Crossplane Provider for Kubernetes](https://github.com/anynines/klutchio/blob/main/crossplane-api/deploy/provider-kubernetes.yaml).
 - To build, push, and install Crossplane packages, you need the Crossplane CLI.
   You can install it with the following command:
 
@@ -93,7 +93,6 @@ There are two ECR repositories, one is used to store provider images
 (`public.ecr.aws/w5n9a2g2/klutch/provider-anynines`) and the other
 one is used for the provider controller images
 (`public.ecr.aws/w5n9a2g2/klutch/provider-anynines-controller`).
-
 
 > **Important Note!**
 > To make sure you don't overwrite existing images, it's
@@ -191,7 +190,7 @@ below are necessary.
 
 #### Create ssh tunnel for Service Broker and Backup Manager
 
-Follow the steps described [here](https://github.com/anynines/klutch/blob/main/clients/a9s-backup-manager/README.md#pre-req) to get access to "aws-inception".
+Follow the steps described [here](https://github.com/anynines/klutchio/blob/main/clients/a9s-backup-manager/README.md#pre-req) to get access to "aws-inception".
 
 #### Start Service Broker tunnel
 
@@ -519,7 +518,7 @@ Here is a breakdown of the steps to follow for different scenarios:
 1. Edit the [composition.yaml](api/a8s/postgresql/composition.yaml)
 file using a text editor or IDE.
 
-2. Locate the [metadata.labels](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml#LL5C3-L5C10)
+2. Locate the [metadata.labels](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml#LL5C3-L5C10)
 field at the top of the file. Within this field, you can see the name and the
 corresponding value for disk, cpu and memory resources for the different Plan
 sizes.
@@ -552,12 +551,12 @@ sizes.
 
 ### Add a Plan
 
-1. Edit the [definition.yaml](api/a8s/postgresql/definition.yaml)
+1. Edit the [definition.yaml](api/common/postgresql_definition.yaml)
 and [composition.yaml](api/a8s/postgresql/composition.yaml)
 files using a text editor or IDE.
 
-2. Locate the [supported.plans](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml#L22)
-field in [definition.yaml](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml).
+2. Locate the [supported.plans](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml#L49)
+field in [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml).
 Within this field you can see a list of supported Plans:
 
     ```yaml
@@ -584,7 +583,7 @@ Within this field you can see a list of supported Plans:
 
     Because only upgrades from smaller to larger DS instance sizes are allowed,
     the validation should also be updated. The validation rule is located in the
-    [definition.yaml](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml#L53)
+    [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml#L30)
     file under the x-kubernetes-validations.rule field.
 
     Continuing the example with the "postgresql-single-extralarge", the
@@ -597,8 +596,8 @@ Within this field you can see a list of supported Plans:
     !(self.find('[A-Za-z]+$') == ‘large’ && oldSelf.find('[A-Za-z]+$') == ‘extralarge’)
     ```
 
-5. Additionally, the [metadata.labels](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml#L5)
-    field in the [composition file](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml)
+5. Additionally, the [metadata.labels](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml#L5)
+    field in the [composition file](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml)
     should also be updated.
 
     For the "postgresql-single-extralarge" example, we could add something
@@ -610,9 +609,9 @@ Within this field you can see a list of supported Plans:
     MemoryExtraLarge: &MemoryExtraLarge "32Gi"
     ```
 
-6. Finally, the [maps](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml#L50)
+6. Finally, the [maps](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml#L53)
     used for patching the disk, cpu and memory resources in the
-    [composition file](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml)
+    [composition file](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml)
     should also be updated.
 
     For our favorite "postgresql-single-extralarge" example this could mean
@@ -657,10 +656,10 @@ service name. Consequently, updating a service would mean deleting the current
 service and creating a new one. Thus, in this case, a Service update is
 equivalent to adding a new Service. The steps to add a Service are:
 
-1. Open the [definition.yaml](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml)
+1. Open the [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml)
 file using a text editor or IDE.
 
-2. Locate the [supported.services](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml#L26)
+2. Locate the [supported.services](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml#L34)
 field.
 Within this field you can see a list with the supported Services:
 
