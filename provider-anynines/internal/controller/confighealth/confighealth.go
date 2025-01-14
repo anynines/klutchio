@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,9 +36,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
-	v1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	credhelp "github.com/anynines/klutch/provider-anynines/internal/controller/utils"
-	client "github.com/anynines/klutch/provider-anynines/pkg/client/osb"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	credhelp "github.com/anynines/klutchio/provider-anynines/internal/controller/utils"
+	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
 )
 
 const (

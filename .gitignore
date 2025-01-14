@@ -1,0 +1,36 @@
+.cache
+.work
+.temp
+_output
+cover.out
+vendor
+.vendor-new
+.DS_Store
+
+# ignore vscode files (debug config etc...)
+.vscode
+.idea
+
+# Golang github .gitignore https://github.com/github/gitignore/blob/main/Go.gitignore
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Crossplane configuration package
+*.xpkg 
+
+# Logfiles, like those produced by some of the tests
+*.log

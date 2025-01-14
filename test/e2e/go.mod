@@ -1,4 +1,4 @@
-module github.com/anynines/klutch/test/e2e
+module github.com/anynines/klutchio/test/e2e
 
 go 1.22
 

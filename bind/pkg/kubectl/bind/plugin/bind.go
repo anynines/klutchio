@@ -42,9 +42,9 @@ import (
 	"k8s.io/component-base/logs"
 	logsv1 "k8s.io/component-base/logs/api/v1"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/kubectl/base"
-	"github.com/anynines/klutch/bind/pkg/kubectl/bind/authenticator"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/kubectl/base"
+	"github.com/anynines/klutchio/bind/pkg/kubectl/bind/authenticator"
 )
 
 // BindOptions contains the options for creating an APIBinding.

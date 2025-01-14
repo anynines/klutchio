@@ -26,7 +26,7 @@ import (
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
 
-	examplebackendv1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned/typed/examplebackend/v1alpha1"
+	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned/typed/examplebackend/v1alpha1"
 )
 
 type Interface interface {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	v2 "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	v2 "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 // NewFakeClientFunc returns a v2.CreateFunc that returns a FakeClient with

@@ -26,8 +26,8 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	apiservicecmd "github.com/anynines/klutch/bind/pkg/kubectl/bind-apiservice/cmd"
-	bindcmd "github.com/anynines/klutch/bind/pkg/kubectl/bind/cmd"
+	apiservicecmd "github.com/anynines/klutchio/bind/pkg/kubectl/bind-apiservice/cmd"
+	bindcmd "github.com/anynines/klutchio/bind/pkg/kubectl/bind/cmd"
 )
 
 func init() {

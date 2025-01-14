@@ -3,4 +3,4 @@ kind: Configuration
 metadata:
   name: anynines-dataservices
 spec:
-  package: public.ecr.aws/w5n9a2g2/anynines/dataservices:v1.3.0
+  package: public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.0

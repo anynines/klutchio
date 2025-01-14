@@ -27,7 +27,7 @@ import (
 	runtime2 "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/yaml"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 // ServiceExportToCRD converts a APIServiceExport to a CRD.

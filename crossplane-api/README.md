@@ -36,7 +36,7 @@ machine for development and testing purposes.
 
   - Alternately, you can install a *specific* Crossplane version using helm's
     [*--version <version>*](https://docs.crossplane.io/v1.11/software/install/)
-    option, and then deploy the [Crossplane Provider for Kubernetes](https://github.com/anynines/klutch/blob/main/crossplane-api/deploy/provider-kubernetes.yaml).
+    option, and then deploy the [Crossplane Provider for Kubernetes](https://github.com/anynines/klutchio/blob/main/crossplane-api/deploy/provider-kubernetes.yaml).
 - To build, push, and install Crossplane packages, you need the Crossplane CLI.
   You can install it with the following command:
 
@@ -90,10 +90,9 @@ aws ecr-public get-login-password --region us-east-1 --profile=ECR | docker logi
 ### Push images to ECR
 
 There are two ECR repositories, one is used to store provider images
-(`public.ecr.aws/w5n9a2g2/anynines/provider-anynines`) and the other
+(`public.ecr.aws/w5n9a2g2/klutch/provider-anynines`) and the other
 one is used for the provider controller images
-(`public.ecr.aws/w5n9a2g2/anynines/provider-anynines-controller`).
-
+(`public.ecr.aws/w5n9a2g2/klutch/provider-anynines-controller`).
 
 > **Important Note!**
 > To make sure you don't overwrite existing images, it's
@@ -191,7 +190,7 @@ below are necessary.
 
 #### Create ssh tunnel for Service Broker and Backup Manager
 
-Follow the steps described [here](https://github.com/anynines/klutch/blob/main/clients/a9s-backup-manager/README.md#pre-req) to get access to "aws-inception".
+Follow the steps described [here](https://github.com/anynines/klutchio/blob/main/clients/a9s-backup-manager/README.md#pre-req) to get access to "aws-inception".
 
 #### Start Service Broker tunnel
 
@@ -202,7 +201,12 @@ In a separate terminal start an ssh tunnel to Service Broker
 ```bash
 export SERVICE_INSTANCE_NAME=<dataservice name> #e.g. postgresql-ms-1686299661
 
-export SERVICEBROKER_IP=$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $SERVICE_INSTANCE_NAME instances | grep broker/" | awk '{print $4}')
+```
+
+**NOTE:** You would have to load the credentials to execute the bosh cli cmd in the BOSH director env.
+
+```bash
+export SERVICEBROKER_IP=$(ssh {IP of the virtual machine from where you can access the BOSH director};bosh -d $SERVICE_INSTANCE_NAME instances | grep broker/" | awk '{print $4}')
 
 echo $SERVICEBROKER_IP
 
@@ -215,8 +219,12 @@ In a separate terminal start an ssh tunnel to Backup Manager
 
 ```bash
 export SERVICE_INSTANCE_NAME=<dataservice name> #e.g. postgresql-ms-1686299661
+```
 
-export BACKUP_MANAGER_IP=$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $SERVICE_INSTANCE_NAME instances | grep backup-manager/" | awk '{print $4}')
+**NOTE:** You would have to load the credentials to execute the bosh cli cmd in the BOSH director env.
+
+```bash
+export BACKUP_MANAGER_IP=$(ssh {IP of the virtual machine from where you can access the BOSH director};bosh -d $SERVICE_INSTANCE_NAME instances | grep backup-manager/" | awk '{print $4}')
 
 echo $BACKUP_MANAGER_IP
 
@@ -277,7 +285,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/anynines/dataservices:v1.3.0
+crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.0
 ```
 
 2. Install files directly:
@@ -487,84 +495,6 @@ you can restore a PostgreSQL Backup with the following command:
 kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore-claim.yaml
 ```
 
-## Usage - aws s3 provider
-
-The aws s3 provider does require the helm and crossplane pre-requisites in order to be deployed
-
-### AWS Access
-
-Some of the pipelines require access to AWS EKS in order to be able to create clusters for testing
-purposes. For these pipelines please apply a manifest using the following template:
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: aws-secret
-  namespace: crossplane-system
-type: Opaque
-stringData:
-  creds: |-
-    [default]
-    AWS_ACCESS_KEY_ID: #<AWS_ACCESS_KEY_ID>
-    AWS_SECRET_ACCESS_KEY: #<AWS_SECRET_ACCESS_KEY>
-  config: |-
-    [default]
-    AWS_DEFAULT_REGION: eu-central-1
-```
-
-### Provision the aws s3 provider
-
-The provider itself can be run by applying the provider file
-
-```bash
-kubectl apply -f ./crossplane-api/deploy/provider-aws.yaml
-```
-
-Verify the providers were created successfully. There should be 2 providers: provider-aws-s3 and upboard-provider-family-aws
-```bash
-kubectl get providers
-```
-
-Apply the provider config
-```bash
-kubectl apply -f ./crossplane-api/deploy/provider-aws-config.yaml
-```
-
-### Managing an s3 bucket
-
-To create an s3 bucket, use the example object store yaml. This generates a hash for the name
-
-```bash
-kubectl create -f ./crossplane-api/examples/a8s/objectstore-claim.yaml
-```
-
-Check that the bucket was created successfully
-```bash
-kubectl get buckets
-```
-
-To delete the s3 bucket:
-
-```bash
-kubectl delete bucket <bucketname>
-```
-
-### Creating an s3 bucket policy
-
-To add an s3 bucket policy as a service binding, use the example s3 service binding claim.
-Make sure to update the claim with the bucket name and the iam role arn.
-
-```bash
-kubectl apply -f ./crossplane-api/examples/a8s/s3-servicebinding-claim.yaml
-```
-
-To remove the service binding
-
-```bash
-kubectl delete servicebinding/example-a8s-s3
-```
-
 ## Update or Add a Service or Plan in a8s
 
 In case of a Service or Plan is changed or a new one is added, it is essential
@@ -588,7 +518,7 @@ Here is a breakdown of the steps to follow for different scenarios:
 1. Edit the [composition.yaml](api/a8s/postgresql/composition.yaml)
 file using a text editor or IDE.
 
-2. Locate the [metadata.labels](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml#LL5C3-L5C10)
+2. Locate the [metadata.labels](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml#LL5C3-L5C10)
 field at the top of the file. Within this field, you can see the name and the
 corresponding value for disk, cpu and memory resources for the different Plan
 sizes.
@@ -621,12 +551,12 @@ sizes.
 
 ### Add a Plan
 
-1. Edit the [definition.yaml](api/a8s/postgresql/definition.yaml)
+1. Edit the [definition.yaml](api/common/postgresql_definition.yaml)
 and [composition.yaml](api/a8s/postgresql/composition.yaml)
 files using a text editor or IDE.
 
-2. Locate the [supported.plans](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml#L22)
-field in [definition.yaml](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml).
+2. Locate the [supported.plans](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml#L49)
+field in [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml).
 Within this field you can see a list of supported Plans:
 
     ```yaml
@@ -653,7 +583,7 @@ Within this field you can see a list of supported Plans:
 
     Because only upgrades from smaller to larger DS instance sizes are allowed,
     the validation should also be updated. The validation rule is located in the
-    [definition.yaml](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml#L53)
+    [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml#L30)
     file under the x-kubernetes-validations.rule field.
 
     Continuing the example with the "postgresql-single-extralarge", the
@@ -666,8 +596,8 @@ Within this field you can see a list of supported Plans:
     !(self.find('[A-Za-z]+$') == ‘large’ && oldSelf.find('[A-Za-z]+$') == ‘extralarge’)
     ```
 
-5. Additionally, the [metadata.labels](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml#L5)
-    field in the [composition file](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml)
+5. Additionally, the [metadata.labels](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml#L5)
+    field in the [composition file](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml)
     should also be updated.
 
     For the "postgresql-single-extralarge" example, we could add something
@@ -679,9 +609,9 @@ Within this field you can see a list of supported Plans:
     MemoryExtraLarge: &MemoryExtraLarge "32Gi"
     ```
 
-6. Finally, the [maps](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml#L50)
+6. Finally, the [maps](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml#L53)
     used for patching the disk, cpu and memory resources in the
-    [composition file](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/composition.yaml)
+    [composition file](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml)
     should also be updated.
 
     For our favorite "postgresql-single-extralarge" example this could mean
@@ -726,10 +656,10 @@ service name. Consequently, updating a service would mean deleting the current
 service and creating a new one. Thus, in this case, a Service update is
 equivalent to adding a new Service. The steps to add a Service are:
 
-1. Open the [definition.yaml](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml)
+1. Open the [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml)
 file using a text editor or IDE.
 
-2. Locate the [supported.services](https://github.com/anynines/klutch/blob/5afcaefaad082059177dbce1f267ffc7339bf62c/crossplane-api/api/a8s/postgresql/definition.yaml#L26)
+2. Locate the [supported.services](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml#L34)
 field.
 Within this field you can see a list with the supported Services:
 

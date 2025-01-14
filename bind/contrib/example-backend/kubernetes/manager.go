@@ -30,11 +30,11 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
-	kuberesources "github.com/anynines/klutch/bind/contrib/example-backend/kubernetes/resources"
-	bindclient "github.com/anynines/klutch/bind/pkg/client/clientset/versioned"
-	bindinformers "github.com/anynines/klutch/bind/pkg/client/informers/externalversions/bind/v1alpha1"
-	bindlisters "github.com/anynines/klutch/bind/pkg/client/listers/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/indexers"
+	kuberesources "github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes/resources"
+	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
+	bindinformers "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions/bind/v1alpha1"
+	bindlisters "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/indexers"
 )
 
 type Manager struct {

@@ -23,7 +23,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	v2 "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	v2 "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 // GetCatalog will produce a valid GetCatalog response based on the generator settings.

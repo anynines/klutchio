@@ -54,9 +54,8 @@ To follow along with this tutorial, you need to install the following specialize
 
 Ensure your machine can reach the following external resources:
 
-1. Configuration: `https://anynines-artifacts.s3.eu-central-1.amazonaws.com/central-management/v1.3.0/crds.yaml`
-2. Docker Image Repositories:
-   - `public.ecr.aws/w5n9a2g2/anynines/`
+1. Docker Image Repositories:
+   - `public.ecr.aws/w5n9a2g2/klutch/`
    - `dexidp/dex`
    - `curlimages/curl`
    - `xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v0.14.1`
@@ -220,12 +219,12 @@ Checking Prerequisites...
 ...
 
 The following command will be executed for you:
-/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/anynines/konnector:v1.3.0 --context kind-klutch-app
+/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.0 --context kind-klutch-app
 ```
 
 Next, a browser window will open for authentication. Use these demo credentials:
 
-- Username: admin@example.com
+- Username: <admin@example.com>
 - Password: password
 
 :::note
@@ -378,7 +377,7 @@ kubectl apply -f <(eval "echo \"$(cat external-pg-service.yaml)\"")
 
   c. Set up port forwarding using one of the following methods:
 
-   - Manual method (replace placeholders with actual values):
+- Manual method (replace placeholders with actual values):
 
      ```bash
      kubectl -n <pg namespace> port-forward svc/example-a8s-postgresql-master 5432:5432 --address <your-ip>
@@ -386,7 +385,8 @@ kubectl apply -f <(eval "echo \"$(cat external-pg-service.yaml)\"")
 
      **OR**
 
-   - Automatic method:
+- Automatic method:
+
       ```bash
       bash -c 'get_ip() { if [[ "$OSTYPE" == "darwin"* ]]; then ifconfig | grep "inet " | grep -v 127.0.0.1 | awk "{print \$2}" | head -n 1; else ip -4 addr show scope global | grep inet | awk "{print \$2}" | cut -d / -f 1 | head -n 1; fi; }; NAMESPACE=$(kubectl get namespaces -o name | sed "s/^namespace\///" | grep "^kube-bind.*default$"); IP=$(get_ip); [ -z "$NAMESPACE" ] || [ -z "$IP" ] && exit 1; exec kubectl -n "$NAMESPACE" port-forward svc/example-a8s-postgresql-master 5432:5432 --address "$IP"'
       ```
@@ -480,11 +480,10 @@ Set up port forwarding:
 kubectl port-forward svc/demo-app 3000:3000
 ```
 
-Open your web browser and navigate to http://localhost:3000 to access the blogpost application. You should now see the
+Open your web browser and navigate to <http://localhost:3000> to access the blogpost application. You should now see the
 blogpost application interface. :tada:
 
 ![Blog application](./blogpost_app_ui.png)
-
 
 ## Step 4: Clean Up Klutch-Created Clusters
 

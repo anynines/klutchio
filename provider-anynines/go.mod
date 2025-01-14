@@ -1,10 +1,10 @@
-module github.com/anynines/klutch/provider-anynines
+module github.com/anynines/klutchio/provider-anynines
 
 go 1.22
 
 require (
-	github.com/anynines/klutch/clients/a9s-backup-manager v0.0.1
-	github.com/anynines/klutch/clients/a9s-open-service-broker v0.0.1
+	github.com/anynines/klutchio/clients/a9s-backup-manager v0.0.1
+	github.com/anynines/klutchio/clients/a9s-open-service-broker v0.0.1
 	github.com/crossplane/crossplane-runtime v1.15.1
 	github.com/crossplane/crossplane-tools v0.0.0-20230925130601-628280f8bf79
 	github.com/go-logr/logr v1.4.1
@@ -91,6 +91,6 @@ require (
 )
 
 replace (
-	github.com/anynines/klutch/clients/a9s-backup-manager v0.0.1 => ../clients/a9s-backup-manager
-	github.com/anynines/klutch/clients/a9s-open-service-broker v0.0.1 => ../clients/a9s-open-service-broker
+	github.com/anynines/klutchio/clients/a9s-backup-manager v0.0.1 => ../clients/a9s-backup-manager
+	github.com/anynines/klutchio/clients/a9s-open-service-broker v0.0.1 => ../clients/a9s-open-service-broker
 )

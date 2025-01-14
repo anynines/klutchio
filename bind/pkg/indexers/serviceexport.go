@@ -17,7 +17,7 @@ limitations under the License.
 package indexers
 
 import (
-	"github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 const (

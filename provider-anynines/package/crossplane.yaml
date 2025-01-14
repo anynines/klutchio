@@ -3,11 +3,11 @@ kind: Provider
 metadata:
   name: provider-anynines
   annotations:
-    meta.crossplane.io/maintainer: anynines <anynines.com> 
-    meta.crossplane.io/source: anynines
+    meta.crossplane.io/maintainer: klutch <klutch.io> 
+    meta.crossplane.io/source: klutch
     meta.crossplane.io/description: |
       A provider that can provision anynines Data Service Instances.
 
 spec:
   controller:
-    image: "public.ecr.aws/w5n9a2g2/anynines/provider-anynines-controller:VERSION"
+    image: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines-controller:VERSION"

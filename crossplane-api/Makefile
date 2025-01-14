@@ -1,5 +1,5 @@
 IMAGE_NAME := dataservices
-ECR_REPO := public.ecr.aws/w5n9a2g2/anynines
+ECR_REPO := public.ecr.aws/w5n9a2g2/klutch
 
 providerconfig:
 # Populate Secrets and create PostgreSQL ProvideConfig using the instance name

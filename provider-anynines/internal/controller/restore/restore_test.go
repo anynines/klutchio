@@ -35,13 +35,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	a9sbackupmanager "github.com/anynines/klutch/clients/a9s-backup-manager"
-	fakebkpmgr "github.com/anynines/klutch/clients/a9s-backup-manager/fake"
-	bkpv1 "github.com/anynines/klutch/provider-anynines/apis/backup/v1"
-	v1 "github.com/anynines/klutch/provider-anynines/apis/restore/v1"
-	dsv1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	a9stest "github.com/anynines/klutch/provider-anynines/internal/controller/test"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	a9sbackupmanager "github.com/anynines/klutchio/clients/a9s-backup-manager"
+	fakebkpmgr "github.com/anynines/klutchio/clients/a9s-backup-manager/fake"
+	bkpv1 "github.com/anynines/klutchio/provider-anynines/apis/backup/v1"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/restore/v1"
+	dsv1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 )
 
 // Unlike many Kubernetes projects Crossplane does not use third party testing

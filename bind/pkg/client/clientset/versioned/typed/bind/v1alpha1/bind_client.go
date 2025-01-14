@@ -23,8 +23,8 @@ import (
 
 	rest "k8s.io/client-go/rest"
 
-	v1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/client/clientset/versioned/scheme"
 )
 
 type KlutchBindV1alpha1Interface interface {

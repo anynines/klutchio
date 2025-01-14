@@ -27,10 +27,10 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 
-	examplebackendv1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
-	versioned "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned"
-	internalinterfaces "github.com/anynines/klutch/bind/contrib/example-backend/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/client/listers/examplebackend/v1alpha1"
+	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	versioned "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned"
+	internalinterfaces "github.com/anynines/klutchio/bind/contrib/example-backend/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/client/listers/examplebackend/v1alpha1"
 )
 
 // APIServiceExportTemplateInformer provides access to a shared informer and lister for

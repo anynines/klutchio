@@ -39,11 +39,11 @@ import (
 	"github.com/go-logr/logr"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/anynines/klutch/provider-anynines/apis"
-	anyninesv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	anynines "github.com/anynines/klutch/provider-anynines/internal/controller"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/features"
-	"github.com/anynines/klutch/provider-anynines/pkg/healthz"
+	"github.com/anynines/klutchio/provider-anynines/apis"
+	anyninesv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	anynines "github.com/anynines/klutchio/provider-anynines/internal/controller"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/features"
+	"github.com/anynines/klutchio/provider-anynines/pkg/healthz"
 )
 
 func main() {

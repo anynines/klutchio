@@ -26,9 +26,9 @@ import (
 	crd "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/anynines/klutch/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
-	templates "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned/fake"
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	templates "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned/fake"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 var mangodb = apiextensions.CustomResourceDefinition{

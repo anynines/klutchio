@@ -31,13 +31,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
-	fakeosb "github.com/anynines/klutch/clients/a9s-open-service-broker/fake"
-	v1 "github.com/anynines/klutch/provider-anynines/apis/servicebinding/v1"
-	dsv1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	a9stest "github.com/anynines/klutch/provider-anynines/internal/controller/test"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	fakeosb "github.com/anynines/klutchio/clients/a9s-open-service-broker/fake"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/servicebinding/v1"
+	dsv1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -54,7 +54,7 @@ var defaultBindingParameters = &v1.ServiceBindingParameters{
 
 func TestMain(m *testing.M) {
 	if err := apisv1.AddToScheme(scheme.Scheme); err != nil {
-		panic("failed to add API github.com/anynines/klutch/provider-anynines/apis/v1alpha1 to scheme")
+		panic("failed to add API github.com/anynines/klutchio/provider-anynines/apis/v1alpha1 to scheme")
 	}
 
 	os.Exit(m.Run())

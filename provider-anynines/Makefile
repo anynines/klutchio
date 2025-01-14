@@ -1,9 +1,9 @@
 # ====================================================================================
 # Setup Project
 PROJECT_NAME := provider-anynines
-PROJECT_REPO := github.com/anynines/klutch/$(PROJECT_NAME)
+PROJECT_REPO := github.com/anynines/klutchio/$(PROJECT_NAME)
 ECR_ACCOUNT := public.ecr.aws/w5n9a2g2
-ECR_FOLDER_PATH := anynines
+ECR_FOLDER_PATH := klutch
 ECR_REPO := $(ECR_ACCOUNT)/$(ECR_FOLDER_PATH)
 BUILDX_NAME := provider-builder
 
@@ -207,7 +207,7 @@ provider-controller-build-push:
 		touch builder_created.flag; \
 	fi
 
-	@cp ./cluster/images/provider-anynines-controller/Dockerfile $(IMAGE_TEMP_DIR) || $(FAIL)
+	@cp ./cluster/images/provider-anynines/Dockerfile $(IMAGE_TEMP_DIR) || $(FAIL)
 	@cp $(OUTPUT_DIR)/bin/$(OS)_$(ARCH)/provider $(IMAGE_TEMP_DIR) || $(FAIL)
 	@cd $(IMAGE_TEMP_DIR) && $(SED_CMD) 's|BASEIMAGE|$(OSBASEIMAGE)|g' Dockerfile || $(FAIL)
 	docker buildx build -o type=image --builder=$(BUILDER_NAME) \

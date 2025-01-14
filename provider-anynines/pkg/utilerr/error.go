@@ -19,8 +19,8 @@ package utilerr
 import (
 	"errors"
 
-	backupClient "github.com/anynines/klutch/clients/a9s-backup-manager"
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	backupClient "github.com/anynines/klutchio/clients/a9s-backup-manager"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 var _ Userdisplayer = &userError{}

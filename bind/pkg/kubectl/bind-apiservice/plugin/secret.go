@@ -26,7 +26,7 @@ import (
 	kubeclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/anynines/klutch/bind/pkg/kubectl/base"
+	"github.com/anynines/klutchio/bind/pkg/kubectl/base"
 )
 
 func (b *BindAPIServiceOptions) createKubeconfigSecret(ctx context.Context, config *rest.Config, remoteHost, remoteNamespace, kubeconfig string) (string, error) {

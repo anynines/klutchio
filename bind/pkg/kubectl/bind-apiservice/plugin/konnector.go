@@ -34,9 +34,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 
-	"github.com/anynines/klutch/bind/deploy/konnector"
-	bindclient "github.com/anynines/klutch/bind/pkg/client/clientset/versioned"
-	"github.com/anynines/klutch/bind/pkg/version"
+	"github.com/anynines/klutchio/bind/deploy/konnector"
+	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
+	"github.com/anynines/klutchio/bind/pkg/version"
 )
 
 const (

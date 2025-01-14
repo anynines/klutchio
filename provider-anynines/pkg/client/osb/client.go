@@ -20,7 +20,7 @@ import (
 	"errors"
 	"strings"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 const (

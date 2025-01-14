@@ -26,9 +26,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	bindclient "github.com/anynines/klutch/bind/pkg/client/clientset/versioned"
-	bindinformers "github.com/anynines/klutch/bind/pkg/client/informers/externalversions"
-	"github.com/anynines/klutch/bind/pkg/konnector/options"
+	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
+	bindinformers "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions"
+	"github.com/anynines/klutchio/bind/pkg/konnector/options"
 )
 
 type Config struct {

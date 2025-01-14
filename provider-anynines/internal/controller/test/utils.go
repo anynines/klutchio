@@ -24,9 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 
-	sbv1 "github.com/anynines/klutch/provider-anynines/apis/servicebinding/v1"
-	dsv1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
+	sbv1 "github.com/anynines/klutchio/provider-anynines/apis/servicebinding/v1"
+	dsv1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 	"github.com/go-logr/logr/testr"
 	corev1 "k8s.io/api/core/v1"
 

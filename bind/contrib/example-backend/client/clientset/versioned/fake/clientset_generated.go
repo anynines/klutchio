@@ -25,9 +25,9 @@ import (
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
 
-	clientset "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned"
-	examplebackendv1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned/typed/examplebackend/v1alpha1"
-	fakeexamplebackendv1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned/typed/examplebackend/v1alpha1/fake"
+	clientset "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned"
+	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned/typed/examplebackend/v1alpha1"
+	fakeexamplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned/typed/examplebackend/v1alpha1/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.

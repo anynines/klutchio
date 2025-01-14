@@ -19,7 +19,7 @@ package fake
 import (
 	"sync"
 
-	backupmanager "github.com/anynines/klutch/clients/a9s-backup-manager"
+	backupmanager "github.com/anynines/klutchio/clients/a9s-backup-manager"
 	"k8s.io/utils/pointer"
 )
 

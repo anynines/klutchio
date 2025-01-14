@@ -15,20 +15,20 @@ Example:
 ## Background Reading
 
 Reading the
-[API specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md) is 
+[API specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md) is
 recommended before reading this documentation.
 
 ## API Fundamentals
 
 There are 7 operations in the API:
 
-1.  Getting a broker's 'catalog' of services: [`Client.GetCatalog`](#getting-a-brokers-catalog)
-2.  Provisioning a new instance of a service: [`Client.ProvisionInstance`](#provisioning-a-new-instance-of-a-service)
-3.  Updating properties of an instance: [`Client.UpdateInstance`](#updating-properties-of-an-instance)
-4.  Deprovisioning an instance: [`Client.DeprovisionInstance`](#deprovisioning-an-instance)
-5.  Checking the status of an asynchronous operation (provision, update, or deprovision) on an instance: [`Client.PollLastOperation`](#provisioning-a-new-instance-of-a-service)
-6.  Binding to an instance: [`Client.Bind`](#binding-to-an-instance)
-7.  Unbinding from an instance: [`Client.Unbind`](#unbinding-from-an-instance)
+1. Getting a broker's 'catalog' of services: [`Client.GetCatalog`](#getting-a-brokers-catalog)
+2. Provisioning a new instance of a service: [`Client.ProvisionInstance`](#provisioning-a-new-instance-of-a-service)
+3. Updating properties of an instance: [`Client.UpdateInstance`](#updating-properties-of-an-instance)
+4. Deprovisioning an instance: [`Client.DeprovisionInstance`](#deprovisioning-an-instance)
+5. Checking the status of an asynchronous operation (provision, update, or deprovision) on an instance: [`Client.PollLastOperation`](#provisioning-a-new-instance-of-a-service)
+6. Binding to an instance: [`Client.Bind`](#binding-to-an-instance)
+7. Unbinding from an instance: [`Client.Unbind`](#unbinding-from-an-instance)
 
 ### Getting a broker's catalog
 
@@ -38,19 +38,19 @@ catalog.
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func GetBrokerCatalog(URL string) (*osb.CatalogResponse, error) {
-	config := osb.DefaultClientConfiguration()
-	config.URL = URL
+ config := osb.DefaultClientConfiguration()
+ config.URL = URL
 
-	client, err := osb.NewClient(config)
-	if err != nil {
-		return nil, err
-	}
+ client, err := osb.NewClient(config)
+ if err != nil {
+  return nil, err
+ }
 
-	return client.GetCatalog()
+ return client.GetCatalog()
 }
 ```
 
@@ -72,48 +72,48 @@ Key points:
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func ProvisionService(client osb.Client, request osb.ProvisionRequest) (*osb.CatalogResponse, error) {
-	request := &ProvisionRequest{
-		InstanceID: "my-dbaas-service-instance",
+ request := &ProvisionRequest{
+  InstanceID: "my-dbaas-service-instance",
 
-		// Made up parameters for a hypothetical service
-		ServiceID: "dbaas-service",
-		PlanID:    "dbaas-gold-plan",
-		Parameters: map[string]interface{}{
-			"tablespace-page-cost":      100,
-			"tablespace-io-concurrency": 5,
-		},
+  // Made up parameters for a hypothetical service
+  ServiceID: "dbaas-service",
+  PlanID:    "dbaas-gold-plan",
+  Parameters: map[string]interface{}{
+   "tablespace-page-cost":      100,
+   "tablespace-io-concurrency": 5,
+  },
 
-		// Set the AcceptsIncomplete field to indicate that this client can
-		// support asynchronous operations (provision, update, deprovision).
-		AcceptsIncomplete: true,
-	}
+  // Set the AcceptsIncomplete field to indicate that this client can
+  // support asynchronous operations (provision, update, deprovision).
+  AcceptsIncomplete: true,
+ }
 
-	// ProvisionInstance returns a response from the broker for successful
-	// operations, or an error if the broker returned an error response or
-	// there was a problem communicating with the broker.
-	resp, err := client.ProvisionInstance(request)
-	if err != nil {
-		// Use the IsHTTPError method to test and convert errors from Brokers
-		// into the standard broker error type, allowing access to conventional
-		// broker-provided fields.
-		errHttp, isError := osb.IsHTTPError(err)
-		if isError {
-			// handle error response from broker
-		} else {
-			// handle errors communicating with the broker
-		}
-	}
+ // ProvisionInstance returns a response from the broker for successful
+ // operations, or an error if the broker returned an error response or
+ // there was a problem communicating with the broker.
+ resp, err := client.ProvisionInstance(request)
+ if err != nil {
+  // Use the IsHTTPError method to test and convert errors from Brokers
+  // into the standard broker error type, allowing access to conventional
+  // broker-provided fields.
+  errHttp, isError := osb.IsHTTPError(err)
+  if isError {
+   // handle error response from broker
+  } else {
+   // handle errors communicating with the broker
+  }
+ }
 
-	// The response.Async field indicates whether the broker is performing the
-	// provision concurrently.  See the LastOperation method for information
-	// about handling asynchronous operations.
-	if response.Async {
-		// handle asynchronous operation
-	}
+ // The response.Async field indicates whether the broker is performing the
+ // provision concurrently.  See the LastOperation method for information
+ // about handling asynchronous operations.
+ if response.Async {
+  // handle asynchronous operation
+ }
 }
 ```
 
@@ -139,44 +139,44 @@ Key points:
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func UpdateService(client osb.Client) {
-	newPlan := "dbaas-quadruple-plan",
+ newPlan := "dbaas-quadruple-plan",
 
-	request := &osb.UpdateInstanceRequest{
-		InstanceID:        "my-dbaas-service-instance",
-		ServiceID:         "dbaas-service",
-		AcceptsIncomplete: true,
+ request := &osb.UpdateInstanceRequest{
+  InstanceID:        "my-dbaas-service-instance",
+  ServiceID:         "dbaas-service",
+  AcceptsIncomplete: true,
 
-		// Passing the plan indicates that the user
-		// wants the plan to change.
-		PlanID: &newPlan,
+  // Passing the plan indicates that the user
+  // wants the plan to change.
+  PlanID: &newPlan,
 
-		// Passing a parameter indicates that the user
-		// wants the parameter value to change.
-		Parameters: map[string]interface{}{
-			"tablespace-page-cost":      50,
-			"tablespace-io-concurrency": 100,
-		},
-	}
+  // Passing a parameter indicates that the user
+  // wants the parameter value to change.
+  Parameters: map[string]interface{}{
+   "tablespace-page-cost":      50,
+   "tablespace-io-concurrency": 100,
+  },
+ }
 
-	response, err := client.UpdateInstance(request)
-	if err != nil {
-		httpErr, isError := osb.IsHTTPError(err)
-		if isError {
-			// handle errors from broker
-		} else {
-			// handle errors communicating with broker
-		}
-	}
+ response, err := client.UpdateInstance(request)
+ if err != nil {
+  httpErr, isError := osb.IsHTTPError(err)
+  if isError {
+   // handle errors from broker
+  } else {
+   // handle errors communicating with broker
+  }
+ }
 
-	if response.Async {
-		// handle asynchronous update operation
-	} else {
-		// handle successful update
-	}
+ if response.Async {
+  // handle asynchronous update operation
+ } else {
+  // handle successful update
+ }
 }
 ```
 
@@ -200,38 +200,38 @@ Key points:
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func DeprovisionService(client osb.Client) {
-	request := &osb.DeprovisionRequest{
-		InstanceID:        "my-dbaas-service-instance",
-		ServiceID:         "dbaas-service",
-		PlanID:            "dbaas-gold-plan",
-		AcceptsIncomplete: true,
-	}
+ request := &osb.DeprovisionRequest{
+  InstanceID:        "my-dbaas-service-instance",
+  ServiceID:         "dbaas-service",
+  PlanID:            "dbaas-gold-plan",
+  AcceptsIncomplete: true,
+ }
 
-	response, err := client.DeprovisionInstance(request)
-	if err != nil {
-		httpErr, isError := osb.IsHTTPError(err)
-		if isError {
-			// handle errors from broker
+ response, err := client.DeprovisionInstance(request)
+ if err != nil {
+  httpErr, isError := osb.IsHTTPError(err)
+  if isError {
+   // handle errors from broker
 
-			if osb.IsGoneError(httpErr) {
-				// A 'gone' status code means that the service instance
-				// doesn't exist.  This means there is no more work to do and
-				// should be equivalent to a success.
-			}
-		} else {
-			// handle errors communicating with broker
-		}
-	}
+   if osb.IsGoneError(httpErr) {
+    // A 'gone' status code means that the service instance
+    // doesn't exist.  This means there is no more work to do and
+    // should be equivalent to a success.
+   }
+  } else {
+   // handle errors communicating with broker
+  }
+ }
 
-	if response.Async {
-		// handle asynchronous deprovisions
-	} else {
-		// handle successful deprovision
-	}
+ if response.Async {
+  // handle asynchronous deprovisions
+ } else {
+  // handle successful deprovision
+ }
 }
 ```
 
@@ -246,41 +246,41 @@ check on the status of the operation.
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func PollServiceInstance(client osb.Client, deleting bool) error {
-	request := &osb.LastOperationRequest{
-		InstanceID: "my-dbaas-service-instance"
-		ServiceID:  "dbaas-service",
-		PlanID:     "dbaas-gold-plan",
+ request := &osb.LastOperationRequest{
+  InstanceID: "my-dbaas-service-instance"
+  ServiceID:  "dbaas-service",
+  PlanID:     "dbaas-gold-plan",
 
-		// Brokers may provide an identifying key for an asychronous operation.
-		OperationKey: osb.OperationKey("12345")
-	}
-	
-	response, err := client.PollLastOperation(request)
-	if err != nil {
-		// If the operation was for delete and we receive a http.StatusGone,
-		// this is considered a success as per the spec.
-		if osb.IsGoneError(err) && deleting {
-			// handle instances that we were deprovisioning and that are now
-			// gone
-		}
+  // Brokers may provide an identifying key for an asychronous operation.
+  OperationKey: osb.OperationKey("12345")
+ }
+ 
+ response, err := client.PollLastOperation(request)
+ if err != nil {
+  // If the operation was for delete and we receive a http.StatusGone,
+  // this is considered a success as per the spec.
+  if osb.IsGoneError(err) && deleting {
+   // handle instances that we were deprovisioning and that are now
+   // gone
+  }
 
-		// The broker returned an error.  While polling last operation, this
-		// represents an invalid response and callers should continue polling
-		// last operation.
-	}
+  // The broker returned an error.  While polling last operation, this
+  // represents an invalid response and callers should continue polling
+  // last operation.
+ }
 
-	switch response.State {
-	case osb.StateInProgress:
-		// The operation is still in progress
-	case osb.StateSucceeded:
-		// The operation succeeded
-	case osb.StateFailed:
-		// The operation failed.
-	}
+ switch response.State {
+ case osb.StateInProgress:
+  // The operation is still in progress
+ case osb.StateSucceeded:
+  // The operation succeeded
+ case osb.StateFailed:
+  // The operation failed.
+ }
 }
 
 ```
@@ -300,34 +300,34 @@ Key points:
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func BindToInstance(client osb.Client) {
-	request := &osb.BindRequest{
-		BindingID:  "binding-id",
-		InstanceID: "instance-id",
-		ServiceID:  "dbaas-service",
-		PlanID:     "dbaas-gold-plan",
+ request := &osb.BindRequest{
+  BindingID:  "binding-id",
+  InstanceID: "instance-id",
+  ServiceID:  "dbaas-service",
+  PlanID:     "dbaas-gold-plan",
 
-		// platforms might want to pass an identifier for applications here
-		AppGUID: "app-guid",
+  // platforms might want to pass an identifier for applications here
+  AppGUID: "app-guid",
 
-		// pass parameters here
-		Parameters: map[string]interface{}{},
-	}
+  // pass parameters here
+  Parameters: map[string]interface{}{},
+ }
 
-	response, err := brokerClient.Bind(request)
-	if err != nil {
-		httpErr, isError := osb.IsHTTPError(err)
-		if isError {
-			// handle errors from the broker
-		} else {
-			// handle errors communicating with the broker
-		}
-	}
+ response, err := brokerClient.Bind(request)
+ if err != nil {
+  httpErr, isError := osb.IsHTTPError(err)
+  if isError {
+   // handle errors from the broker
+  } else {
+   // handle errors communicating with the broker
+  }
+ }
 
-	// do something with the credentials
+ // do something with the credentials
 }
 ```
 
@@ -346,28 +346,28 @@ Key points:
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func UnbindFromInstance(client osb.Client) {
-	request := &osb.UnbindRequest{
-		BindingID:  "binding-id",
-		InstanceID: "instance-id",
-		ServiceID:  "dbaas-service",
-		PlanID:     "dbaas-gold-plan",
-		AppGUID: "app-guid",
-	}
+ request := &osb.UnbindRequest{
+  BindingID:  "binding-id",
+  InstanceID: "instance-id",
+  ServiceID:  "dbaas-service",
+  PlanID:     "dbaas-gold-plan",
+  AppGUID: "app-guid",
+ }
 
-	response, err := brokerClient.Unbind(request)
-	if err != nil {
-		httpErr, isError := osb.IsHTTPError(err)
-		if isError {
-			// handle errors from the broker
-		} else {
-			// handle errors communicating with the broker
-		}
-	}
+ response, err := brokerClient.Unbind(request)
+ if err != nil {
+  httpErr, isError := osb.IsHTTPError(err)
+  if isError {
+   // handle errors from the broker
+  } else {
+   // handle errors communicating with the broker
+  }
+ }
 
-	// handle successful unbind
+ // handle successful unbind
 }
 ```

@@ -28,10 +28,10 @@ import (
 	componentbaseversion "k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	conditionsapi "github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/util/conditions"
-	"github.com/anynines/klutch/bind/pkg/version"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/util/conditions"
+	"github.com/anynines/klutchio/bind/pkg/version"
 )
 
 type reconciler struct {

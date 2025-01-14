@@ -26,15 +26,15 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
-	"github.com/anynines/klutch/bind/contrib/example-backend/controllers/clusterbinding"
-	"github.com/anynines/klutch/bind/contrib/example-backend/controllers/serviceexport"
-	"github.com/anynines/klutch/bind/contrib/example-backend/controllers/serviceexportrequest"
-	"github.com/anynines/klutch/bind/contrib/example-backend/controllers/servicenamespace"
-	"github.com/anynines/klutch/bind/contrib/example-backend/deploy"
-	"github.com/anynines/klutch/bind/contrib/example-backend/exporttemplate"
-	examplehttp "github.com/anynines/klutch/bind/contrib/example-backend/http"
-	examplekube "github.com/anynines/klutch/bind/contrib/example-backend/kubernetes"
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/clusterbinding"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/serviceexport"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/serviceexportrequest"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/servicenamespace"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/deploy"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/exporttemplate"
+	examplehttp "github.com/anynines/klutchio/bind/contrib/example-backend/http"
+	examplekube "github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 type Server struct {
