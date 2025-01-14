@@ -29,14 +29,14 @@ image in our [image registry](https://gallery.ecr.aws/w5n9a2g2/klutch/provider-a
 
 ```bash
 kubectl patch providers/provider-anynines \
-  --type merge -p '{"spec":{"package":"public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.0"}}'
+  --type merge -p '{"spec":{"package":"public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.1"}}'
 ```
 
 2. Finally update anynines configuration package
 
 ```bash
 kubectl patch configurations/anynines-dataservices \
-  --type merge -p '{"spec":{"package":"public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.0"}}'
+  --type merge -p '{"spec":{"package":"public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.1"}}'
 ```
 
 ### Control Plane Cluster backend

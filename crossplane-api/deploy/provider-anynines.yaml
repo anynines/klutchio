@@ -3,7 +3,7 @@ kind: Provider
 metadata:
   name: provider-anynines
 spec:
-  package: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.0"
+  package: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.1"
   runtimeConfigRef:
     name: provider-anynines
 ---
@@ -18,10 +18,9 @@ spec:
       template:
         spec:
           containers:
-          - name: package-runtime
-            # Enable health checks
-            readinessProbe:
-              httpGet:
-                path: /healthz
-                port: 8081
-
+            - name: package-runtime
+              # Enable health checks
+              readinessProbe:
+                httpGet:
+                  path: /healthz
+                  port: 8081

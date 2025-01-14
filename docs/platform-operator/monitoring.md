@@ -18,7 +18,7 @@ condition of the installed crossplane providers:
 $ kubectl get providers
 NAME                                     INSTALLED   HEALTHY   PACKAGE                                                         AGE
 crossplane-contrib-provider-kubernetes   True        True      xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v0.9.0   118m
-provider-anynines                        True        True      public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.0       118m
+provider-anynines                        True        True      public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.1       118m
 ```
 
 If one of the underlying pods encounters an error and needs to be recreated, the HEALTHY condition
