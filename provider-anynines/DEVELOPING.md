@@ -19,7 +19,7 @@ Execute `make submodules` to initialize
 ```shell
 $ make submodules
 Submodule 'provider-anynines/build' (https://github.com/crossplane/build) registered for path 'build'
-Cloning into '<path to>/klutch/provider-anynines/build'...
+Cloning into '<path to>/klutchio/provider-anynines/build'...
 ```
 
 ## Test & Build
@@ -75,8 +75,8 @@ by simply deleting and recreating the corresponding object.
 
 The chance of such a collision however is extremely low. More information can be found in:
 
-- https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/identifiers.md
-- https://www.ietf.org/rfc/rfc4122.txt
+- <https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/identifiers.md>
+- <https://www.ietf.org/rfc/rfc4122.txt>
 
 [provider-dev]:
   https://github.com/crossplane/crossplane/blob/master/contributing/guide-provider-development.md
