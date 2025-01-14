@@ -77,7 +77,7 @@ checking out the tab "Image tags" for this image in our
 ### Example using kubectl
 
 ```bash
-kubectl set image --namespace kube-bind deployment/konnector konnector=public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.0
+kubectl set image --namespace kube-bind deployment/konnector konnector=public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.1
 ```
 
 ### Example using a manifest
@@ -107,7 +107,7 @@ spec:
       containers:
         - name: konnector
           # This image should point to the new version:
-          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.0
+          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.1
           env:
             - name: POD_NAME
               valueFrom:
