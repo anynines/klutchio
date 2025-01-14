@@ -2,11 +2,17 @@
 
 ## Unreleased
 
+## [1.3.0] - 2025-01-14
+
 ### Changed
 
-- updated naming conventions. `Consumer Cluster` is now `App Cluster` and `Management Cluster` is now `Control Plane Cluster`.
+- Renamed image repositories prefix from `public.ecr.aws/w5n9a2g2/anynines` to `public.ecr.aws/w5n9a2g2/klutch`.
 
-- renamed backend resources for bindings.
+- Removed unused resources.
+
+- Updated naming conventions. `Consumer Cluster` is now `App Cluster` and `Management Cluster` is now `Control Plane Cluster`.
+
+- Renamed backend resources for bindings.
   Changed the namespace used for bindings on the App Clusters from `kube-bind` to `klutch-bind`.
 
   This change automatically applies to new bindings.
@@ -25,6 +31,7 @@
 ## [1.0.0] - 2024-08-30
 
 ### Added
+
 - Crossplane Provider named `provider-anynines` for leveraging a9s Data Services.
 - Health checks and readinessProbe for ProviderConfigs.
 - Klunch-bind for cross-cluster service management.
