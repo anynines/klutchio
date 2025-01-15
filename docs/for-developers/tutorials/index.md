@@ -219,7 +219,7 @@ Checking Prerequisites...
 ...
 
 The following command will be executed for you:
-/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.0 --context kind-klutch-app
+/opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export --konnector-image public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.1 --context kind-klutch-app
 ```
 
 Next, a browser window will open for authentication. Use these demo credentials:

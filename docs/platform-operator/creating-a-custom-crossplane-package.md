@@ -31,7 +31,7 @@ registry of your choice, and deploy your changes to the control plane cluster by
 # Get the name of the configuration
 $ kubectl get configurations.pkg.crossplane.io
 NAME                             INSTALLED   HEALTHY   PACKAGE                                                AGE
-w5n9a2g2-anynines-dataservices   True        True      public.ecr.aws/w5n9a2g2/anynines/dataservices:v1.3.0   73d
+w5n9a2g2-anynines-dataservices   True        True      public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.1   3d
 
 # edit the configuration
 $ kubectl edit configurations.pkg.crossplane.io w5n9a2g2-anynines-dataservices
@@ -44,7 +44,7 @@ and then edit `spec.package` to the configuration package you have pushed to you
 
 To add a new API, you need to create a crossplane package with the API you want to add. As a
 starting point you can look into the crossplane documentation for Composite Resource Definitions,
-Compositions, and Package at (https://docs.crossplane.io/latest/concepts/).
+Compositions, and Package at (<https://docs.crossplane.io/latest/concepts/>).
 
 Once you have created your custom API and installed it on the Provider cluster, you can add it to
 Klutch by following the [steps for adding a custom api to klutch-bind](./adding-custom-service.md)

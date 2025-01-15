@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## [1.3.1] - 2025-01-14
+
+### Added
+
+- Added documentation for dynamic Kubernetes clients, providing guidance on usage and best practices.
+
+### Changed
+
+- Aligned PostgreSQL plan names with a9s-dataservices for improved consistency and integration.
+
+- Adjusted health check timeouts for provider-anynines to improve reliability and reduce errors.
+
+- Enhanced internal processes by updating the Makefile for optimized pipeline management.
+
+- Replaced native patch and transform functionality with composite functions from Crossplane, ensuring better modularity and maintainability.
+
 ## [1.3.0] - 2025-01-14
 
 ### Changed
@@ -34,7 +50,7 @@
 
 - Crossplane Provider named `provider-anynines` for leveraging a9s Data Services.
 - Health checks and readinessProbe for ProviderConfigs.
-- Klunch-bind for cross-cluster service management.
+- Klutch-bind for cross-cluster service management.
 - Crossplane APIs for a9s Data services (provider-anynines), a8s Data Services (provider-kubernetes) and AWS s3 buckets (provider-aws-s3).
 - Documentation content for the Docusaurus-powered Klutchio website.
 - End-to-end tests for Klutch.

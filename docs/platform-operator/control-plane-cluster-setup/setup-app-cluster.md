@@ -162,7 +162,7 @@ backend. To create this binding, execute the following commands:
 1. In the following line, replace `<backend-host>` with the hostname of the Klutch backend:
 
    ```bash
-   kubectl bind http://<backend-host>:443/export --konnector-image=public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.0
+   kubectl bind http://<backend-host>:443/export --konnector-image=public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.1
    ```
 
 2. Authenticate using provided URL and your OIDC credentials. Grant the OIDC client access in the
@@ -255,7 +255,7 @@ spec:
       containers:
         - name: konnector
           # Make sure to use the latest image version here:
-          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.0
+          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.1
           env:
             - name: POD_NAME
               valueFrom:

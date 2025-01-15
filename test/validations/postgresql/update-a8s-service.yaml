@@ -11,11 +11,11 @@ base:
       name: a8s-postgresql
 
 invalid_patches:
-- spec:
-    # Change to a different service
-    service: a9s-postgresql14
+  - spec:
+      # Change to a different service
+      service: a9s-postgresql14
 
 valid_patches:
-- spec:
-    # No change
-    service: a9s-postgresql13
+  - spec:
+      # No change
+      service: a9s-postgresql13

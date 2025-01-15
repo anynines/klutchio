@@ -6,45 +6,53 @@ spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
     kind: XServiceBinding
-  resources:
-    - name: a8s-servicebinding
-      base:
-        apiVersion: kubernetes.crossplane.io/v1alpha1
-        kind: Object
-        spec:
-          forProvider:
-            manifest:
-              apiVersion: servicebindings.anynines.com/v1beta3
-              kind: ServiceBinding
-          providerConfigRef:
-            name: kubernetes-provider
-      patches:
-        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-          toFieldPath: spec.forProvider.manifest.metadata.namespace
-        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-          toFieldPath: spec.forProvider.manifest.metadata.name
-        - fromFieldPath: spec.serviceInstanceType
-          toFieldPath: spec.forProvider.manifest.spec.instance.apiVersion
-          transforms:
-            - type: map
-              map:
-                postgresql: postgresql.anynines.com/v1beta3
-        - fromFieldPath: spec.serviceInstanceType
-          toFieldPath: spec.forProvider.manifest.spec.instance.kind
-          transforms:
-            - type: map
-              map:
-                postgresql: Postgresql
-        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-          toFieldPath: spec.forProvider.manifest.spec.instance.namespace
-        - fromFieldPath: spec.instanceRef
-          toFieldPath: spec.forProvider.manifest.spec.instance.name
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.manifest.status.implemented
-          toFieldPath: status.managed.implemented
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.manifest.status.secret.name
-          toFieldPath: status.managed.secret.name
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.manifest.status.secret.namespace
-          toFieldPath: status.managed.secret.namespace
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: a8s-servicebinding
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha1
+              kind: Object
+              spec:
+                forProvider:
+                  manifest:
+                    apiVersion: servicebindings.anynines.com/v1beta3
+                    kind: ServiceBinding
+                providerConfigRef:
+                  name: kubernetes-provider
+            patches:
+              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - fromFieldPath: spec.serviceInstanceType
+                toFieldPath: spec.forProvider.manifest.spec.instance.apiVersion
+                transforms:
+                  - type: map
+                    map:
+                      postgresql: postgresql.anynines.com/v1beta3
+              - fromFieldPath: spec.serviceInstanceType
+                toFieldPath: spec.forProvider.manifest.spec.instance.kind
+                transforms:
+                  - type: map
+                    map:
+                      postgresql: Postgresql
+              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+                toFieldPath: spec.forProvider.manifest.spec.instance.namespace
+              - fromFieldPath: spec.instanceRef
+                toFieldPath: spec.forProvider.manifest.spec.instance.name
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.manifest.status.implemented
+                toFieldPath: status.managed.implemented
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.manifest.status.secret.name
+                toFieldPath: status.managed.secret.name
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.manifest.status.secret.namespace
+                toFieldPath: status.managed.secret.namespace

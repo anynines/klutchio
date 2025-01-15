@@ -9,6 +9,7 @@ BUILDX_NAME := provider-builder
 
 PLATFORMS ?= linux_amd64 linux_arm64
 -include build/makelib/common.mk
+-include ci/common.mk
 
 # ====================================================================================
 # Setup Output
@@ -41,6 +42,7 @@ KIND_NODE_IMAGE_TAG ?= v1.23.4
 DOCKER_REGISTRY ?= crossplane
 IMAGES = $(PROJECT_NAME) 
 -include build/makelib/imagelight.mk
+-include ci/imagelight.mk
 
 fallthrough: submodules
 	@echo Initial setup complete. Running make again . . .
@@ -88,7 +90,7 @@ dev: $(KIND) $(KUBECTL)
 	@$(KIND) create cluster --name=$(PROJECT_NAME)-dev
 	@$(KUBECTL) cluster-info --context kind-$(PROJECT_NAME)-dev
 	@$(INFO) Installing Crossplane CRDs
-	@$(KUBECTL) apply -k https://github.com/crossplane/crossplane//cluster?ref=master
+	@$(KUBECTL) apply --server-side -k https://github.com/crossplane/crossplane//cluster?ref=master
 	@$(INFO) Installing Provider anynines CRDs
 	@$(KUBECTL) apply -R -f package/crds
 	@$(INFO) Starting Provider anynines controllers
@@ -138,6 +140,7 @@ provider.addtype: $(GOMPLATE)
 	@[ "${provider}" ] || ( echo "argument \"provider\" is not set"; exit 1 )
 	@[ "${group}" ] || ( echo "argument \"group\" is not set"; exit 1 )
 	@[ "${kind}" ] || ( echo "argument \"kind\" is not set"; exit 1 )
+	@PROVIDER=$(provider) GROUP=$(group) KIND=$(kind) APIVERSION=$(apiversion) PROJECT_REPO=$(PROJECT_REPO) ./hack/helpers/addtype.sh
 
 define CROSSPLANE_MAKE_HELP
 Crossplane Targets:

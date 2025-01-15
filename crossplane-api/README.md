@@ -285,7 +285,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.0
+crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.1
 ```
 
 2. Install files directly:
@@ -307,6 +307,21 @@ manages RBAC. However, if provider-anynines is not installed in the cluster,
 Crossplane won't be able to manage RBAC dynamically. As a result, Compositions
 will not be able to configure the provider-anynines managed resources due to
 authorization issues.
+
+### Install Crossplane Functions
+
+Additionally, we install composition functions. Composition functions (or simply “functions”) are Crossplane extensions that template Crossplane resources. Crossplane uses these functions to determine which resources to create when a composite resource (XR) is created. To verify that the composition functions are correctly installed, use the following command:
+
+```bash
+kubectl get function
+```
+
+Expected output:
+
+```text
+NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
+function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.1.4
+```
 
 #### Install ProviderConfig for provider-anynines
 
@@ -394,10 +409,10 @@ to refer to a valid service and plan.
 | postgresql-single-nano    | 1       | 3Gi         | 2   | 1 Gi   |
 | postgresql-single-small   | 1       | 10Gi        | 2   | 2 Gi   |
 | postgresql-single-medium  | 1       | 50Gi        | 2   | 4 Gi   |
-| postgresql-single-large   | 1       | 200Gi       | 4   | 16 Gi  |
-| postgresql-cluster-small  | 3       | 10Gi        | 2   | 2 Gi   |
-| postgresql-cluster-medium | 3       | 50Gi        | 2   | 4 Gi   |
-| postgresql-cluster-large  | 3       | 200Gi       | 4   | 16 Gi  |
+| postgresql-single-big   | 1       | 200Gi       | 4   | 16 Gi  |
+| postgresql-replicas-small  | 3       | 10Gi        | 2   | 2 Gi   |
+| postgresql-replicas-medium | 3       | 50Gi        | 2   | 4 Gi   |
+| postgresql-replicas-big  | 3       | 200Gi       | 4   | 16 Gi  |
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/postgresql-claim.yaml
@@ -560,23 +575,23 @@ field in [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossp
 Within this field you can see a list of supported Plans:
 
     ```yaml
-    plans: &pgPlans ["postgresql-cluster-small",
-        "postgresql-cluster-medium", "postgresql-cluster-large",
+    plans: &pgPlans ["postgresql-replicas-small",
+        "postgresql-replicas-medium", "postgresql-replicas-big",
         "postgresql-single-nano","postgresql-single-small",
-        "postgresql-single-medium", "postgresql-single-large"]
+        "postgresql-single-medium", "postgresql-single-big"]
     ```
 
 3. Update the "plans" list with the new Plan to be supported.
 
-    For example, suppose the new plan "postgresql-single-extralarge" is
+    For example, suppose the new plan "postgresql-single-huge" is
     introduced, so the list will be updated to:
 
     ```yaml
-    plans: &pgPlans ["postgresql-cluster-small",
-        "postgresql-cluster-medium", "postgresql-cluster-large",
+    plans: &pgPlans ["postgresql-replicas-small",
+        "postgresql-replicas-medium", "postgresql-replicas-big",
         "postgresql-single-nano","postgresql-single-small",
-        "postgresql-single-medium", "postgresql-single-large",
-        "postgresql-single-extralarge"]
+        "postgresql-single-medium", "postgresql-single-big",
+        "postgresql-single-huge"]
     ```
 
 4. Update the validation rules.
@@ -586,7 +601,7 @@ Within this field you can see a list of supported Plans:
     [definition.yaml](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/common/postgresql_definition.yaml#L30)
     file under the x-kubernetes-validations.rule field.
 
-    Continuing the example with the "postgresql-single-extralarge", the
+    Continuing the example with the "postgresql-single-huge", the
     validation in this case should be updated with the following rules that
     prohibit the transition from extralarge to smaller dataservice instances.
 
@@ -600,13 +615,13 @@ Within this field you can see a list of supported Plans:
     field in the [composition file](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml)
     should also be updated.
 
-    For the "postgresql-single-extralarge" example, we could add something
+    For the "postgresql-single-huge" example, we could add something
     similar to:
 
     ```yaml
-    volumeSizeExtraLarge: &volumeSizeExtraLarge "1000Gi"
-    CPUExtraLarge: &CPUExtraLarge "8"
-    MemoryExtraLarge: &MemoryExtraLarge "32Gi"
+    volumeSizeHuge: &volumeSizeHuge "1000Gi"
+    CPUHuge: &CPUHuge "8"
+    MemoryHuge: &MemoryHuge "32Gi"
     ```
 
 6. Finally, the [maps](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml#L53)
@@ -614,7 +629,7 @@ Within this field you can see a list of supported Plans:
     [composition file](https://github.com/anynines/klutchio/blob/main/crossplane-api/api/a8s/postgresql/composition.yaml)
     should also be updated.
 
-    For our favorite "postgresql-single-extralarge" example this could mean
+    For our favorite "postgresql-single-huge" example this could mean
     adding to the maps something like:
 
     ```yaml
@@ -624,8 +639,8 @@ Within this field you can see a list of supported Plans:
             nano: *volumeSizeNano
             small: *volumeSizeSmall
             medium: *volumeSizeMedium
-            large: *volumeSizeLarge
-            extralarge: *volumeSizeExtraLarge
+            big: *volumeSizeLarge
+            huge: *volumeSizeHuge
 
     ...
     - type: map
@@ -633,8 +648,8 @@ Within this field you can see a list of supported Plans:
             nano: *CPUNano
             small: *CPUSmall
             medium: *CPUMedium
-            large: *CPULarge
-            extralarge: *CPUExtraLarge
+            big: *CPULarge
+            huge: *CPUHuge
 
     ...
     - type: map
@@ -642,8 +657,8 @@ Within this field you can see a list of supported Plans:
             nano: *MemoryNano
             small: *MemorySmall
             medium: *MemoryMedium
-            large: *MemoryLarge
-            extralarge: *MemoryExtraLarge
+            big: *MemoryLarge
+            huge: *MemoryHuge
     ...
     ```
 

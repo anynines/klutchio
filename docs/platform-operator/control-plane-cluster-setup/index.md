@@ -246,7 +246,7 @@ spec:
       serviceAccountName: anynines-backend
       containers:
         - name: anynines-backend
-          image: public.ecr.aws/w5n9a2g2/klutch/example-backend:v1.3.0
+          image: public.ecr.aws/w5n9a2g2/klutch/example-backend:v1.3.1
           args:
             - --namespace-prefix=cluster
             - --pretty-name=anynines
