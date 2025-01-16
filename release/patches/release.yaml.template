@@ -35,4 +35,4 @@ spec:
     spec:
       containers:
       - name: anynines-backend
-        image: "public.ecr.aws/w5n9a2g2/klutch/klutchbind-backend:$KUBE_BIND_BACKEND_VERSION"
+        image: "public.ecr.aws/w5n9a2g2/klutch/example-backend:$KUBE_BIND_BACKEND_VERSION"

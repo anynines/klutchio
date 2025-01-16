@@ -224,7 +224,7 @@ The following command will be executed for you:
 
 Next, a browser window will open for authentication. Use these demo credentials:
 
-- Username: <admin@example.com>
+- Username: [admin@example.com](mailto:admin@example.com)
 - Password: password
 
 :::note
@@ -367,15 +367,15 @@ kubectl apply -f <(eval "echo \"$(cat external-pg-service.yaml)\"")
 
 #### Set up port forwarding in the Control Plane Cluster
 
-  a. Open a new terminal window.
+a. Open a new terminal window.
 
-  b. Switch the kubectl context to the Control Plane Cluster:
+b. Switch the kubectl context to the Control Plane Cluster:
 
   ```bash
   kubectl config use-context kind-klutch-control-plane
   ```
 
-  c. Set up port forwarding using one of the following methods:
+c. Set up port forwarding using one of the following methods:
 
 - Manual method (replace placeholders with actual values):
 
@@ -387,11 +387,11 @@ kubectl apply -f <(eval "echo \"$(cat external-pg-service.yaml)\"")
 
 - Automatic method:
 
-      ```bash
-      bash -c 'get_ip() { if [[ "$OSTYPE" == "darwin"* ]]; then ifconfig | grep "inet " | grep -v 127.0.0.1 | awk "{print \$2}" | head -n 1; else ip -4 addr show scope global | grep inet | awk "{print \$2}" | cut -d / -f 1 | head -n 1; fi; }; NAMESPACE=$(kubectl get namespaces -o name | sed "s/^namespace\///" | grep "^kube-bind.*default$"); IP=$(get_ip); [ -z "$NAMESPACE" ] || [ -z "$IP" ] && exit 1; exec kubectl -n "$NAMESPACE" port-forward svc/example-a8s-postgresql-master 5432:5432 --address "$IP"'
-      ```
+    ```bash
+    bash -c 'get_ip() { if [[ "$OSTYPE" == "darwin"* ]]; then ifconfig | grep "inet " | grep -v 127.0.0.1 | awk "{print \$2}" | head -n 1; else ip -4 addr show scope global | grep inet | awk "{print \$2}" | cut -d / -f 1 | head -n 1; fi; }; NAMESPACE=$(kubectl get namespaces -o name | sed "s/^namespace\///" | grep "^kube-bind.*default$"); IP=$(get_ip); [ -z "$NAMESPACE" ] || [ -z "$IP" ] && exit 1; exec kubectl -n "$NAMESPACE" port-forward svc/example-a8s-postgresql-master 5432:5432 --address "$IP"'
+    ```
 
-  d. Leave this terminal window running to maintain the port forwarding.
+d. Leave this terminal window running to maintain the port forwarding.
 
 ### 3.4 Deploy a Blogpost Application
 
@@ -480,7 +480,7 @@ Set up port forwarding:
 kubectl port-forward svc/demo-app 3000:3000
 ```
 
-Open your web browser and navigate to <http://localhost:3000> to access the blogpost application. You should now see the
+Open your web browser and navigate to [http://localhost:3000](http://localhost:3000) to access the blogpost application. You should now see the
 blogpost application interface. :tada:
 
 ![Blog application](./blogpost_app_ui.png)
