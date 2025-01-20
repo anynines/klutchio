@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -262,12 +263,44 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 	return instances.ToServiceInstance(sb.Name)
 }
 
-// initializeServiceBindingStatus initializes InstanceID, ServiceID and PlanID in the status
-// if not set.
+// GetServiceBindingSecret retrieves the servicebinding secret with postfix '-creds'.
+func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBinding) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+
+	err := c.kube.Get(ctx, types.NamespacedName{
+		Name:      sb.Name + "-creds",
+		Namespace: sb.Labels[constants.LabelKeyClaimNamespace],
+	}, secret)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get ServiceBinding secret: %w",
+			err)
+	}
+
+	return secret, nil
+}
+
+// initializeServiceBindingStatus initializes InstanceID, ServiceID, PlanID and ConnectionDetails
+// in the status if not set.
 func (c *external) initializeServiceBindingStatus(ctx context.Context, sb *v1.ServiceBinding) error {
-	if !sb.Status.AtProvider.HasMissingFields() {
+	if !sb.Status.AtProvider.HasMissingFields() &&
+		!sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
 		return nil
 	}
+
+	// Populate ConnectionDetails
+	if sb.Annotations[AnnotationKeyServiceBindingCreated] == "true" {
+		secret, err := c.GetServiceBindingSecret(ctx, *sb)
+		if err != nil {
+			return err
+		}
+
+		sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
+		sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
+	} else if !sb.Status.AtProvider.HasMissingFields() {
+		return nil
+	}
+
 	serviceInstance, err := c.GetServiceInstanceManagedResource(ctx, *sb)
 	if err != nil {
 		return err

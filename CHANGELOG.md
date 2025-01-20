@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Added HostURL and Port into ServiceBinding status.
+
 ## [1.3.1] - 2025-01-14
 
 ### Added

@@ -323,6 +323,19 @@ spec:
                 description: ServiceBindingObservation are the observable fields of
                   a ServiceBinding.
                 properties:
+                  connectionDetails:
+                    description: ConnectionDetails is a struct that contains the network
+                      details of the data service instance.
+                    properties:
+                      hostURL:
+                        description: HostURL is the URL used to connect with the data
+                          service instance.
+                        type: string
+                      port:
+                        description: Port is the Port used to connect with the data
+                          service instance.
+                        type: string
+                    type: object
                   instanceId:
                     description: InstanceID is the ID of the data service instance
                       to bind.

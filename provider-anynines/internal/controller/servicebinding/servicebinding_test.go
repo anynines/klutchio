@@ -88,6 +88,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -109,6 +111,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
 				),
 			),
 		},
@@ -121,6 +125,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 			),
 			expectedExternalObservation: managed.ExternalObservation{
@@ -137,6 +143,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -165,6 +173,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 			),
 			expectedExternalObservation: managed.ExternalObservation{
@@ -191,6 +201,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 				withAtProvider("Pending", 0),
 			),
@@ -218,6 +230,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 				withAtProvider("Pending", 0),
 			),
@@ -244,7 +258,13 @@ func TestObserve(t *testing.T) {
 					AcceptsIncomplete: false,
 				}),
 				afterBindingCreation(),
-				initializeSBStatus("6e2c036c-254f-11ee-be56-0242ac120002", "63d05ec8-254e-11ee-be56-0242ac120002", "76c0089e-254e-11ee-be56-0242ac120002"),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
+				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
 			),
@@ -274,6 +294,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -299,7 +321,13 @@ func TestObserve(t *testing.T) {
 					AcceptsIncomplete: false,
 				}),
 				afterBindingCreation(),
-				initializeSBStatus("6e2c036c-254f-11ee-be56-0242ac120002", "63d05ec8-254e-11ee-be56-0242ac120002", "76c0089e-254e-11ee-be56-0242ac120002"),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
+				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
 			),
@@ -331,6 +359,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 				withAtProvider("Created", 0),
 				deletionTimestamp(),
@@ -358,7 +388,13 @@ func TestObserve(t *testing.T) {
 					AcceptsIncomplete: false,
 				}),
 				afterBindingCreation(),
-				initializeSBStatus("6e2c036c-254f-11ee-be56-0242ac120002", "63d05ec8-254e-11ee-be56-0242ac120002", "76c0089e-254e-11ee-be56-0242ac120002"),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
+				),
 				deletionTimestamp(),
 				withConditions(xpv1.Deleting()),
 				withAtProvider("Deleting", 0),
@@ -388,6 +424,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -415,7 +453,13 @@ func TestObserve(t *testing.T) {
 					AcceptsIncomplete: false,
 				}),
 				afterBindingCreation(),
-				initializeSBStatus("6e2c036c-254f-11ee-be56-0242ac120002", "63d05ec8-254e-11ee-be56-0242ac120002", "76c0089e-254e-11ee-be56-0242ac120002"),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
+				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
 			),
@@ -562,6 +606,99 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"",
+					"",
+					"",
+				),
+			),
+		},
+		"status_connection_details_not_initialized": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "postgres-1",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-asty-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("host", "test.URL.com"),
+					a9stest.WithKey("port", "5432"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
+				),
+			),
+		},
+		"status_connection_details_not_initialized_secret_not_found": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "postgres-1",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			getInstancesReaction: &GetInstancesReaction{
+				Error: fmt.Errorf("Internal error in provider"),
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
 				),
 			),
 		},
@@ -588,6 +725,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
 				),
 			),
 		},
@@ -612,6 +751,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -643,6 +784,8 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120003",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test.URL.com",
+					"5432",
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -726,6 +869,8 @@ func TestObserveReturnsError(t *testing.T) {
 			"6e2c036c-254f-11ee-be56-0242ac120002",
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
+			"test.URL.com",
+			"5432",
 		),
 	)
 	getInstancesReaction := &GetInstancesReaction{
@@ -753,7 +898,13 @@ func TestObserveReturnsError(t *testing.T) {
 	expectedServiceBinding := serviceBinding(
 		withServiceBindingParameters(defaultBindingParameters),
 		afterBindingCreation(),
-		initializeSBStatus("6e2c036c-254f-11ee-be56-0242ac120002", "63d05ec8-254e-11ee-be56-0242ac120002", "76c0089e-254e-11ee-be56-0242ac120002"),
+		initializeSBStatus(
+			"6e2c036c-254f-11ee-be56-0242ac120002",
+			"63d05ec8-254e-11ee-be56-0242ac120002",
+			"76c0089e-254e-11ee-be56-0242ac120002",
+			"test.URL.com",
+			"5432",
+		),
 	)
 
 	fakeOSB := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
@@ -870,6 +1021,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -912,6 +1065,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 			},
@@ -924,6 +1079,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1002,6 +1159,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 			},
@@ -1014,6 +1173,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1052,6 +1213,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 			},
@@ -1064,6 +1227,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1104,6 +1269,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 			},
@@ -1116,6 +1283,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1194,6 +1363,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 			},
@@ -1206,6 +1377,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1280,6 +1453,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 			},
@@ -1292,6 +1467,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1334,6 +1511,8 @@ func TestCreate(t *testing.T) {
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 			},
@@ -1346,6 +1525,8 @@ func TestCreate(t *testing.T) {
 						"postgres-1-id",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
+						"",
+						"",
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1428,6 +1609,8 @@ func TestDeleteHappyPath(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
 				),
 			),
 			unbindResponse: &osbclient.UnbindResponse{},
@@ -1447,6 +1630,8 @@ func TestDeleteHappyPath(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
 				),
 			),
 			unbindResponse: &osbclient.UnbindResponse{
@@ -1468,6 +1653,8 @@ func TestDeleteHappyPath(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
 				),
 			),
 			unbindResponse: &osbclient.UnbindResponse{
@@ -1547,6 +1734,8 @@ func TestDeleteClientErr(t *testing.T) {
 			"6e2c036c-254f-11ee-be56-0242ac120002",
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
+			"test.URL.com",
+			"5432",
 		),
 	)
 
@@ -1666,11 +1855,13 @@ func afterBindingCreation() func(*v1.ServiceBinding) {
 	}
 }
 
-func initializeSBStatus(instanceID, planID, serviceID string) func(*v1.ServiceBinding) {
+func initializeSBStatus(instanceID, planID, serviceID, hostURL, port string) func(*v1.ServiceBinding) {
 	return func(sb *v1.ServiceBinding) {
 		sb.Status.AtProvider.InstanceID = instanceID
 		sb.Status.AtProvider.PlanID = planID
 		sb.Status.AtProvider.ServiceID = serviceID
+		sb.Status.AtProvider.ConnectionDetails.HostURL = hostURL
+		sb.Status.AtProvider.ConnectionDetails.Port = port
 	}
 }
 
@@ -1759,7 +1950,7 @@ func withStatusInstanceID(id string) ServiceInstanceOption {
 
 func newKubeMock(serviceInstanceObject runtime.Object, otherResources []client.Object) client.Client {
 	sc := runtime.NewScheme()
-	sc.AddKnownTypes(dsv1.SchemeGroupVersion, &dsv1.ServiceInstance{}, &dsv1.ServiceInstanceList{})
+	sc.AddKnownTypes(dsv1.SchemeGroupVersion, &dsv1.ServiceInstance{}, &dsv1.ServiceInstanceList{}, &corev1.Secret{})
 
 	objs := make([]runtime.Object, len(otherResources)+1) // change to appease the linter
 	objs[0] = serviceInstanceObject
