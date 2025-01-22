@@ -268,7 +268,7 @@ func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBind
 	secret := &corev1.Secret{}
 
 	err := c.kube.Get(ctx, types.NamespacedName{
-		Name:      sb.Name + "-creds",
+		Name:      sb.Labels[constants.LabelKeyClaimName] + "-creds",
 		Namespace: sb.Labels[constants.LabelKeyClaimNamespace],
 	}, secret)
 	if err != nil {
@@ -280,8 +280,7 @@ func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBind
 	return secret, nil
 }
 
-// initializeServiceBindingStatus initializes InstanceID, ServiceID, PlanID and ConnectionDetails
-// in the status if not set.
+// initializeServiceBindingStatus initializes the status of ServiceBinding.
 func (c *external) initializeServiceBindingStatus(ctx context.Context, sb *v1.ServiceBinding) error {
 	if !sb.Status.AtProvider.HasMissingFields() &&
 		!sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
@@ -290,29 +289,17 @@ func (c *external) initializeServiceBindingStatus(ctx context.Context, sb *v1.Se
 
 	// Populate ConnectionDetails
 	if sb.Annotations[AnnotationKeyServiceBindingCreated] == "true" {
-		secret, err := c.GetServiceBindingSecret(ctx, *sb)
+		err := c.initializeConnectionDetails(ctx, sb)
 		if err != nil {
 			return err
 		}
-
-		sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
-		sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
 	} else if !sb.Status.AtProvider.HasMissingFields() {
 		return nil
 	}
 
-	serviceInstance, err := c.GetServiceInstanceManagedResource(ctx, *sb)
+	err := c.initializeInstanceFields(ctx, sb)
 	if err != nil {
 		return err
-	}
-
-	sb.Status.AtProvider.InstanceID = serviceInstance.Status.AtProvider.InstanceID
-	sb.Status.AtProvider.ServiceID = serviceInstance.Status.AtProvider.ServiceID
-	sb.Status.AtProvider.PlanID = serviceInstance.Status.AtProvider.PlanID
-
-	// Validate status
-	if sb.Status.AtProvider.HasMissingFields() {
-		return errInstanceNotReady
 	}
 
 	return errServiceBindingIsUnset
@@ -373,6 +360,45 @@ func getInstanceCredentials(instance osbclient.GetInstanceResponse, sb *v1.Servi
 			return &credential
 		}
 	}
+	return nil
+}
+
+// initializeConnectionDetails populates the servicebinding status with connection details
+// mainly HostURl and Port.
+func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.ServiceBinding) error {
+	secret, err := c.GetServiceBindingSecret(ctx, *sb)
+	if err != nil {
+		return err
+	}
+
+	sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
+	sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
+
+	// Validate status
+	if sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
+		return errInstanceNotReady
+	}
+
+	return nil
+}
+
+// initializeInstanceFields populates the servicebinding status with service instance
+// details like InstanceID, ServiceID and PlanID.
+func (c external) initializeInstanceFields(ctx context.Context, sb *v1.ServiceBinding) error {
+	serviceInstance, err := c.GetServiceInstanceManagedResource(ctx, *sb)
+	if err != nil {
+		return err
+	}
+
+	sb.Status.AtProvider.InstanceID = serviceInstance.Status.AtProvider.InstanceID
+	sb.Status.AtProvider.ServiceID = serviceInstance.Status.AtProvider.ServiceID
+	sb.Status.AtProvider.PlanID = serviceInstance.Status.AtProvider.PlanID
+
+	// Validate status
+	if sb.Status.AtProvider.HasMissingFields() {
+		return errInstanceNotReady
+	}
+
 	return nil
 }
 

@@ -639,7 +639,7 @@ func TestObserve(t *testing.T) {
 				),
 			),
 			otherResources: []client.Object{
-				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-asty-creds"),
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
 					a9stest.Namespace[corev1.Secret]("test"),
 					a9stest.WithKey("host", "test.URL.com"),
 					a9stest.WithKey("port", "5432"),

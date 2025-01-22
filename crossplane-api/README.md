@@ -233,8 +233,6 @@ ssh -L 8988:$BACKUP_MANAGER_IP:3000 aws-s1-inception -o "ServerAliveInterval 30"
 
 ### Install crossplane providers
 
-The whole package can either installed via kustomize or by manually applying each yaml file.
-
 #### Kustomize
 
 ```bash
@@ -308,7 +306,7 @@ Crossplane won't be able to manage RBAC dynamically. As a result, Compositions
 will not be able to configure the provider-anynines managed resources due to
 authorization issues.
 
-### Install Crossplane Functions
+#### Install Crossplane Functions
 
 Additionally, we install composition functions. Composition functions (or simply “functions”) are Crossplane extensions that template Crossplane resources. Crossplane uses these functions to determine which resources to create when a composite resource (XR) is created. To verify that the composition functions are correctly installed, use the following command:
 
@@ -321,6 +319,14 @@ Expected output:
 ```text
 NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
 function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.1.4
+```
+
+The whole package can either installed via kustomize or by manually applying each yaml file.
+
+##### Manual Installation
+
+```bash
+kubectl create -f ./crossplane-api/deploy/functions/function-patch-and-transform.yaml
 ```
 
 #### Install ProviderConfig for provider-anynines

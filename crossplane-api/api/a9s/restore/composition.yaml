@@ -21,9 +21,9 @@ spec:
               kind: Restore
             patches:
               - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-                toFieldPath: spec.forProvider.manifest.metadata.namespace
+                toFieldPath: metadata.labels[crossplane.io/claim-namespace]
               - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-                toFieldPath: spec.forProvider.manifest.metadata.name
+                toFieldPath: metadata.labels[crossplane.io/claim-name]
               - fromFieldPath: spec.backupRef
                 toFieldPath: spec.forProvider.backupName
               - fromFieldPath: spec.serviceInstanceType
