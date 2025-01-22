@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Added `HostURL` and `Port` fields to the `ServiceBinding` status of `provider-anynines` managed resources.
+
+### Changed
+
+- Fix composition resources in './crossplane-api' to use new mapping paths.
+
 ## [1.3.1] - 2025-01-14
 
 ### Added

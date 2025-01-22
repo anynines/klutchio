@@ -104,6 +104,18 @@ type ServiceBindingObservation struct {
 
 	// ServiceID is the Service ID of the data service instance.
 	ServiceID string `json:"serviceID,omitempty"`
+
+	// ConnectionDetails is a struct that contains the network details of the data service instance.
+	ConnectionDetails ConnectionDetails `json:"connectionDetails,omitempty"`
+}
+
+// ConnectionDetails contains the network details required for connecting to the data service instance.
+type ConnectionDetails struct {
+	// HostURL is the URL used to connect with the data service instance.
+	HostURL string `json:"hostURL,omitempty"`
+
+	// Port is the Port used to connect with the data service instance.
+	Port string `json:"port,omitempty"`
 }
 
 // A ServiceBindingSpec defines the desired state of a ServiceBinding.
@@ -161,6 +173,11 @@ func (sbo *ServiceBindingObservation) HasMissingFields() bool {
 	return sbo.InstanceID == "" ||
 		sbo.ServiceID == "" ||
 		sbo.PlanID == ""
+}
+
+func (sbo *ConnectionDetails) HasMissingFields() bool {
+	return sbo.HostURL == "" ||
+		sbo.Port == ""
 }
 
 func (sb *ServiceBinding) SetDeletionStatusIfNotDeleted(status string) {
