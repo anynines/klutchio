@@ -31,7 +31,7 @@ registry of your choice, and deploy your changes to the control plane cluster by
 # Get the name of the configuration
 $ kubectl get configurations.pkg.crossplane.io
 NAME                             INSTALLED   HEALTHY   PACKAGE                                                AGE
-w5n9a2g2-anynines-dataservices   True        True      public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.1     3d
+w5n9a2g2-anynines-dataservices   True        True      public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.2     3d
 
 # edit the configuration
 $ kubectl edit configurations.pkg.crossplane.io w5n9a2g2-anynines-dataservices

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [1.3.2] - 2025-01-23
+
 ### Added
 
 - Added `HostURL` and `Port` fields to the `ServiceBinding` status of `provider-anynines` managed resources.
