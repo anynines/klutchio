@@ -20,7 +20,7 @@ spec:
       containers:
         - name: konnector
           # This image should point to the new version:
-          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.1
+          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.2
           env:
             - name: POD_NAME
               valueFrom:
