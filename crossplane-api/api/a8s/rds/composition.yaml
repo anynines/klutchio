@@ -1,0 +1,42 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: a8s-rds-instance
+spec:
+  compositeTypeRef:
+    apiVersion: anynines.com/v1
+    kind: XRDSInstance
+  resources:
+    - name: a8s-rds-instance
+      base:
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: Instance
+        spec:
+          forProvider:
+            allocatedStorage: 20
+            engine: "postgres"
+            identifier: "test-rds-ident"
+            instanceClass: "db.t3.micro"
+            manageMasterUserPassword: true
+            region: "eu-central-1"
+            skipFinalSnapshot: true
+            username: adminuser
+          providerConfigRef:
+            name: aws-rds-provider
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: "spec.allocatedStorage"
+          toFieldPath: "spec.forProvider.allocatedStorage"
+        - type: FromCompositeFieldPath
+          fromFieldPath: "spec.engine"
+          toFieldPath: "spec.forProvider.engine"
+        - type: FromCompositeFieldPath
+          fromFieldPath: "spec.instanceClass"
+          toFieldPath: "spec.forProvider.instanceClass"
+        - type: FromCompositeFieldPath
+          fromFieldPath: "spec.region"
+          toFieldPath: "spec.forProvider.region"
+        - type: FromCompositeFieldPath
+          fromFieldPath: "spec.username"
+          toFieldPath: "spec.forProvider.username"
+        

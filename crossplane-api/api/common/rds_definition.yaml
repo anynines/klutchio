@@ -1,0 +1,58 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xrdsinstances.anynines.com
+spec:
+  group: anynines.com
+  names:
+    kind: XRDSInstance
+    plural: xrdsinstances
+  claimNames:
+    kind: RDSInstance
+    plural: rdsinstances
+  defaultCompositionRef:
+    name: a8s-rdsinstance
+  defaultCompositeDeletePolicy: Foreground
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        supported:
+          - region: &region ["eu-central-1", "us-east-1"]
+        properties:
+          spec:
+            type: object
+            properties:
+              allocatedStorage:
+                description: |
+                    Specifies the amount of storage in gibibytes during the creation of the instance.
+                type: integer
+              engine:
+                description: The database engine to use for the instance
+                type: string
+              instanceClass:
+                description: The size of the RDS instance
+                type: string
+              region:
+                description: |
+                    The region the rds instance will be deployed to
+                type: string
+                enum: *region
+              username:
+                description: The username for the admin user of the instance
+                type: string
+            required:
+              - allocatedStorage
+              - engine
+              - instanceClass
+              - region
+              - username
+          status:
+            type: object
+            properties:
+              managed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true

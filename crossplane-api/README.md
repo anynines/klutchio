@@ -516,6 +516,104 @@ you can restore a PostgreSQL Backup with the following command:
 kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore-claim.yaml
 ```
 
+## Usage - aws providers
+
+The aws providers require the helm and crossplane pre-requisites in order to be deployed
+
+### AWS Access
+
+Some of the pipelines require access to AWS EKS in order to be able to create clusters for testing
+purposes. For these pipelines please apply a manifest using the following template:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-secret
+  namespace: crossplane-system
+type: Opaque
+stringData:
+  creds: |-
+    [default]
+    AWS_ACCESS_KEY_ID: #<AWS_ACCESS_KEY_ID>
+    AWS_SECRET_ACCESS_KEY: #<AWS_SECRET_ACCESS_KEY>
+  config: |-
+    [default]
+    AWS_DEFAULT_REGION: eu-central-1
+```
+
+### Using aws providers
+
+The providers can be run by applying the provider file
+
+```bash
+kubectl apply -f ./crossplane-api/deploy/provider-aws.yaml
+```
+
+Verify the providers were created successfully. The provider you want to use should be created and upboard-provider-family-aws should also be installed
+
+```bash
+kubectl get providers
+```
+
+Apply the provider config
+```bash
+kubectl apply -f ./crossplane-api/deploy/provider-aws-config.yaml
+```
+
+### Managing an s3 bucket
+
+To create an s3 bucket, use the example object store yaml. This generates a hash for the name
+
+```bash
+kubectl create -f ./crossplane-api/examples/a8s/objectstore-claim.yaml
+```
+
+Check that the bucket was created successfully
+```bash
+kubectl get buckets
+```
+
+To delete the s3 bucket:
+
+```bash
+kubectl delete bucket <bucketname>
+```
+
+### Creating an s3 bucket policy
+
+To add an s3 bucket policy as a service binding, use the example s3 service binding claim.
+Make sure to update the claim with the bucket name and the iam role arn.
+
+```bash
+kubectl apply -f ./crossplane-api/examples/a8s/s3-servicebinding-claim.yaml
+```
+
+To remove the service binding
+
+```bash
+kubectl delete servicebinding/example-a8s-s3
+```
+
+### Managing an rds instance
+
+To create an rds instance, use the example object store yaml. This generates a hash for the name
+
+```bash
+kubectl create -f ./crossplane-api/examples/a8s/rds-claim.yaml
+```
+
+Check that the rds instance was created successfully
+```bash
+kubectl get rdsinstances
+```
+
+To delete the rds instance:
+
+```bash
+kubectl delete rdsinstances <instancename>
+```
+
 ## Update or Add a Service or Plan in a8s
 
 In case of a Service or Plan is changed or a new one is added, it is essential

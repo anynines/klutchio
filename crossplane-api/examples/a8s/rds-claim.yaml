@@ -1,0 +1,12 @@
+apiVersion: anynines.com/v1
+kind: RDSInstance
+metadata:
+  name: test-rds-instance
+spec:
+  allocatedStorage: 10
+  engine: "postgres"
+  instanceClass: "db.t3.micro"
+  region: "us-east-1"
+  username: a8s-adminuser
+  compositionRef:
+    name: a8s-rds-instance
