@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: demo-app
-          image: anyninesgmbh/a9s-postgresql-app:1.1.0
+          image: anyninesgmbh/a9s-postgresql-app:1.2.0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -27,19 +27,19 @@ spec:
             - name: "POSTGRESQL_USERNAME"
               valueFrom:
                 secretKeyRef:
-                  name: example-a8s-postgresql-service-binding 
+                  name: example-a8s-postgresql-service-binding
                   key: username
             - name: "POSTGRESQL_PASSWORD"
               valueFrom:
                 secretKeyRef:
-                  name: example-a8s-postgresql-service-binding 
+                  name: example-a8s-postgresql-service-binding
                   key: password
             - name: "POSTGRESQL_PORT"
               value: "5432"
             - name: "POSTGRESQL_DATABASE"
               valueFrom:
                 secretKeyRef:
-                  name: example-a8s-postgresql-service-binding 
+                  name: example-a8s-postgresql-service-binding
                   key: database
             - name: "POSTGRESQL_SSLMODE"
               value: "disable"
@@ -54,6 +54,6 @@ metadata:
   name: demo-app
 spec:
   selector:
-      app: demo-app
+    app: demo-app
   ports:
-  - port: 3000
+    - port: 3000
