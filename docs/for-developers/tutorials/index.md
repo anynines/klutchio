@@ -420,7 +420,7 @@ spec:
     spec:
       containers:
         - name: demo-app
-          image: anyninesgmbh/a9s-postgresql-app:1.1.0
+          image: anyninesgmbh/a9s-postgresql-app:1.2.0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
