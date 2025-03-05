@@ -11,7 +11,7 @@ helm install crossplane \
 --namespace crossplane-system \
 --create-namespace crossplane-stable/crossplane \
 --set args='{"--enable-ssa-claims"}' \
---version 1.17.1
+--version 1.19.0
 
 
 # Check if Crossplane developments are ready

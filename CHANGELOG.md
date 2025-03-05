@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Chores
+
+- Upgraded Crossplane to version [v1.19.0](https://docs.crossplane.io/v1.19)
+- Updated crossplane functions
+  - `function-patch-and-transform` upgraded to v0.8.2
+
 ## [1.3.2] - 2025-01-23
 
 ### Added

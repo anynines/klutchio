@@ -8,6 +8,7 @@ The XRDs under test can be found in `crossplane-api/api`.
 ### Host prerequites
 
 The following tools are needed for the steps below:
+
 - kind or minikube
 - [Helm](https://helm.sh/docs/intro/install/), for installing the crossplane helm chart
 - [yq](https://github.com/mikefarah/yq), for processing YAML files in shell scripts
@@ -15,15 +16,17 @@ The following tools are needed for the steps below:
 ### Cluster Prerequisites
 
 Things that must be installed on the cluster:
+
 - crossplane
 - the anynines compositions & XRDs
 
 It's not necessary to run any crossplane provider.
 
 Copy & paste instructions for the above are:
+
 ```
 helm repo add crossplane-stable https://charts.crossplane.io/stable && helm repo update
-helm install crossplane --namespace crossplane-system --create-namespace crossplane-stable/crossplane --version 1.17.1
+helm install crossplane --namespace crossplane-system --create-namespace crossplane-stable/crossplane --version 1.19.0
 kubectl -n crossplane-system wait --for=condition=available deployment/crossplane deployment/crossplane-rbac-manager
 kubectl apply --recursive -f ./crossplane-api/api/common
 kubectl apply --recursive -f ./crossplane-api/api/a8s
@@ -33,6 +36,7 @@ kubectl apply --recursive -f ./crossplane-api/api/a9s
 ## Running the tests
 
 To run all of the tests, use:
+
 ```
 ./test/validations/run-tests.sh
 ```
@@ -67,6 +71,7 @@ These tests check updating an existing resource.
 Any file that matches the pattern `*/update-*.yaml` is considered an "update" test.
 
 Update tests follow this template:
+
 ```yaml
 # `base` defines the object state before any updates. The manifest must be valid, as it will actually be applied
 # to the test cluster.
