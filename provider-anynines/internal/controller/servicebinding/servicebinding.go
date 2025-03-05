@@ -82,6 +82,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		resource.ManagedKind(v1.ServiceBindingGroupVersionKind),
 		managed.WithExternalConnecter(logConnec),
 		managed.WithLogger(log),
+		managed.WithPollInterval(o.PollInterval),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		managed.WithConnectionPublishers(cps...))
 
