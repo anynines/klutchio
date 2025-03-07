@@ -984,7 +984,7 @@ func TestDelete(t *testing.T) {
 			} else {
 				inputMR = tc.args.managedResource
 			}
-			err = e.Delete(context.Background(), inputMR)
+			_, err = e.Delete(context.Background(), inputMR)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
 			}

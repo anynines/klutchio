@@ -914,7 +914,7 @@ func TestDelete(t *testing.T) {
 			}
 
 			// invoke the method under test
-			err := e.Delete(context.Background(), inputMR)
+			_, err := e.Delete(context.Background(), inputMR)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\n%s\nDelete(...): -want error, +got error:\n%s", t.Name(), diff)
 			}

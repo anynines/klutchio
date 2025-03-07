@@ -315,10 +315,10 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	sb, err := getServiceBindingFromResource(mg)
 	if err != nil {
-		return err
+		return managed.ExternalDelete{}, err
 	}
 
 	sb.Status.SetConditions(xpv1.Deleting())
@@ -334,9 +334,14 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	// TODO: handle response from client
 	_, err = c.service.Unbind(deleteReq)
 	if err != nil {
-		return errDeleteServiceBinding.WithCause(err)
+		return managed.ExternalDelete{}, errDeleteServiceBinding.WithCause(err)
 	}
 
+	return managed.ExternalDelete{}, nil
+}
+
+func (c *external) Disconnect(ctx context.Context) error {
+	// Unimplemented, required by newer versions of crossplane-runtime
 	return nil
 }
 

@@ -1693,7 +1693,7 @@ func TestDeleteHappyPath(t *testing.T) {
 				Logger: a9stest.TestLogger(t),
 			}
 
-			err := external.Delete(context.TODO(), testCase.serviceBinding)
+			_, err := external.Delete(context.TODO(), testCase.serviceBinding)
 			if err != nil {
 				t.Errorf("Unexpected error occurred when trying to "+
 					"delete ServiceBinding %+v : %s",
@@ -1776,7 +1776,7 @@ func TestDeleteClientErr(t *testing.T) {
 		Logger: a9stest.TestLogger(t),
 	}
 
-	err := external.Delete(context.TODO(), serviceBinding)
+	_, err := external.Delete(context.TODO(), serviceBinding)
 	if err == nil {
 		t.Errorf("Delete method did not return expected error for ServiceBinding %+v",
 			serviceBinding)

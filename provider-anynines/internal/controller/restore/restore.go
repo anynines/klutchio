@@ -307,20 +307,25 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	rst, ok := mg.(*v1.Restore)
 	if !ok {
-		return fmt.Errorf(errNotRestore)
+		return managed.ExternalDelete{}, fmt.Errorf(errNotRestore)
 	}
 
 	switch state := rst.Status.AtProvider.State; state {
 	case v1.StatusQueued:
-		return errRestoreQueued
+		return managed.ExternalDelete{}, errRestoreQueued
 	case v1.StatusRunning:
-		return errRestoreRunning
+		return managed.ExternalDelete{}, errRestoreRunning
 	default:
-		return nil
+		return managed.ExternalDelete{}, nil
 	}
+}
+
+func (c *external) Disconnect(ctx context.Context) error {
+	// Unimplemented, required by newer versions of crossplane-runtime
+	return nil
 }
 
 // initializeRestoreStatus initializes InstanceID and BackupID values in status if not set.
