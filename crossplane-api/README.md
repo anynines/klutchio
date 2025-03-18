@@ -318,7 +318,7 @@ Expected output:
 
 ```text
 NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
-function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.1.4
+function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.8.2   3m
 ```
 
 The whole package can either installed via kustomize or by manually applying each yaml file.

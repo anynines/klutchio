@@ -1480,7 +1480,7 @@ func TestDelete(t *testing.T) {
 				Logger: a9stest.TestLogger(t),
 			}
 			// Invoke the method under test.
-			err := e.Delete(context.Background(), tc.args.mr)
+			_, err := e.Delete(context.Background(), tc.args.mr)
 
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Delete(...): -want error, +got error:\n%s", diff)

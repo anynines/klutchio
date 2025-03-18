@@ -336,10 +336,10 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalUpdate{}, nil
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	dsi, ok := mg.(*v1.ServiceInstance)
 	if !ok {
-		return errNotServiceInstance
+		return managed.ExternalDelete{}, errNotServiceInstance
 	}
 
 	dsi.SetConditions(xpv1.Deleting())
@@ -351,13 +351,18 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 		PlanID:            dsi.Status.AtProvider.PlanID,
 	})
 	if err != nil && !client.IsNotFound(err) {
-		return fmt.Errorf("%s: %w", errDeleteServiceInstance, utilerr.HandleHttpError(err))
+		return managed.ExternalDelete{}, fmt.Errorf("%s: %w", errDeleteServiceInstance, utilerr.HandleHttpError(err))
 	}
 
 	if response.Async {
 		c.logAsyncAction(*response.OperationKey, dsi)
 	}
 
+	return managed.ExternalDelete{}, nil
+}
+
+func (c *external) Disconnect(ctx context.Context) error {
+	// Unimplemented, required by newer versions of crossplane-runtime
 	return nil
 }
 

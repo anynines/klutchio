@@ -85,10 +85,11 @@ func TestLogme2InstanceLifecycle(t *testing.T) {
 	//
 	// Individual validations are covered by unit tests in `test/validations/`.
 	invalidUpgrades := features.New("Attempt to select invalid upgrades").
-		Assess("Change of 'service' is not allowed",
-			funcs.ApplyInvalid(fieldManager, manifests, "claim-upgrade-service-not-allowed.yaml",
-				"Service is an immutable field"),
-		).
+		// The test has been commented out as only one Service plan exists for logme2 {N/A}
+		// Assess("Change of 'service' is not allowed",
+		// 	funcs.ApplyInvalid(fieldManager, manifests, "claim-upgrade-service-not-allowed.yaml",
+		// 		"Service is an immutable field"),
+		// ).
 		Assess("Change of 'plan' is not allowed",
 			funcs.ApplyInvalid(fieldManager, manifests, "claim-upgrade-plan-not-allowed.yaml",
 				"Migration from single to clustered Data Service Instance is not supported."),
