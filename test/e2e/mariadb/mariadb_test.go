@@ -140,6 +140,13 @@ func TestMariaDBInstanceLifecycle(t *testing.T) {
 		).
 		Feature()
 
+	invalidPlan := features.New("Attempt to select invalid upgrades").
+		Assess("Non ssl plans not allowed for MariaDB v10.11",
+			funcs.ApplyInvalid(fieldManager, manifests, "claim-initial-plan-not-supported.yaml",
+				"MariaDB v10.11 only supports ssl plans"),
+		).
+		Feature()
+
 	deprovisionMariaDBServiceBinding := features.New("Deprovision MariaDB servicebinding").
 		Assess("DeleteClaim", funcs.DeleteResources(manifests, "servicebinding-initial.yaml")).
 		Assess("ServiceBinding is being deleted",
@@ -173,5 +180,5 @@ func TestMariaDBInstanceLifecycle(t *testing.T) {
 		).
 		Feature()
 
-	testenv.Test(t, provisionMariaDB, createServiceBinding, takeBackup, restoreBackup, upgradeMariaDB, invalidUpgrades, deprovisionMariaDBServiceBinding, deleteBackup, deleteRestore, deprovisionMariaDB)
+	testenv.Test(t, provisionMariaDB, createServiceBinding, takeBackup, restoreBackup, upgradeMariaDB, invalidUpgrades, invalidPlan, deprovisionMariaDBServiceBinding, deleteBackup, deleteRestore, deprovisionMariaDB)
 }
