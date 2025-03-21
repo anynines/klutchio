@@ -1,6 +1,6 @@
 ---
 title: Glossary
-sidebar_position: 7
+sidebar_position: 8
 tags:
   - Klutch
   - open source
@@ -19,14 +19,14 @@ This page explains key terms and concepts to help contributors and users better 
 
 An App Cluster is a Kubernetes cluster that is used by application developers to consume Klutch Resources. For example,
 an App Cluster may host an application that utilizes a PostgreSQL database provisioned by Klutch. App Clusters are never
-the environment where the actual data services are provisioned
+the environment where the actual data services are provisioned.
 
 #### Klutch Control Plane Cluster
 
 Klutch Control Plane Cluster is a Kubernetes cluster that oversees the entire multi-cluster ecosystem. It manages
 bidirectional synchronization of resource specifications, status, and additional information with App Clusters, while
 maintaining a catalog of available resources. This cluster provides system-wide observability and management
-capabilities. It hosts Crossplane and its providers to manage and provision cloud-native resources across multiple
+capabilities. It hosts Crossplane® and its providers to manage and provision cloud-native resources across multiple
 automation backends.
 
 #### Proxy Claim

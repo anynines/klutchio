@@ -1,6 +1,6 @@
 ---
-title: Local Deployment Guide
-sidebar_position: 3
+title: Local Deployment
+sidebar_position: 6
 tags:
   - Klutch
   - open-source
@@ -22,13 +22,6 @@ resources in the App Cluster while provisioning happens in the Control Plane Clu
 In this local setup, we will deploy [a8s PostgreSQL](https://k8s.anynines.com/for-postgres/) in Klutch’s Control Plane
 Cluster. However, in many real-world deployments, an automation backend may be used to provision them in remote
 infrastructure.
-
-:::
-
-:::tip
-
-Curious about how everything fits together? Take a look at the [Architecture Overview](./architecture/index.md)
-to learn more.
 
 :::
 
@@ -82,7 +75,7 @@ The following actions will be performed as a result of this command:
 2. Create a Kind cluster named `klutch-control-plane`
 3. Deploy core components in the klutch-control-plane, including:
    - Dex IdP, Klutch-bind backend, Ingress-nginx
-   - Crossplane, Provider-kubernetes, API service export templates
+   - Crossplane®, Provider-kubernetes, API service export templates
    - [a8s data services](https://k8s.anynines.com/for-postgres/) (a8s PostgreSQL) as an example automation backend,
      Minio (object storage).
 4. Create a new Kind cluster named `klutch-app`

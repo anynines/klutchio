@@ -1,6 +1,6 @@
 ---
 title: Community & Support
-sidebar_position: 6
+sidebar_position: 7
 tags:
   - Klutch
   - open source

@@ -1,5 +1,5 @@
 ---
-title: Developers Guide
+title: Application Developer Guide
 sidebar_position: 5
 tags:
   - Klutch
@@ -32,6 +32,14 @@ guide have been completed without issues.
 The types of resources you can create depend on the Klutch API bindings configured in your App Cluster. These may
 include databases, message queues, storage solutions, and other services available through supported cloud providers or
 on-premise infrastructure (automation backends).
+
+Klutch is inspired by the Open Service Broker API (OSBAPI) and introduces key abstractions to streamline data service
+management:
+
+- **Service Instance:** Specify the desired data service you want to provision.
+- **Service Binding:** Define which data service to bind. After applying the YAML file with the ServiceBinding, the necessary credentials and connection details are exposed to the App Cluster.
+- **Backup:** Take data service backups.
+- **Restore:** Perform restores when needed.
 
 Before creating a resource, you can check which APIs are available by listing the bound APIs. You can do this with the
 following command:
@@ -140,7 +148,7 @@ communication between your App Cluster and the Control Plane Cluster using the f
     ```
 
 As a developer, your access is typically limited to your App Cluster. Troubleshooting issues related to the Klutch
-Control Plane Cluster or Crossplane configuration may require additional permissions or support from your platform
+Control Plane Cluster or Crossplane® configuration may require additional permissions or support from your platform
 operators.
 
 For further questions or assistance, feel free to raise an issue on our [GitHub repository](https://github.com/anynines/klutchio),
