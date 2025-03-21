@@ -14,73 +14,76 @@ spec:
     name: a9s-mongodb
   defaultCompositeDeletePolicy: Foreground
   versions:
-  - name: v1
-    served: true
-    referenceable: true
-    schema:
-      openAPIV3Schema:
-        supported:
-          # TODO: Add validation to check whether a plan is valid for a given service
-          - plans: &mongodbPlans ["mongodbsspl-replica-small-ssl",
-              "mongodbsspl-replica-medium-ssl", "mongodbsspl-replica-big-ssl",
-              "mongodbsspl-single-nano-ssl", "mongodbsspl-single-small-ssl",
-              "mongodbsspl-single-medium-ssl", "mongodbsspl-single-big-ssl",
-              "mongodbsspl-replica-small", "mongodbsspl-replica-medium",
-              "mongodbsspl-replica-big", "mongodbsspl-single-nano",
-              "mongodbsspl-single-small", "mongodbsspl-single-medium",
-              "mongodbsspl-single-big"]
-          - services: &mongodbServices ["a9s-mongodb50"]
-        properties:
-          spec:
-            properties:
-              acceptsIncomplete:
-                type: boolean
-              service:
-                type: string
-                enum: *mongodbServices
-                x-kubernetes-validations:
-                # Validation to check that service can't be updated.
-                - rule: "self == oldSelf"
-                  message: "Service is an immutable field"
-              plan:
-                description: Plan specifies the service plan. There are options
-                  for single or replicated Data Service Instances and options for
-                  different underlying computing resources (e.g.
-                  mongodb-replica-small).
-                type: string
-                enum: *mongodbPlans
-                x-kubernetes-validations:
-                # Validate that only upgrades from smaller to bigger DS instance
-                # sizes are allowed.
-                - rule: "!(self.contains('small') && oldSelf.contains('medium')) &&
-                    !(self.contains('small') && oldSelf.contains('big')) &&
-                    !(self.contains('medium') && oldSelf.contains('big'))"
-                  message: "Transition from bigger to smaller plan size is not
-                    supported."
-                # We must use separate rules to avoid reaching the rule complexity limit
-                - rule: "!(self.contains('nano') && oldSelf.contains('small')) &&
-                    !(self.contains('nano') && oldSelf.contains('medium'))&&
-                    !(self.contains('nano') && oldSelf.contains('big'))"
-                  message: "Transition from bigger to smaller plan size is not
-                    supported."
-                # Validate that only migrations from single to replicated DS
-                # instance are allowed.
-                - rule: "!(self.contains('-single-') && oldSelf.contains('-replica-'))"
-                  message: "Migration from replicated to single Data Service
-                    Instance is not supported."
-                - rule: "oldSelf.contains('ssl') == self.contains('ssl')"
-                  message: "Plan migrations not possible from Non-SSL to SSL and
-                    SSL to Non-SSL"
-            required:
-              - service
-              - plan
-          status:
-            type: object
-            properties:
-              managed:
-                type: object
-                x-kubernetes-preserve-unknown-fields: true
-    additionalPrinterColumns:
-    - name: ManagedResource
-      type: string
-      jsonPath: ".status.managed.state"
+    - name: v1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          supported:
+            # TODO: Add validation to check whether a plan is valid for a given service
+            - plans:
+                &mongodbPlans [
+                  "mongodbsspl-single-nano",
+                  "mongodbsspl-single-small",
+                  "mongodbsspl-single-big",
+                  "mongodbsspl-single-nano-ssl",
+                  "mongodbsspl-single-small-ssl",
+                  "mongodbsspl-single-big-ssl",
+                  "mongodbsspl-replica-small",
+                  "mongodbsspl-replica-big",
+                  "mongodbsspl-replica-small-ssl",
+                  "mongodbsspl-replica-big-ssl",
+                ]
+            - services: &mongodbServices ["a9s-mongodb50", "a9s-mongodb70"]
+          properties:
+            spec:
+              properties:
+                acceptsIncomplete:
+                  type: boolean
+                service:
+                  type: string
+                  enum: *mongodbServices
+                  x-kubernetes-validations:
+                    # Validation to check that service can't be updated.
+                    - rule: "self == oldSelf"
+                      message: "Service is an immutable field"
+                plan:
+                  description:
+                    Plan specifies the service plan. There are options
+                    for single or replicated Data Service Instances and options for
+                    different underlying computing resources (e.g.
+                    mongodb-replica-small).
+                  type: string
+                  enum: *mongodbPlans
+                  x-kubernetes-validations:
+                    # Validate that only upgrades from smaller to bigger DS instance
+                    # sizes are allowed.
+                    - rule:
+                        "!(self.contains('nano') && oldSelf.contains('small')) &&
+                        !(self.contains('nano') && oldSelf.contains('big')) &&
+                        !(self.contains('small') && oldSelf.contains('big'))"
+                      message:
+                        "Transition from bigger to smaller plan size is not
+                        supported."
+                    # Validate that only migrations from single to replicated DS
+                    # instance are allowed.
+                    - rule: "!(self.contains('-single-') && oldSelf.contains('-replica-'))"
+                      message: "Migration from replicated to single Data Service
+                        Instance is not supported."
+                    - rule: "oldSelf.contains('ssl') == self.contains('ssl')"
+                      message:
+                        "Plan migrations not possible from Non-SSL to SSL and
+                        SSL to Non-SSL"
+              required:
+                - service
+                - plan
+            status:
+              type: object
+              properties:
+                managed:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+      additionalPrinterColumns:
+        - name: ManagedResource
+          type: string
+          jsonPath: ".status.managed.state"

@@ -4,7 +4,8 @@
 
 ### Chores
 
-- Upgraded Crossplane to version [v1.19.0](https://docs.crossplane.io/v1.19)
+- Update the supported plans and services for a9s Data Services.
+- Upgraded Crossplane to version [v1.19.0](https://docs.crossplane.io/v1.19).
 - Updated crossplane functions
   - `function-patch-and-transform` upgraded to v0.8.2
 - Fixed security vulnerabilities identified by Dependabot.

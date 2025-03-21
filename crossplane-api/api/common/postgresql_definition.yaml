@@ -30,7 +30,8 @@ spec:
               x-kubernetes-validations:
                 # Validation for postgresql services.
                 - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
-                    (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql15'))
+                    (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql15' ||
+                    self.service == 'a9s-postgresql17'))
                     || (self.compositionRef.name == 'a8s-postgresql' &&
                     (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql14'))"
                   message: "Unsupported service used for postgresql"
@@ -52,6 +53,13 @@ spec:
                     self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-small'||
                     self.plan == 'postgresql-single-medium' || self.plan == 'postgresql-single-big'))"
                   message: "Unsupported plan used for postgresql"
+                # Bionic plans are only supported by a9s PostgreSQL 13.
+                - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
+                    !(self.service == 'a9s-postgresql13') &&
+                    !(self.plan.contains('bionic'))) ||
+                    (self.service == 'a9s-postgresql13') ||
+                    (self.compositionRef.name == 'a8s-postgresql')"
+                  message: "Bionic plans are only supported by a9s PostgreSQL 13"
 
                 # Validation for parameters ONLY supported by a8s
                 - rule:

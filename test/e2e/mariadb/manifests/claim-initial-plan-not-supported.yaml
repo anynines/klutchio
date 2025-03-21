@@ -4,7 +4,7 @@ metadata:
   name: sample-mariadb-instance
   namespace: mariadb-lifecycle
 spec:
-  service: a9s-mariadb106
-  plan: mariadb-cluster-small-ssl
+  service: a9s-mariadb1011
+  plan: mariadb-single-nano
   compositionRef:
     name: a9s-mariadb
