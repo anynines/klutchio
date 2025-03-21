@@ -14,29 +14,26 @@ keywords:
   - multi-cluster architecture
 ---
 
-This section covers all the Klutch components that work together to enable its functionality. Klutch follows a
-multi-cluster architecture as well as a client-server paradigm and is primarily composed of two clusters: the App
-Cluster and the Control Plane Cluster. Depending on the configuration, there can be one or more App Clusters.
-
-Here is the high-level overview of Klutch:
+Klutch follows a multi-cluster, client-server paradigm. Developers interact with the App Cluster to request and consume
+data services, while platform operators use the Control Plane Cluster to manage and monitor them.
 
 ![High Level Architecture](../img/high_level_architecture.png)
 
 ## App Cluster
 
-The App Cluster hosts applications but does not host the data services used by them. Developers create data services
-using proxy claims, which are forwarded to the Control Plane Cluster. It is important to note that each App Cluster must
-authorize itself with the Control Plane Cluster in order to request the provisioning of data services.
+An App Cluster runs applications and consumes Klutch-managed data services, while the actual data services are
+provisioned elsewhere. Developers define their data service requirements by creating Proxy Claims, a Kubernetes Custom
+Resource that serves as a resource request. Klutch’s API leverages powerful abstractions to streamline data service
+management, covering from resource provisioning to backup and restore processes. When a Proxy Claim is applied, the
+request is forwarded to the Control Plane, which provisions the actual resource in an automation backend (such as AWS)
+and synchronizes the latest status back to the App Cluster.
 
 ## Control Plane Cluster
 
-Platform operators are responsible for managing the Control Plane Cluster, the central hub of Klutch’s functionality.
-This centralized approach benefits platform operators by restricting the management of all data services used within an
-organization to a single location. The Control Plane Cluster processes requests from App Clusters, hosts the core
-components of Klutch, and handles the provisioning of data services—one of Klutch’s primary features. These services can
-be provisioned within the Control Plane Cluster, on external cloud providers, or on-premises, depending on the
-requirements. Once provisioned, the Control Plane Cluster is notified of any updates to the data service instance
-specifications from the App Cluster and takes the necessary actions to apply the changes accordingly.
+The Control Plane Cluster is a Kubernetes cluster that serves as the central management hub for Klutch. Platform
+operators use it to monitor and manage data services. It facilitates the provisioning of data services across various
+automation backends, maintains a catalog of resources, and ensures bidirectional synchronization of resource
+specifications, status, and metadata with App Clusters.
 
-In the [following section](./architecture-deep-dive/), we will take a closer look at the Klutch components that reside within both the App Cluster
-and the Control Plane Cluster.
+In the [following section](./architecture-deep-dive/), we will take a closer look at the Klutch components and how they
+facilitate data service management within Klutch.
