@@ -21,14 +21,14 @@ Cluster components within a Klutch environment.
 
 ## Updating the Control Plane Cluster
 
-### Crossplane Runtime
+### Crossplane® Runtime
 
-To update the Crossplane runtime, refer to the [official Crossplane documentation](https://docs.crossplane.io/). The
+To update the Crossplane® runtime, refer to the [official Crossplane® documentation](https://docs.crossplane.io/). The
 specific update process varies based on your installation method.
 
-### Crossplane Providers and Configuration Packages
+### Crossplane® Providers and Configuration Packages
 
-Patching is a method for updating Crossplane providers and configuration packages dynamically without modifying full
+Patching is a method for updating Crossplane® providers and configuration packages dynamically without modifying full
 manifests.
 
 You can see an example of updating a provider and its configuration package using patching with provider-anynines:
@@ -79,7 +79,7 @@ Before proceeding, review the changelog for the new version and follow any migra
 
 **Downtime Considerations During Updates**
 
-During updates, components like Crossplane providers and the Klutch-bind backend may experience brief downtime. However,
+During updates, components like Crossplane® providers and the Klutch-bind backend may experience brief downtime. However,
 existing data service instances will remain operational and accessible. Any modifications (creation, updates, deletions)
 made to data service instances during the update will be applied once the process is complete.
 

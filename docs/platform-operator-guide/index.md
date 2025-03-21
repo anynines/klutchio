@@ -1,5 +1,5 @@
 ---
-title: Platform Operators Guide
+title: Platform Operator Guide
 sidebar_position: 4
 tags:
   - Klutch

@@ -32,7 +32,7 @@ Before setting up the Klutch Control Plane, ensure that the required infrastruct
 - [Helm](https://helm.sh/docs/helm/helm_install/): Version 3.2.0 or later is required for package management.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): The Kubernetes command-line tool must be installed and properly
 configured to interact with your cluster, and include Kustomize support (built-in from v1.14+)
-- [Crossplane](https://docs.crossplane.io/latest/software/install/): Version 1.17.0 or newer must be installed on the
+- [Crossplane®](https://docs.crossplane.io/latest/software/install/): Version 1.17.0 or newer must be installed on the
 cluster.
   - Additionally, ensure the Server-Side Apply (SSA) flag is enabled for claims by setting:
 
@@ -50,7 +50,7 @@ Deploy the required Kubernetes objects for Klutch components to the Control Plan
 kubectl apply --kustomize https://github.com/anynines/klutchio
 ```
 
-This command installs the necessary CustomResourceDefinitions (CRDs), composition functions and Crossplane Providers
+This command installs the necessary CustomResourceDefinitions (CRDs), composition functions and Crossplane® Providers
 required for Klutch's operation, including:
 
 - provider-anynines: Enables the provisioning and management of VM-based anynines data services in a Kubernetes-native
@@ -64,7 +64,7 @@ Wait for the configuration package to become healthy:
 kubectl get configuration -w
 ```
 
-### 2. Configure Crossplane Providers
+### 2. Configure Crossplane® Providers
 
 To fully enable Klutch, at least one of the following providers must be configured:
 
@@ -74,8 +74,8 @@ To fully enable Klutch, at least one of the following providers must be configur
 
 #### 2.1 Configure provider-kubernetes (In-Cluster Provider Configuration)
 
-The following command sets up a ProviderConfig resource for provider-kubernetes in Crossplane. This configuration
-defines how Crossplane interacts with resources within the cluster:
+The following command sets up a ProviderConfig resource for provider-kubernetes in Crossplane®. This configuration
+defines how Crossplane® interacts with resources within the cluster:
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/anynines/klutchio/refs/heads/main/crossplane-api/deploy/config-in-cluster.yaml

@@ -18,9 +18,9 @@ key insights into effective monitoring.
 
 ## Control Plane Cluster Monitoring
 
-### Crossplane Providers Health
+### Crossplane® Providers Health
 
-Klutch utilizes Crossplane providers, such as provider-anynines and provider-kubernetes. To assess their health,
+Klutch utilizes Crossplane® providers, such as provider-anynines and provider-kubernetes. To assess their health,
 verify the HEALTHY status of the installed providers:
 
 ```bash
@@ -48,7 +48,7 @@ kubectl get pods --namespace crossplane-system -l pkg.crossplane.io/provider=pro
 
 ### Monitoring provider-anynines Configuration
 
-The provider-anynines Crossplane provider connects to data service brokers using a ProviderConfig. It includes a
+The provider-anynines Crossplane® provider connects to data service brokers using a ProviderConfig. It includes a
 health probe that periodically checks the connection and broker availability, with the results reflected in the status
 of each ProviderConfig.
 
