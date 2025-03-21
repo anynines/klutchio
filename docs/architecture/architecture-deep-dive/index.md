@@ -64,7 +64,7 @@ For detailed instructions on how to set up a Klutch Control Plane Cluster, refer
 
 Do you want to try Klutch locally without a full-fledged setup?
 
-Follow our [Local Deployment Guide](./local-deployment-guide.md) to set up a demo sandbox environment on your local
+Follow our [Local Deployment Guide](../../local-deployment-guide.md) to set up a demo sandbox environment on your local
 machine.
 
 :::
