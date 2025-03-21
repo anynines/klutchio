@@ -83,12 +83,11 @@ Klutch leverages Crossplane® as a core component but expands on it with additio
 provisioning of data services while maintaining local autonomy for developers and centralized oversight for platform
 teams.
 
-The main function of Crossplane® is to connect clusters to cloud providers, while the main function of Klutch
+The main function of Crossplane® is to connect clusters to automation backends, while the main function of Klutch
 is to provide full lifecycle management of data services, which includes features such as taking automatic backups and
 restoring any failed data services.
 
-By building on Crossplane®'s strengths, Klutch introduces features that address key
-limitations and enhance usability:
+By building on Crossplane®'s strengths, Klutch introduces features that address key limitations and enhance usability:
 
 - **Unified Interface for Data Services** – Inspired by the Open Service Broker API (OSBAPI), Klutch introduces
 abstractions such as Service Instances and Service Bindings. It further enhances lifecycle management by making Backup
