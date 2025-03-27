@@ -1,26 +1,28 @@
 ---
 title: Community & Support
-sidebar_position: 10
+sidebar_position: 7
 tags:
   - Klutch
   - open source
+  - community
   - support
 keywords:
   - Klutch
   - open source
+  - community  
   - support
 ---
 
 ## GitHub
 
-Do you want to contribute, raise an issue, or simply leave us a star?
+Want to contribute, report an issue, or give us a ⭐? Check out our [GitHub repository](https://github.com/anynines/klutchio)!
 
-Check out our [GitHub repository](https://github.com/anynines/klutchio) for that!
+For questions, suggestions, or discussions, join our [GitHub Discussions](https://github.com/anynines/klutchio/discussions)!
 
 ## Slack Workspace
 
-Join the Klutch Open Source [Slack workspace here](https://app.slack.com/client/T07FST6U1T7/C07FVLWBDDH) and
-get in touch with the developers and the community!
+Join the Klutch Open Source [Slack workspace here](https://app.slack.com/client/T07FST6U1T7/C07FVLWBDDH)
+and get in touch with the developers and the community!
 
 ## Contact Us Directly
 
@@ -29,4 +31,4 @@ The developers at [anynines](https://anynines.com) are available to speak with y
 - Questions or concerns about Klutch Open Source?
 - Interested in learning more about anynines or our other products?
 
-Please reach out to us! We'd love to hear from you.
+Please reach out to us! We'd love to hear from you. 💬
