@@ -24,7 +24,7 @@ It abstracts provisioning and configuration complexities via a standardized inte
 for managing various data services, such as databases and message brokers, across on-prem, hybrid, and multi-cloud
 environments.
 
-![High Level Architecture](img/Klutch_overview.jpg)
+![High Level Architecture](img/Klutch_overview.png)
 
 ## How Klutch works
 
@@ -122,7 +122,7 @@ Developers need fast, reliable access to data services without being bogged down
 Traditional manual setups slow down development, while cloud providers burden developers with networking, security, and
 configuration details. These distractions keep developers from their core mission – building applications.
 
-##### 🚀 Klutch to The Rescue!
+##### 🚀 Klutch to The Rescue
 
 Klutch’s Kubernetes-native, declarative interface allows developers to easily define their data service needs using
 tools and approaches they’re already comfortable with. Once specified, Klutch handles the provisioning, configuration,
@@ -149,7 +149,7 @@ without constant manual intervention.
 Technical leaders need to optimize resource allocation, uphold service standards, and maintain compliance across
 platforms. Limited visibility often hinders strategic decision-making.
 
-##### 💡 Stay Ahead with Klutch 
+##### 💡 Stay Ahead with Klutch
 
 Klutch equips managers with the ability to oversee infrastructure usage and maintain high standards of service delivery.
 It features robust observability features for easily tracking metrics, optimizing resource allocation, and making
