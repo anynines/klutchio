@@ -859,6 +859,463 @@ func TestObserve(t *testing.T) {
 	}
 }
 
+func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		sb                          resource.Managed
+		expectedExternalObservation managed.ExternalObservation
+		expectedServiceBinding      resource.Managed
+		getInstancesReaction        *GetInstancesReaction
+		serviceInstance             dsv1.ServiceInstance
+		otherResources              []client.Object
+		kube                        client.Client
+	}{
+		"status_connection_details_logme2": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "logme-1",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("cacrt", "-----BEGIN CERTIFICATE-----\nMIIDGzszfasde....8tn9ebYK0k2Qt\n-----END CERTIFICATE-----\n"),
+					a9stest.WithKey("host", "https://d765411-os.service.dc1.dsf2.a9ssvc:9200"),
+					a9stest.WithKey("password", "a9scbe8462ee571f12d95b3a950e1bf8b2445a59983"),
+					a9stest.WithKey("syslog_drain_url", "syslog-tls://d765411-fluentd.service.dc1.dsf2.a9ssvc:6514"),
+					a9stest.WithKey("username", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"https://d765411-os.service.dc1.dsf2.a9ssvc",
+					"9200",
+				),
+			),
+		},
+		"status_connection_details_mariadb": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "mariadb",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("host", "d15575b.service.dc1.a9s-mariadb-consul"),
+					a9stest.WithKey("name", "d15575b"),
+					a9stest.WithKey("password", "a9s-password"),
+					a9stest.WithKey("port", "3306"),
+					a9stest.WithKey("uri", "mysql://a9s-brk-usr:a9s-password@d15575b.service.dc1.a9s-mariadb-consul:3306/d15575b"),
+					a9stest.WithKey("username", "a9s-brk-usr"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"d15575b.service.dc1.a9s-mariadb-consul",
+					"3306",
+				),
+			),
+		},
+		"status_connection_details_messaging": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "msg",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("host", "hostname.node.dcx.consul"),
+					a9stest.WithKey("hosts", ` ["hostname.node.dcx.consul"]`),
+					a9stest.WithKey("password", "password"),
+					a9stest.WithKey("port", "5672"),
+					a9stest.WithKey("http_api_uri", "http://username:password@hostname.node.dcx.consul/api/"),
+					a9stest.WithKey("http_api_uris", "['http://username:password@hostname.node.dcx.consul/api/']"),
+					a9stest.WithKey("protocols", `{
+						"amqp": {
+							"host": "hostname.node.dcx.consul",
+							"hosts": [
+								"hostname.node.dcx.consul"
+							],
+							"password": "password",
+							"port": 5672,
+							"ssl": false,
+							"uri": "amqp://username:password@hostname.node.dcx.consul:5672",
+							"username": "username"
+						},
+						"management": {
+							"username": "username",
+							"password": "password",
+							"path": "/api",
+							"ssl": false,
+							"host": "hostname.node.dcx.consul",
+							"hosts": [
+								"hostname.node.dcx.consul"
+							],
+							"uri": "http://username:password@hostname.node.dcx.consul",
+							"uris": ["http://username:password@hostname.node.dcx.consul"]
+						}
+					}`),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"hostname.node.dcx.consul",
+					"5672",
+				),
+			),
+		},
+		"status_connection_details_mongodb": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "mongodb",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("default_database", "d22906"),
+					a9stest.WithKey("password", "EXAMPLE-PASSWORD"),
+					a9stest.WithKey("username", "EXAMPLE-USERNAME"),
+					a9stest.WithKey("hosts", ` ["test-mongodb-0.node.dc1.dsf2.a9ssvc:27017"]`),
+					a9stest.WithKey("uri", "mongodb://a9s-brk-usr-test:test@test-mongodb-0.node.dc1.dsf2.a9ssvc:27017/test?ssl=true"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"test-mongodb-0.node.dc1.dsf2.a9ssvc",
+					"27017",
+				),
+			),
+		},
+		"status_connection_details_postgresql": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "postgres-1",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("host", "EXAMPLE-HOST"),
+					a9stest.WithKey("hosts", "[EXAMPLE-HOST]"),
+					a9stest.WithKey("name", "d92e2bd"),
+					a9stest.WithKey("password", "EXAMPLE-PASSWORD"),
+					a9stest.WithKey("port", "5432"),
+					a9stest.WithKey("uri", "EXAMPLE-URI"),
+					a9stest.WithKey("username", "EXAMPLE-USERNAME"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"EXAMPLE-HOST",
+					"5432",
+				),
+			),
+		},
+		"status_connection_details_prometheus": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "prometheus",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("username", "EXAMPLE-USERNAME"),
+					a9stest.WithKey("password", "EXAMPLE-PASSWORD"),
+					a9stest.WithKey("alertmanager_urls", `[http://test-alertmanager-0.node.dc1.dsf2.a9ssvc:9093/service-instances/test/alertmanager/]`),
+					a9stest.WithKey("grafana_urls", `["http://test-grafana-0.node.dc1.dsf2.a9ssvc:3000/service-instances/test/grafana/"]`),
+					a9stest.WithKey("prometheus_urls", `["http://test-prometheus-0.node.dc1.dsf2.a9ssvc:9090/service-instances/test/prometheus/"]`),
+					a9stest.WithKey("graphite_exporter_port", "9109"),
+					a9stest.WithKey("graphite_exporters", `["test-prometheus-0.node.dc1.dsf2.a9ssvc"]`),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"http://test-prometheus-0.node.dc1.dsf2.a9ssvc",
+					"9090",
+				),
+			),
+		},
+		"status_connection_details_search": {
+			sb: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"",
+					"",
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "search",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("host", `["EXAMPLE_HOST"]`),
+					a9stest.WithKey("hosts", `["EXAMPLE_HOST"]`),
+					a9stest.WithKey("password", "EXAMPLE_PASSWORD"),
+					a9stest.WithKey("username", "EXAMPLE_USER"),
+					a9stest.WithKey("scheme", "http"),
+					a9stest.WithKey("port", "9200"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding(
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					"EXAMPLE-HOST",
+					"9200",
+				),
+			),
+		},
+	}
+
+	for name, testCase := range cases {
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			fakeOSB := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
+				GetInstancesReaction: testCase.getInstancesReaction,
+			})
+
+			if testCase.kube == nil {
+				testCase.kube = newKubeMock(testCase.serviceInstance.DeepCopyObject(),
+					testCase.otherResources)
+			}
+
+			e := utilerr.Decorator{
+				Logger: a9stest.TestLogger(t),
+				ExternalClient: &external{
+					kube:    testCase.kube,
+					service: fakeOSB,
+				},
+			}
+
+			got, err := e.Observe(context.TODO(), testCase.sb)
+
+			if testCase.getInstancesReaction == nil {
+				if err != nil {
+					t.Errorf("Unexpected error occurred when trying to observe ServiceBinding %+v : %s", testCase.sb, err)
+				}
+			} else {
+				if diff := cmp.Diff(testCase.getInstancesReaction.Error, err, test.EquateErrors()); diff != "" {
+					t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
+				}
+			}
+
+			if dif := cmp.Diff(testCase.expectedExternalObservation, got); dif != "" {
+				t.Errorf("Return from Observe differs from expected externalObservation: %s", dif)
+			}
+
+			if diff := cmp.Diff(testCase.expectedServiceBinding,
+				testCase.sb,
+				test.EquateConditions()); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestObserveReturnsError(t *testing.T) {
 	t.Parallel()
 
