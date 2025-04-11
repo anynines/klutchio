@@ -95,6 +95,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 			Logger: log,
 		}),
 		managed.WithLogger(log),
+		managed.WithPollInterval(o.PollInterval),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		managed.WithConnectionPublishers(cps...))
 
