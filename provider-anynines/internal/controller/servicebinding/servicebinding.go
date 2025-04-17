@@ -19,6 +19,7 @@ package servicebinding
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	corev1 "k8s.io/api/core/v1"
@@ -368,6 +369,13 @@ func getInstanceCredentials(instance osbclient.GetInstanceResponse, sb *v1.Servi
 	return nil
 }
 
+func (c external) parseHostAndPort(input string) (host, port string) {
+	index := strings.LastIndex(input, ":")
+	host = input[:index]
+	port = input[index+1:]
+	return host, port
+}
+
 // initializeConnectionDetails populates the servicebinding status with connection details
 // mainly HostURl and Port.
 func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.ServiceBinding) error {
@@ -375,15 +383,24 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 	if err != nil {
 		return err
 	}
-
-	sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
-	sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
-
+	if strings.Contains(sb.ObjectMeta.Name, "search") {
+		if secret.Data["host"][0] == '[' && secret.Data["host"][len(secret.Data["host"])-1] == ']' {
+			sb.Status.AtProvider.ConnectionDetails.HostURL, sb.Status.AtProvider.ConnectionDetails.Port = c.parseHostAndPort(string(secret.Data["host"][1 : len(secret.Data["host"])-1]))
+		}
+	} else if strings.Contains(sb.ObjectMeta.Name, "logme2") {
+		sb.Status.AtProvider.ConnectionDetails.HostURL, sb.Status.AtProvider.ConnectionDetails.Port = c.parseHostAndPort(string(secret.Data["host"]))
+	} else if strings.Contains(sb.ObjectMeta.Name, "mongodb") {
+		if secret.Data["hosts"][0] == '[' && secret.Data["hosts"][len(secret.Data["hosts"])-1] == ']' {
+			sb.Status.AtProvider.ConnectionDetails.HostURL, sb.Status.AtProvider.ConnectionDetails.Port = c.parseHostAndPort(string(secret.Data["hosts"][1 : len(secret.Data["hosts"])-1]))
+		}
+	} else {
+		sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
+		sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
+	}
 	// Validate status
 	if sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
 		return errInstanceNotReady
 	}
-
 	return nil
 }
 
