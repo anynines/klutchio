@@ -19,6 +19,7 @@ package servicebinding
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
@@ -284,7 +285,7 @@ func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBind
 // initializeServiceBindingStatus initializes the status of ServiceBinding.
 func (c *external) initializeServiceBindingStatus(ctx context.Context, sb *v1.ServiceBinding) error {
 	if !sb.Status.AtProvider.HasMissingFields() &&
-		!sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
+		sb.CheckLengthOfConnectionDetails() {
 		return nil
 	}
 
@@ -383,22 +384,60 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 	if err != nil {
 		return err
 	}
+
+	var hostURL, port string
+
 	if strings.Contains(sb.ObjectMeta.Name, "search") {
 		if secret.Data["host"][0] == '[' && secret.Data["host"][len(secret.Data["host"])-1] == ']' {
-			sb.Status.AtProvider.ConnectionDetails.HostURL, sb.Status.AtProvider.ConnectionDetails.Port = c.parseHostAndPort(string(secret.Data["host"][1 : len(secret.Data["host"])-1]))
+			hostURL, port = c.parseHostAndPort(string(secret.Data["host"][1 : len(secret.Data["host"])-1]))
+			sb.AddConnectionDetails(hostURL, port)
 		}
 	} else if strings.Contains(sb.ObjectMeta.Name, "logme2") {
-		sb.Status.AtProvider.ConnectionDetails.HostURL, sb.Status.AtProvider.ConnectionDetails.Port = c.parseHostAndPort(string(secret.Data["host"]))
+		hostURL, port = c.parseHostAndPort(string(secret.Data["host"]))
+		sb.AddConnectionDetails(hostURL, port)
 	} else if strings.Contains(sb.ObjectMeta.Name, "mongodb") {
 		if secret.Data["hosts"][0] == '[' && secret.Data["hosts"][len(secret.Data["hosts"])-1] == ']' {
-			sb.Status.AtProvider.ConnectionDetails.HostURL, sb.Status.AtProvider.ConnectionDetails.Port = c.parseHostAndPort(string(secret.Data["hosts"][1 : len(secret.Data["hosts"])-1]))
+			hostURL, port = c.parseHostAndPort(string(secret.Data["hosts"][1 : len(secret.Data["hosts"])-1]))
+			sb.AddConnectionDetails(hostURL, port)
 		}
+	} else if strings.Contains(sb.ObjectMeta.Name, "prometheus") {
+		if secret.Data["prometheus_urls"][0] == '[' && secret.Data["prometheus_urls"][len(secret.Data["prometheus_urls"])-1] == ']' {
+			parsedURL, err := url.Parse(string(secret.Data["prometheus_urls"][1 : len(secret.Data["prometheus_urls"])-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			sb.AddConnectionDetails(hostURL, port)
+		}
+		if secret.Data["alertmanager_urls"][0] == '[' && secret.Data["alertmanager_urls"][len(secret.Data["alertmanager_urls"])-1] == ']' {
+			parsedURL, err := url.Parse(string(secret.Data["alertmanager_urls"][1 : len(secret.Data["alertmanager_urls"])-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			sb.AddConnectionDetails(hostURL, port)
+		}
+		if secret.Data["grafana_urls"][0] == '[' && secret.Data["grafana_urls"][len(secret.Data["grafana_urls"])-1] == ']' {
+			parsedURL, err := url.Parse(string(secret.Data["grafana_urls"][1 : len(secret.Data["grafana_urls"])-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			sb.AddConnectionDetails(hostURL, port)
+		}
+		if secret.Data["graphite_exporters"][0] == '[' && secret.Data["graphite_exporters"][len(secret.Data["graphite_exporters"])-1] == ']' {
+			hostURL = string(string(secret.Data["graphite_exporters"][1 : len(secret.Data["graphite_exporters"])-1]))
+			port = string(secret.Data["graphite_exporter_port"])
+			sb.AddConnectionDetails(hostURL, port)
+		}
+
 	} else {
-		sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
-		sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
+		hostURL = string(secret.Data["host"])
+		port = string(secret.Data["port"])
+		sb.AddConnectionDetails(hostURL, port)
 	}
 	// Validate status
-	if sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
+	if !sb.CheckLengthOfConnectionDetails() {
 		return errInstanceNotReady
 	}
 	return nil
