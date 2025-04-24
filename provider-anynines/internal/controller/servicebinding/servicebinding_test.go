@@ -2317,8 +2317,7 @@ func initializeSBStatus(instanceID, planID, serviceID, hostURL, port string) fun
 		sb.Status.AtProvider.InstanceID = instanceID
 		sb.Status.AtProvider.PlanID = planID
 		sb.Status.AtProvider.ServiceID = serviceID
-		sb.Status.AtProvider.ConnectionDetails.HostURL = hostURL
-		sb.Status.AtProvider.ConnectionDetails.Port = port
+		sb.AddConnectionDetails(hostURL, port)
 	}
 }
 
