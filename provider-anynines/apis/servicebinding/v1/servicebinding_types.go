@@ -179,7 +179,7 @@ func (sb *ServiceBinding) AddConnectionDetails(host, port string) {
 	sb.Status.AtProvider.ConnectionDetails = append(sb.Status.AtProvider.ConnectionDetails, ConnectionDetails{host, port})
 }
 
-func (sb *ServiceBinding) CheckLengthOfConnectionDetails() bool {
+func (sb *ServiceBinding) ConnectionDetailsIsNotEmpty() bool {
 	return len(sb.Status.AtProvider.ConnectionDetails) > 0
 }
 

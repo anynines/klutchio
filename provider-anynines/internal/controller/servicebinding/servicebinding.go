@@ -285,7 +285,7 @@ func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBind
 // initializeServiceBindingStatus initializes the status of ServiceBinding.
 func (c *external) initializeServiceBindingStatus(ctx context.Context, sb *v1.ServiceBinding) error {
 	if !sb.Status.AtProvider.HasMissingFields() &&
-		sb.CheckLengthOfConnectionDetails() {
+		sb.ConnectionDetailsIsNotEmpty() {
 		return nil
 	}
 
@@ -431,13 +431,15 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 			sb.AddConnectionDetails(hostURL, port)
 		}
 
-	} else {
+	} else if strings.Contains(sb.ObjectMeta.Name, "postgresql") || strings.Contains(sb.ObjectMeta.Name, "messaging") || strings.Contains(sb.ObjectMeta.Name, "mariadb") {
 		hostURL = string(secret.Data["host"])
 		port = string(secret.Data["port"])
 		sb.AddConnectionDetails(hostURL, port)
+	} else {
+		return errServiceInstanceNotFound
 	}
 	// Validate status
-	if !sb.CheckLengthOfConnectionDetails() {
+	if !sb.ConnectionDetailsIsNotEmpty() {
 		return errInstanceNotReady
 	}
 	return nil
