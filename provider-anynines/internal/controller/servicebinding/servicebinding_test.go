@@ -60,6 +60,11 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+type connectionDetails struct {
+	hostURL string
+	port    string
+}
+
 // Unlike many Kubernetes projects Crossplane does not use third party testing
 // libraries, per the common Go test review comments. Crossplane encourages the
 // use of table driven unit tests. The tests of the crossplane-runtime project
@@ -81,15 +86,14 @@ func TestObserve(t *testing.T) {
 		kube                        client.Client
 	}{
 		"sb_not_initialized_yet": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				withAtProvider("Pending", 0),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -104,20 +108,19 @@ func TestObserve(t *testing.T) {
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
 			expectedExternalObservation: managed.ExternalObservation{},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				withAtProvider("Pending", 0),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 		},
 		"sb_does_not_exist_on_broker": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				withAtProvider("Pending", 0),
@@ -125,8 +128,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 			),
 			expectedExternalObservation: managed.ExternalObservation{
@@ -135,7 +139,7 @@ func TestObserve(t *testing.T) {
 				ResourceLateInitialized: false,
 				ConnectionDetails:       managed.ConnectionDetails{},
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				withAtProvider("Pending", 0),
 				afterBindingCreation(),
@@ -143,8 +147,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -165,7 +170,7 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"sb_does_not_exist_but_unrelated_sb_exists": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				withAtProvider("Pending", 0),
@@ -173,8 +178,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 			),
 			expectedExternalObservation: managed.ExternalObservation{
@@ -194,15 +200,16 @@ func TestObserve(t *testing.T) {
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withAtProvider("Pending", 0),
 			),
@@ -223,15 +230,16 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"sb_exists_and_available_condition_is_not_set": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withAtProvider("Pending", 0),
 			),
@@ -252,7 +260,7 @@ func TestObserve(t *testing.T) {
 				ResourceLateInitialized: false,
 				ConnectionDetails:       managed.ConnectionDetails{},
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(&v1.ServiceBindingParameters{
 					InstanceName:      "postgres-1",
 					AcceptsIncomplete: false,
@@ -262,8 +270,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -286,7 +295,7 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"sb_exists_and_unrelated_sb_exists": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				withAtProvider("Pending", 0),
@@ -294,8 +303,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -315,7 +325,7 @@ func TestObserve(t *testing.T) {
 				ResourceLateInitialized: false,
 				ConnectionDetails:       managed.ConnectionDetails{},
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(&v1.ServiceBindingParameters{
 					InstanceName:      "postgres-1",
 					AcceptsIncomplete: false,
@@ -325,8 +335,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -352,15 +363,16 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"sb_is_being_deleted": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withAtProvider("Created", 0),
 				deletionTimestamp(),
@@ -382,7 +394,7 @@ func TestObserve(t *testing.T) {
 				ResourceLateInitialized: false,
 				ConnectionDetails:       managed.ConnectionDetails{},
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(&v1.ServiceBindingParameters{
 					InstanceName:      "postgres-1",
 					AcceptsIncomplete: false,
@@ -392,8 +404,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				deletionTimestamp(),
 				withConditions(xpv1.Deleting()),
@@ -417,15 +430,16 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"sb_exists_and_available_condition_is_set": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -447,7 +461,7 @@ func TestObserve(t *testing.T) {
 				ResourceLateInitialized: false,
 				ConnectionDetails:       managed.ConnectionDetails{},
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(&v1.ServiceBindingParameters{
 					InstanceName:      "postgres-1",
 					AcceptsIncomplete: false,
@@ -457,8 +471,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -487,8 +502,43 @@ func TestObserve(t *testing.T) {
 				Error: utilerr.ErrInternal,
 			},
 		},
+		"fails_data_service_not_available": {
+			sb: serviceBinding("log",
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					nil,
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("cacrt", "-----BEGIN CERTIFICATE-----\nMIIDGzszfasde....8tn9ebYK0k2Qt\n-----END CERTIFICATE-----\n"),
+					a9stest.WithKey("host", "https://hsdxxxxxx-os.service.dc1.dsf2.a9ssvc:9200"),
+					a9stest.WithKey("password", "a9scbe8462ee571f12d95b3a950e1bf8b2445a59983"),
+					a9stest.WithKey("syslog_drain_url", "syslog-tls://d765411-fluentd.service.dc1.dsf2.a9ssvc:6514"),
+					a9stest.WithKey("username", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errNoSuchDataservice,
+			},
+			expectedServiceBinding: serviceBinding("log",
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					nil,
+				),
+			),
+		},
 		"instanceNotFound": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withInstanceName("dummy"),
 			),
 			serviceInstance: *serviceInstance(
@@ -505,13 +555,13 @@ func TestObserve(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceInstanceNotFound,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withInstanceName("dummy"),
 			),
 		},
 
 		"moreThanOneMatchingInstancesExist": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			serviceInstance: *serviceInstance(
@@ -542,7 +592,7 @@ func TestObserve(t *testing.T) {
 					),
 				),
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			getInstancesReaction: &GetInstancesReaction{
@@ -550,7 +600,7 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"crossNamespace": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			serviceInstance: *serviceInstance(serviceInstanceWithLabels(
@@ -568,23 +618,23 @@ func TestObserve(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceInstanceNotFound,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 		},
 		"fails_instance_not_found": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceInstanceNotFound,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 		},
 		"fails_service_id_not_initialized": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			serviceInstance: *serviceInstance(
@@ -600,27 +650,25 @@ func TestObserve(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errInstanceNotReady,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"",
-					"",
-					"",
+					nil,
 				),
 			),
 		},
 		"status_connection_details_not_initialized": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -648,28 +696,28 @@ func TestObserve(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 			),
 		},
 		"status_connection_details_not_initialized_secret_not_found": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -690,20 +738,19 @@ func TestObserve(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: fmt.Errorf("Internal error in provider"),
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 		},
 		"fails_plan_id_not_initialized": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			serviceInstance: *serviceInstance(
@@ -719,19 +766,18 @@ func TestObserve(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errInstanceNotReady,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 		},
 		"fails_list_not_gettable_from_kubernetes": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			kube: fake.NewClientBuilder().Build(),
@@ -739,20 +785,21 @@ func TestObserve(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: utilerr.ErrInternal,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 		},
 		"sb_exists_but_plainID_is_out_of_sync": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -774,7 +821,7 @@ func TestObserve(t *testing.T) {
 				ResourceLateInitialized: false,
 				ConnectionDetails:       managed.ConnectionDetails{},
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(&v1.ServiceBindingParameters{
 					InstanceName:      "postgres-1",
 					AcceptsIncomplete: false,
@@ -784,8 +831,9 @@ func TestObserve(t *testing.T) {
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120003",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test.URL.com",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432"},
+					},
 				),
 				withConditions(xpv1.Available()),
 				withAtProvider("Created", 0),
@@ -872,15 +920,14 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 		kube                        client.Client
 	}{
 		"status_connection_details_logme2": {
-			sb: serviceBinding(
+			sb: serviceBinding("logme2",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -902,7 +949,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
 					a9stest.Namespace[corev1.Secret]("test"),
 					a9stest.WithKey("cacrt", "-----BEGIN CERTIFICATE-----\nMIIDGzszfasde....8tn9ebYK0k2Qt\n-----END CERTIFICATE-----\n"),
-					a9stest.WithKey("host", "https://d765411-os.service.dc1.dsf2.a9ssvc:9200"),
+					a9stest.WithKey("host", "https://hsdxxxxxx-os.service.dc1.dsf2.a9ssvc:9200"),
 					a9stest.WithKey("password", "a9scbe8462ee571f12d95b3a950e1bf8b2445a59983"),
 					a9stest.WithKey("syslog_drain_url", "syslog-tls://d765411-fluentd.service.dc1.dsf2.a9ssvc:6514"),
 					a9stest.WithKey("username", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2"),
@@ -911,28 +958,28 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("logme2",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"https://d765411-os.service.dc1.dsf2.a9ssvc",
-					"9200",
+					[]connectionDetails{
+						{hostURL: "https://hsdxxxxxx-os.service.dc1.dsf2.a9ssvc", port: "9200"},
+					},
 				),
 			),
 		},
 		"status_connection_details_mariadb": {
-			sb: serviceBinding(
+			sb: serviceBinding("mariadb",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -964,28 +1011,28 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("mariadb",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"d15575b.service.dc1.a9s-mariadb-consul",
-					"3306",
+					[]connectionDetails{
+						{hostURL: "d15575b.service.dc1.a9s-mariadb-consul", port: "3306"},
+					},
 				),
 			),
 		},
 		"status_connection_details_messaging": {
-			sb: serviceBinding(
+			sb: serviceBinding("messaging",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -1042,28 +1089,28 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("messaging",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"hostname.node.dcx.consul",
-					"5672",
+					[]connectionDetails{
+						{hostURL: "hostname.node.dcx.consul", port: "5672"},
+					},
 				),
 			),
 		},
 		"status_connection_details_mongodb": {
-			sb: serviceBinding(
+			sb: serviceBinding("mongodb",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -1087,35 +1134,35 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("default_database", "d22906"),
 					a9stest.WithKey("password", "EXAMPLE-PASSWORD"),
 					a9stest.WithKey("username", "EXAMPLE-USERNAME"),
-					a9stest.WithKey("hosts", ` ["test-mongodb-0.node.dc1.dsf2.a9ssvc:27017"]`),
+					a9stest.WithKey("hosts", "[hsdxxxxxx-mongodb-0.node.dc1.dsf2.a9ssvc:27017]"),
 					a9stest.WithKey("uri", "mongodb://a9s-brk-usr-test:test@test-mongodb-0.node.dc1.dsf2.a9ssvc:27017/test?ssl=true"),
 				),
 			},
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("mongodb",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"test-mongodb-0.node.dc1.dsf2.a9ssvc",
-					"27017",
+					[]connectionDetails{
+						{hostURL: "hsdxxxxxx-mongodb-0.node.dc1.dsf2.a9ssvc", port: "27017"},
+					},
 				),
 			),
 		},
 		"status_connection_details_postgresql": {
-			sb: serviceBinding(
+			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -1148,28 +1195,28 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"EXAMPLE-HOST",
-					"5432",
+					[]connectionDetails{
+						{hostURL: "EXAMPLE-HOST", port: "5432"},
+					},
 				),
 			),
 		},
 		"status_connection_details_prometheus": {
-			sb: serviceBinding(
+			sb: serviceBinding("prometheus",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -1192,38 +1239,41 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.Namespace[corev1.Secret]("test"),
 					a9stest.WithKey("username", "EXAMPLE-USERNAME"),
 					a9stest.WithKey("password", "EXAMPLE-PASSWORD"),
-					a9stest.WithKey("alertmanager_urls", `[http://test-alertmanager-0.node.dc1.dsf2.a9ssvc:9093/service-instances/test/alertmanager/]`),
-					a9stest.WithKey("grafana_urls", `["http://test-grafana-0.node.dc1.dsf2.a9ssvc:3000/service-instances/test/grafana/"]`),
-					a9stest.WithKey("prometheus_urls", `["http://test-prometheus-0.node.dc1.dsf2.a9ssvc:9090/service-instances/test/prometheus/"]`),
+					a9stest.WithKey("alertmanager_urls", "[http://hsdxxxxxx-alertmanager-0.node.dc1.dsf2.a9ssvc:9093/service-instances/a73888f1-211d-440c-b8ef-ea89e1e36608-1747054677/alertmanager/]"),
+					a9stest.WithKey("grafana_urls", "[http://hsdxxxxxx-grafana-0.node.dc1.dsf2.a9ssvc:3000/service-instances/a73888f1-211d-440c-b8ef-ea89e1e36608-1747054677/grafana/]"),
+					a9stest.WithKey("prometheus_urls", "[http://hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc:9090/service-instances/a73888f1-211d-440c-b8ef-ea89e1e36608-1747054677/prometheus/]"),
 					a9stest.WithKey("graphite_exporter_port", "9109"),
-					a9stest.WithKey("graphite_exporters", `["test-prometheus-0.node.dc1.dsf2.a9ssvc"]`),
+					a9stest.WithKey("graphite_exporters", "[hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc]"),
 				),
 			},
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("prometheus",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"http://test-prometheus-0.node.dc1.dsf2.a9ssvc",
-					"9090",
+					[]connectionDetails{
+						{hostURL: "http://hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc", port: "9090"},
+						{hostURL: "http://hsdxxxxxx-alertmanager-0.node.dc1.dsf2.a9ssvc", port: "9093"},
+						{hostURL: "http://hsdxxxxxx-grafana-0.node.dc1.dsf2.a9ssvc", port: "3000"},
+						{hostURL: "hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc", port: "9109"},
+					},
 				),
 			),
 		},
 		"status_connection_details_search": {
-			sb: serviceBinding(
+			sb: serviceBinding("search",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			serviceInstance: *serviceInstance(
@@ -1244,7 +1294,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			otherResources: []client.Object{
 				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
 					a9stest.Namespace[corev1.Secret]("test"),
-					a9stest.WithKey("host", `["EXAMPLE_HOST"]`),
+					a9stest.WithKey("host", "[https://hsdxxxxxx.service.dc1.dsf2.a9ssvc:9200]"),
 					a9stest.WithKey("hosts", `["EXAMPLE_HOST"]`),
 					a9stest.WithKey("password", "EXAMPLE_PASSWORD"),
 					a9stest.WithKey("username", "EXAMPLE_USER"),
@@ -1255,15 +1305,16 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			getInstancesReaction: &GetInstancesReaction{
 				Error: errServiceBindingIsUnset,
 			},
-			expectedServiceBinding: serviceBinding(
+			expectedServiceBinding: serviceBinding("search",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"EXAMPLE-HOST",
-					"9200",
+					[]connectionDetails{
+						{hostURL: "https://hsdxxxxxx.service.dc1.dsf2.a9ssvc", port: "9200"},
+					},
 				),
 			),
 		},
@@ -1319,15 +1370,16 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 func TestObserveReturnsError(t *testing.T) {
 	t.Parallel()
 
-	sb := serviceBinding(
+	sb := serviceBinding("postgresql",
 		withServiceBindingParameters(defaultBindingParameters),
 		afterBindingCreation(),
 		initializeSBStatus(
 			"6e2c036c-254f-11ee-be56-0242ac120002",
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
-			"test.URL.com",
-			"5432",
+			[]connectionDetails{
+				{hostURL: "test.URL.com", port: "5432"},
+			},
 		),
 	)
 	getInstancesReaction := &GetInstancesReaction{
@@ -1352,15 +1404,16 @@ func TestObserveReturnsError(t *testing.T) {
 		ResourceLateInitialized: false,
 	}
 
-	expectedServiceBinding := serviceBinding(
+	expectedServiceBinding := serviceBinding("postgresql",
 		withServiceBindingParameters(defaultBindingParameters),
 		afterBindingCreation(),
 		initializeSBStatus(
 			"6e2c036c-254f-11ee-be56-0242ac120002",
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
-			"test.URL.com",
-			"5432",
+			[]connectionDetails{
+				{hostURL: "test.URL.com", port: "5432"},
+			},
 		),
 	)
 
@@ -1431,7 +1484,7 @@ func TestConnect(t *testing.T) {
 		},
 	}
 
-	sb := serviceBinding(a9stest.Uid[v1.ServiceBinding]("test-uid"), withProviderRef("test-provider"))
+	sb := serviceBinding("postgresql", a9stest.Uid[v1.ServiceBinding]("test-uid"), withProviderRef("test-provider"))
 
 	_, err := con.Connect(context.TODO(), sb)
 	if err != nil {
@@ -1472,14 +1525,13 @@ func TestCreate(t *testing.T) {
 	}{
 		"sb_successfully_created_for_postgresql": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("postgresql",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1516,28 +1568,26 @@ func TestCreate(t *testing.T) {
 						"username": []byte(fmt.Sprintf("%+v", "a9se0e1dasd30f0510b5asd87ba44c45")),
 					},
 				},
-				sb: serviceBinding(
+				sb: serviceBinding("postgresql",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 			},
 		},
 		"sb_successfully_created_for_search": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("search",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1610,28 +1660,26 @@ func TestCreate(t *testing.T) {
 						"username": []byte(fmt.Sprintf("%+v", "a9sc56b7fde44da65146f3b14f862bc11be6311801f")),
 					},
 				},
-				sb: serviceBinding(
+				sb: serviceBinding("search",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 			},
 		},
 		"sb_successfully_created_for_mongodb": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("mongodb",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1664,28 +1712,26 @@ func TestCreate(t *testing.T) {
 						"username":         []byte(fmt.Sprintf("%+v", "a9s-brk-usr-ce2536939a9aa77140c3e196186f4aad559ad112")),
 					},
 				},
-				sb: serviceBinding(
+				sb: serviceBinding("mongodb",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 			},
 		},
 		"sb_successfully_created_for_mariadb": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("mariadb",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1720,28 +1766,26 @@ func TestCreate(t *testing.T) {
 						"username": []byte(fmt.Sprintf("%+v", "a9s-brk-usr-a9s011b86e584ce3664fc86dc94c5f0")),
 					},
 				},
-				sb: serviceBinding(
+				sb: serviceBinding("mariadb",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 			},
 		},
 		"sb_successfully_created_for_messaging": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("messaging",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1814,28 +1858,26 @@ func TestCreate(t *testing.T) {
 						"uri":                           []byte(fmt.Sprintf("%+v", "a9s-brk-usr-1a5b9f4e6d7c3a8e0f2b3d4e5a6d5e:b4c2d8e1f5a0a9d6c9a7e5b8c5a7b0a6b2d4c0@d67701c.service.dc1.a9svs:5672")),
 					},
 				},
-				sb: serviceBinding(
+				sb: serviceBinding("messaging",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 			},
 		},
 		"sb_successfully_created_for_logme2": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("logme2",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1904,28 +1946,26 @@ func TestCreate(t *testing.T) {
 						"username":         []byte(fmt.Sprintf("%+v", "a9s8fb94579c777baded1f6b5877c162a54f9461a57")),
 					},
 				},
-				sb: serviceBinding(
+				sb: serviceBinding("logme2",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 			},
 		},
 		"sb_successfully_created_for_prometheus": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("prometheus",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -1962,28 +2002,26 @@ func TestCreate(t *testing.T) {
 						"username":               []byte(fmt.Sprintf("%+v", "a9s-brk-usr-76b0c4a7ebb051402a8437783b76d9449d638054")),
 					},
 				},
-				sb: serviceBinding(
+				sb: serviceBinding("prometheus",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 			},
 		},
 		"fails_on_broker": {
 			args: args{
-				sb: serviceBinding(
+				sb: serviceBinding("postgresql",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"postgres-1-id",
 						"63d05ec8-254e-11ee-be56-0242ac120002",
 						"76c0089e-254e-11ee-be56-0242ac120002",
-						"",
-						"",
+						nil,
 					),
 				),
 				bindReaction: &BindReaction{
@@ -2059,15 +2097,14 @@ func TestDeleteHappyPath(t *testing.T) {
 		expectedUnbindReq *osbclient.UnbindRequest
 	}{
 		"empty_response": {
-			serviceBinding: serviceBinding(
+			serviceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			unbindResponse: &osbclient.UnbindResponse{},
@@ -2080,15 +2117,14 @@ func TestDeleteHappyPath(t *testing.T) {
 			},
 		},
 		"async_true_response": {
-			serviceBinding: serviceBinding(
+			serviceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			unbindResponse: &osbclient.UnbindResponse{
@@ -2103,15 +2139,14 @@ func TestDeleteHappyPath(t *testing.T) {
 			},
 		},
 		"async_false_response": {
-			serviceBinding: serviceBinding(
+			serviceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
-					"",
-					"",
+					nil,
 				),
 			),
 			unbindResponse: &osbclient.UnbindResponse{
@@ -2184,15 +2219,16 @@ func TestDeleteHappyPath(t *testing.T) {
 func TestDeleteClientErr(t *testing.T) {
 	t.Parallel()
 
-	serviceBinding := serviceBinding(
+	serviceBinding := serviceBinding("postgresql",
 		withServiceBindingParameters(defaultBindingParameters),
 		afterBindingCreation(),
 		initializeSBStatus(
 			"6e2c036c-254f-11ee-be56-0242ac120002",
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
-			"test.URL.com",
-			"5432",
+			[]connectionDetails{
+				{hostURL: "test.URL.com", port: "5432"},
+			},
 		),
 	)
 
@@ -2265,13 +2301,14 @@ func withAtProvider(state string, id int) func(*v1.ServiceBinding) {
 	}
 }
 
-func serviceBinding(opts ...func(*v1.ServiceBinding)) *v1.ServiceBinding {
+func serviceBinding(instanceName string, opts ...func(*v1.ServiceBinding)) *v1.ServiceBinding {
 	sb := &v1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-sb-asty",
 			Labels: map[string]string{
 				"crossplane.io/claim-name":      "test-sb",
 				"crossplane.io/claim-namespace": "test",
+				"klutch.com/instance-name":      instanceName,
 			},
 			UID: "1a6a6b3e-254e-11ee-be56-0242ac120002",
 		},
@@ -2312,12 +2349,18 @@ func afterBindingCreation() func(*v1.ServiceBinding) {
 	}
 }
 
-func initializeSBStatus(instanceID, planID, serviceID, hostURL, port string) func(*v1.ServiceBinding) {
+func addConnectionDetails(conD []connectionDetails, sb *v1.ServiceBinding) {
+	for i := 0; i < len(conD); i++ {
+		sb.AddConnectionDetails(conD[i].hostURL, conD[i].port)
+	}
+}
+
+func initializeSBStatus(instanceID, planID, serviceID string, conD []connectionDetails) func(*v1.ServiceBinding) {
 	return func(sb *v1.ServiceBinding) {
 		sb.Status.AtProvider.InstanceID = instanceID
 		sb.Status.AtProvider.PlanID = planID
 		sb.Status.AtProvider.ServiceID = serviceID
-		sb.AddConnectionDetails(hostURL, port)
+		addConnectionDetails(conD, sb)
 	}
 }
 
