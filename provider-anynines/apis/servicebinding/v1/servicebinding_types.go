@@ -176,7 +176,9 @@ func (sbo *ServiceBindingObservation) HasMissingFields() bool {
 }
 
 func (sb *ServiceBinding) AddConnectionDetails(host, port string) {
-	sb.Status.AtProvider.ConnectionDetails = append(sb.Status.AtProvider.ConnectionDetails, ConnectionDetails{host, port})
+	if host != "" && port != "" {
+		sb.Status.AtProvider.ConnectionDetails = append(sb.Status.AtProvider.ConnectionDetails, ConnectionDetails{host, port})
+	}
 }
 
 func (sb *ServiceBinding) ConnectionDetailsIsNotEmpty() bool {

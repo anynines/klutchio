@@ -63,6 +63,7 @@ const (
 	// of servicebinding is unset
 	errServiceBindingIsUnset   = utilerr.PlainUserErr("servicebinding status field is unset, setting required values")
 	errInstanceNotReady        = utilerr.PlainUserErr("service instance is not ready")
+	errNoSuchDataservice       = utilerr.PlainUserErr("the specified data service is not available.")
 	errServiceInstanceNotFound = utilerr.PlainUserErr("data service instance was not found")
 	errNewClient               = "cannot create new Service"
 )
@@ -387,20 +388,20 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 
 	var hostURL, port string
 
-	if strings.Contains(sb.ObjectMeta.Name, "search") {
+	if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "search") {
 		if secret.Data["host"][0] == '[' && secret.Data["host"][len(secret.Data["host"])-1] == ']' {
 			hostURL, port = c.parseHostAndPort(string(secret.Data["host"][1 : len(secret.Data["host"])-1]))
 			sb.AddConnectionDetails(hostURL, port)
 		}
-	} else if strings.Contains(sb.ObjectMeta.Name, "logme2") {
+	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "logme2") {
 		hostURL, port = c.parseHostAndPort(string(secret.Data["host"]))
 		sb.AddConnectionDetails(hostURL, port)
-	} else if strings.Contains(sb.ObjectMeta.Name, "mongodb") {
+	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "mongodb") {
 		if secret.Data["hosts"][0] == '[' && secret.Data["hosts"][len(secret.Data["hosts"])-1] == ']' {
 			hostURL, port = c.parseHostAndPort(string(secret.Data["hosts"][1 : len(secret.Data["hosts"])-1]))
 			sb.AddConnectionDetails(hostURL, port)
 		}
-	} else if strings.Contains(sb.ObjectMeta.Name, "prometheus") {
+	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "prometheus") {
 		if secret.Data["prometheus_urls"][0] == '[' && secret.Data["prometheus_urls"][len(secret.Data["prometheus_urls"])-1] == ']' {
 			parsedURL, err := url.Parse(string(secret.Data["prometheus_urls"][1 : len(secret.Data["prometheus_urls"])-1]))
 			if err != nil {
@@ -431,12 +432,12 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 			sb.AddConnectionDetails(hostURL, port)
 		}
 
-	} else if strings.Contains(sb.ObjectMeta.Name, "postgresql") || strings.Contains(sb.ObjectMeta.Name, "messaging") || strings.Contains(sb.ObjectMeta.Name, "mariadb") {
+	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "postgresql") || strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "messaging") || strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "mariadb") {
 		hostURL = string(secret.Data["host"])
 		port = string(secret.Data["port"])
 		sb.AddConnectionDetails(hostURL, port)
 	} else {
-		return errServiceInstanceNotFound
+		return errNoSuchDataservice
 	}
 	// Validate status
 	if !sb.ConnectionDetailsIsNotEmpty() {
