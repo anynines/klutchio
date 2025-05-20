@@ -106,7 +106,7 @@ type ServiceBindingObservation struct {
 	ServiceID string `json:"serviceID,omitempty"`
 
 	// ConnectionDetails is a struct that contains the network details of the data service instance.
-	ConnectionDetails ConnectionDetails `json:"connectionDetails,omitempty"`
+	ConnectionDetails []ConnectionDetails `json:"connectionDetails,omitempty"`
 }
 
 // ConnectionDetails contains the network details required for connecting to the data service instance.
@@ -175,9 +175,12 @@ func (sbo *ServiceBindingObservation) HasMissingFields() bool {
 		sbo.PlanID == ""
 }
 
-func (sbo *ConnectionDetails) HasMissingFields() bool {
-	return sbo.HostURL == "" ||
-		sbo.Port == ""
+func (sb *ServiceBinding) AddConnectionDetails(hostURL, port string) {
+	sb.Status.AtProvider.ConnectionDetails = append(sb.Status.AtProvider.ConnectionDetails, ConnectionDetails{hostURL, port})
+}
+
+func (sb *ServiceBinding) ConnectionDetailsIsNotEmpty() bool {
+	return len(sb.Status.AtProvider.ConnectionDetails) > 0
 }
 
 func (sb *ServiceBinding) SetDeletionStatusIfNotDeleted(status string) {
