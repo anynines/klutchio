@@ -2308,7 +2308,7 @@ func serviceBinding(instanceName string, opts ...func(*v1.ServiceBinding)) *v1.S
 			Labels: map[string]string{
 				"crossplane.io/claim-name":      "test-sb",
 				"crossplane.io/claim-namespace": "test",
-				"klutch.com/instance-name":      instanceName,
+				"klutch.io/instance-name":       instanceName,
 			},
 			UID: "1a6a6b3e-254e-11ee-be56-0242ac120002",
 		},

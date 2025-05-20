@@ -63,7 +63,7 @@ const (
 	// of servicebinding is unset
 	errServiceBindingIsUnset   = utilerr.PlainUserErr("servicebinding status field is unset, setting required values")
 	errInstanceNotReady        = utilerr.PlainUserErr("service instance is not ready")
-	errNoSuchDataservice       = utilerr.PlainUserErr("the specified data service is not available.")
+	errNoSuchDataservice       = utilerr.PlainUserErr("referenced data service not found.")
 	errServiceInstanceNotFound = utilerr.PlainUserErr("data service instance was not found")
 	errNewClient               = "cannot create new Service"
 )
@@ -371,11 +371,14 @@ func getInstanceCredentials(instance osbclient.GetInstanceResponse, sb *v1.Servi
 	return nil
 }
 
-func (c external) parseHostAndPort(input string) (host, port string) {
-	index := strings.LastIndex(input, ":")
-	host = input[:index]
-	port = input[index+1:]
-	return host, port
+func (c external) parseHostAndPort(input string) (host, port string, err error) {
+	if strings.Contains(input, ":") {
+		index := strings.LastIndex(input, ":")
+		host = input[:index]
+		port = input[index+1:]
+		return host, port, nil
+	}
+	return "", "", fmt.Errorf("invalid host:port format: %q", input)
 }
 
 // initializeConnectionDetails populates the servicebinding status with connection details
@@ -387,55 +390,89 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 	}
 
 	var hostURL, port string
+	instanceName := sb.ObjectMeta.Labels["klutch.io/instance-name"]
 
-	if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "search") {
-		if secret.Data["host"][0] == '[' && secret.Data["host"][len(secret.Data["host"])-1] == ']' {
-			hostURL, port = c.parseHostAndPort(string(secret.Data["host"][1 : len(secret.Data["host"])-1]))
-			sb.AddConnectionDetails(hostURL, port)
-		}
-	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "logme2") {
-		hostURL, port = c.parseHostAndPort(string(secret.Data["host"]))
-		sb.AddConnectionDetails(hostURL, port)
-	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "mongodb") {
-		if secret.Data["hosts"][0] == '[' && secret.Data["hosts"][len(secret.Data["hosts"])-1] == ']' {
-			hostURL, port = c.parseHostAndPort(string(secret.Data["hosts"][1 : len(secret.Data["hosts"])-1]))
-			sb.AddConnectionDetails(hostURL, port)
-		}
-	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "prometheus") {
-		if secret.Data["prometheus_urls"][0] == '[' && secret.Data["prometheus_urls"][len(secret.Data["prometheus_urls"])-1] == ']' {
-			parsedURL, err := url.Parse(string(secret.Data["prometheus_urls"][1 : len(secret.Data["prometheus_urls"])-1]))
+	if strings.Contains(instanceName, "search") {
+		host, found := secret.Data["host"]
+		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+			hostURL, port, err = c.parseHostAndPort(string(host[1 : len(host)-1]))
 			if err != nil {
 				return err
 			}
-			hostURL, port = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
 			sb.AddConnectionDetails(hostURL, port)
 		}
-		if secret.Data["alertmanager_urls"][0] == '[' && secret.Data["alertmanager_urls"][len(secret.Data["alertmanager_urls"])-1] == ']' {
-			parsedURL, err := url.Parse(string(secret.Data["alertmanager_urls"][1 : len(secret.Data["alertmanager_urls"])-1]))
+	} else if strings.Contains(instanceName, "logme2") {
+		host, found := secret.Data["host"]
+		if found && len(host) >= 0 {
+			hostURL, port, err = c.parseHostAndPort(string(host))
 			if err != nil {
 				return err
 			}
-			hostURL, port = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
 			sb.AddConnectionDetails(hostURL, port)
 		}
-		if secret.Data["grafana_urls"][0] == '[' && secret.Data["grafana_urls"][len(secret.Data["grafana_urls"])-1] == ']' {
-			parsedURL, err := url.Parse(string(secret.Data["grafana_urls"][1 : len(secret.Data["grafana_urls"])-1]))
+	} else if strings.Contains(instanceName, "mongodb") {
+		host, found := secret.Data["hosts"]
+		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+			hostURL, port, err = c.parseHostAndPort(string(host[1 : len(host)-1]))
 			if err != nil {
 				return err
 			}
-			hostURL, port = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
 			sb.AddConnectionDetails(hostURL, port)
 		}
-		if secret.Data["graphite_exporters"][0] == '[' && secret.Data["graphite_exporters"][len(secret.Data["graphite_exporters"])-1] == ']' {
-			hostURL = string(string(secret.Data["graphite_exporters"][1 : len(secret.Data["graphite_exporters"])-1]))
-			port = string(secret.Data["graphite_exporter_port"])
+	} else if strings.Contains(instanceName, "prometheus") {
+		host, found := secret.Data["prometheus_urls"]
+		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port, err = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			if err != nil {
+				return err
+			}
 			sb.AddConnectionDetails(hostURL, port)
+		}
+		host, found = secret.Data["alertmanager_urls"]
+		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port, err = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			if err != nil {
+				return err
+			}
+			sb.AddConnectionDetails(hostURL, port)
+		}
+		host, found = secret.Data["grafana_urls"]
+		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port, err = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			if err != nil {
+				return err
+			}
+			sb.AddConnectionDetails(hostURL, port)
+		}
+		host, found = secret.Data["graphite_exporters"]
+		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+			hostURL = string(string(host[1 : len(host)-1]))
+			port, found := secret.Data["graphite_exporter_port"]
+			if found {
+				sb.AddConnectionDetails(hostURL, string(port))
+			}
 		}
 
-	} else if strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "postgresql") || strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "messaging") || strings.Contains(sb.ObjectMeta.Labels["klutch.com/instance-name"], "mariadb") {
-		hostURL = string(secret.Data["host"])
-		port = string(secret.Data["port"])
-		sb.AddConnectionDetails(hostURL, port)
+	} else if strings.Contains(instanceName, "postgresql") ||
+		strings.Contains(instanceName, "messaging") ||
+		strings.Contains(instanceName, "mariadb") {
+		hostURL, hostFound := secret.Data["host"]
+		port, portFound := secret.Data["port"]
+		if hostFound && portFound {
+			sb.AddConnectionDetails(string(hostURL), string(port))
+		}
 	} else {
 		return errNoSuchDataservice
 	}

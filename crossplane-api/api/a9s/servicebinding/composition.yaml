@@ -28,7 +28,7 @@ spec:
                   acceptsIncomplete: true
             patches:
               - fromFieldPath: spec.serviceInstanceType
-                toFieldPath: metadata.labels[klutch.com/instance-name]
+                toFieldPath: metadata.labels[klutch.io/instance-name]
               - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
                 toFieldPath: metadata.labels[crossplane.io/claim-namespace]
               - fromFieldPath: metadata.labels[crossplane.io/claim-name]
