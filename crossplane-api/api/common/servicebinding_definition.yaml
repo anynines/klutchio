@@ -22,8 +22,7 @@ spec:
         supported:
           - region: &region ["eu-central-1", "us-east-1"]
           - types: &serviceInstanceTypes ["postgresql", "mongodb",
-              "search", "logme2", "prometheus", "messaging", "mariadb",
-              "messaging"]
+              "search", "logme2", "prometheus", "messaging", "mariadb"]
         properties:
           spec:
             x-kubernetes-validations:
