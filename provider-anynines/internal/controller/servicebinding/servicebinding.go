@@ -371,6 +371,9 @@ func getInstanceCredentials(instance osbclient.GetInstanceResponse, sb *v1.Servi
 	return nil
 }
 
+// parseHostAndPort parses an input string in the format "host:port".
+// It separates the host and port by finding the last occurrence of ':'.
+// Returns the extracted host and port as separate strings.
 func (c external) parseHostAndPort(input string) (host, port string, err error) {
 	if strings.Contains(input, ":") {
 		index := strings.LastIndex(input, ":")
@@ -381,6 +384,60 @@ func (c external) parseHostAndPort(input string) (host, port string, err error) 
 	return "", "", fmt.Errorf("invalid host:port format: %q", input)
 }
 
+func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
+	host, found := secret[key]
+	if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+		hostURL, port, err := c.parseHostAndPort(string(host[1 : len(host)-1]))
+		if err != nil {
+			return err
+		}
+		sb.AddConnectionDetails(hostURL, port)
+	} else {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	return nil
+}
+
+func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
+	host, found := secret[key]
+	if found && len(host) >= 0 {
+		hostURL, port, err := c.parseHostAndPort(string(host))
+		if err != nil {
+			return err
+		}
+		sb.AddConnectionDetails(hostURL, port)
+	} else {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	return nil
+}
+
+func (c external) extractPrometheusHost(sb *v1.ServiceBinding, secret map[string][]byte, key string, port string) error {
+	host, found := secret[key]
+	if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+		if strings.Contains(key, "graphite_exporters") {
+			hostURL := string(string(host[1 : len(host)-1]))
+			port, found := secret[port]
+			if found {
+				sb.AddConnectionDetails(hostURL, string(port))
+			}
+		} else {
+			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port, err := c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			if err != nil {
+				return err
+			}
+			sb.AddConnectionDetails(hostURL, port)
+		}
+	} else {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	return nil
+}
+
 // initializeConnectionDetails populates the servicebinding status with connection details
 // mainly HostURl and Port.
 func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.ServiceBinding) error {
@@ -389,80 +446,42 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 		return err
 	}
 
-	var hostURL, port string
 	instanceName := sb.ObjectMeta.Labels["klutch.io/instance-name"]
 
 	if strings.Contains(instanceName, "search") {
-		host, found := secret.Data["host"]
-		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
-			hostURL, port, err = c.parseHostAndPort(string(host[1 : len(host)-1]))
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
+		err = c.extractBracketHost(sb, secret.Data, "host")
+		if err != nil {
+			return err
 		}
 	} else if strings.Contains(instanceName, "logme2") {
-		host, found := secret.Data["host"]
-		if found && len(host) >= 0 {
-			hostURL, port, err = c.parseHostAndPort(string(host))
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
+		err = c.extractPlainHost(sb, secret.Data, "host")
+		if err != nil {
+			return err
 		}
 	} else if strings.Contains(instanceName, "mongodb") {
-		host, found := secret.Data["hosts"]
-		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
-			hostURL, port, err = c.parseHostAndPort(string(host[1 : len(host)-1]))
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
+		err = c.extractBracketHost(sb, secret.Data, "hosts")
+		if err != nil {
+			return err
 		}
 	} else if strings.Contains(instanceName, "prometheus") {
-		host, found := secret.Data["prometheus_urls"]
-		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
-			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
-			if err != nil {
-				return err
-			}
-			hostURL, port, err = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
+		err = c.extractPrometheusHost(sb, secret.Data, "prometheus_urls", "")
+		if err != nil {
+			return err
 		}
-		host, found = secret.Data["alertmanager_urls"]
-		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
-			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
-			if err != nil {
-				return err
-			}
-			hostURL, port, err = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
+
+		err = c.extractPrometheusHost(sb, secret.Data, "alertmanager_urls", "")
+		if err != nil {
+			return err
 		}
-		host, found = secret.Data["grafana_urls"]
-		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
-			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
-			if err != nil {
-				return err
-			}
-			hostURL, port, err = c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
+
+		err = c.extractPrometheusHost(sb, secret.Data, "grafana_urls", "")
+		if err != nil {
+			return err
 		}
-		host, found = secret.Data["graphite_exporters"]
-		if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
-			hostURL = string(string(host[1 : len(host)-1]))
-			port, found := secret.Data["graphite_exporter_port"]
-			if found {
-				sb.AddConnectionDetails(hostURL, string(port))
-			}
+
+		err = c.extractPrometheusHost(sb, secret.Data, "graphite_exporters", "graphite_exporter_port")
+		if err != nil {
+			return err
 		}
 
 	} else if strings.Contains(instanceName, "postgresql") ||
@@ -476,10 +495,7 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 	} else {
 		return errNoSuchDataservice
 	}
-	// Validate status
-	if !sb.ConnectionDetailsIsNotEmpty() {
-		return errInstanceNotReady
-	}
+
 	return nil
 }
 
