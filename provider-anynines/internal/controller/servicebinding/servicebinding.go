@@ -386,7 +386,7 @@ func (c external) parseHostAndPort(input string) (host, port string, err error) 
 
 func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
 	host, found := secret[key]
-	if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+	if found && len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
 		hostURL, port, err := c.parseHostAndPort(string(host[1 : len(host)-1]))
 		if err != nil {
 			return err
@@ -400,7 +400,7 @@ func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]
 
 func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
 	host, found := secret[key]
-	if found && len(host) >= 0 {
+	if found && len(host) > 0 {
 		hostURL, port, err := c.parseHostAndPort(string(host))
 		if err != nil {
 			return err
@@ -414,7 +414,7 @@ func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]by
 
 func (c external) extractPrometheusHost(sb *v1.ServiceBinding, secret map[string][]byte, key string, port string) error {
 	host, found := secret[key]
-	if found && len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+	if found && len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
 		if strings.Contains(key, "graphite_exporters") {
 			hostURL := string(string(host[1 : len(host)-1]))
 			port, found := secret[port]
@@ -446,7 +446,7 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 		return err
 	}
 
-	instanceName := sb.ObjectMeta.Labels["klutch.io/instance-name"]
+	instanceName := sb.ObjectMeta.Labels["klutch.io/instance-type"]
 
 	if strings.Contains(instanceName, "search") {
 		err = c.extractBracketHost(sb, secret.Data, "host")
