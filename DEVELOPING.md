@@ -8,7 +8,7 @@ Klutch consists of multiple components that fulfill different roles. You can fin
 different folders of this repository. The diagram shows the different modules and how information
 flows between them, but does not represent the folder structure explained below.
 
-![Klutch Overview](./docs/Klutch_Overview.png)
+![Klutch Overview](./docs/img/high_level_architecture.png)
 
 ## Folder overview
 The following section explains the folder structure of this repository.
