@@ -4,7 +4,7 @@
 
 Klutch extends [Crossplane](https://www.crossplane.io/) to manage resources across multiple
 Kubernetes clusters. More details about Klutch's
-[core concepts can be found here](https://klutch.io/docs/core_concepts).
+[core concepts can be found here](https://klutch.io/docs/architecture/).
 
 Klutch makes it possible to share Kubernetes API-driven services of any `Kind` across a large number
 of clusters. Service providers remain in control of operations, service users can focus on using the
@@ -14,7 +14,7 @@ service and only need a lightweight adapter in their cluster.
 
 Please refer to our documentation [for platform operators](https://klutch.io/docs/platform-operator/)
 if you want to enable your users to use various managed resources. If you're a software developer
-then please read [our documentation for developers](https://klutch.io/docs/for-developers/).
+then please read [our documentation for developers](https://klutch.io/docs/developer-guide/).
 
 ## Getting Involved
 
