@@ -24,12 +24,14 @@ import (
 var camelToUnderscoreRE = regexp.MustCompile("[A-Z]")
 var underscoreToCamelRE = regexp.MustCompile("_[a-z]")
 
+// Deprecated: this function is not used anymore
 func CamelCaseToUnderscore(s string) string {
 	return camelToUnderscoreRE.ReplaceAllStringFunc(s, func(match string) string {
 		return "_" + strings.ToLower(match)
 	})
 }
 
+// Deprecated: this function is not used anymore
 func UnderscoreToCamelCase(s string) string {
 	return underscoreToCamelRE.ReplaceAllStringFunc(s, func(match string) string {
 		return strings.ToUpper(string(match[1]))
