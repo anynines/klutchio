@@ -66,8 +66,9 @@ func (cl Decorator) Create(ctx context.Context, res resource.Managed) (managed.E
 	return r, cl.convertAndLog("Create", err)
 }
 
-func (cl Decorator) Delete(ctx context.Context, res resource.Managed) error {
-	return cl.convertAndLog("Delete", cl.ExternalClient.Delete(ctx, res))
+func (cl Decorator) Delete(ctx context.Context, res resource.Managed) (managed.ExternalDelete, error) {
+	r, err := cl.ExternalClient.Delete(ctx, res)
+	return r, cl.convertAndLog("Delete", err)
 }
 
 func (cl Decorator) Observe(ctx context.Context, res resource.Managed) (managed.ExternalObservation, error) {
@@ -78,6 +79,10 @@ func (cl Decorator) Observe(ctx context.Context, res resource.Managed) (managed.
 func (cl Decorator) Update(ctx context.Context, res resource.Managed) (managed.ExternalUpdate, error) {
 	r, err := cl.ExternalClient.Update(ctx, res)
 	return r, cl.convertAndLog("Update", err)
+}
+
+func (cl Decorator) Disconnect(ctx context.Context) error {
+	return cl.convertAndLog("Disconnect", cl.ExternalClient.Disconnect(ctx))
 }
 
 func (cl Decorator) convertAndLog(operation string, err error) error {

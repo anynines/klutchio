@@ -6,10 +6,10 @@
 
 `make lint` to run the linter to make sure the code is up to standards. Each commit should pass this check.
 
-
 ## Working with the components in a dev environment
 
 binaries are built using `make`
+
 ### Example Backend
 
 Testing the backend requires a working and reachable OIDC provider. You can test the backend locally
@@ -25,13 +25,14 @@ go run ./cmd/example-backend \
     --cookie-signing-key=$(openssl rand -base64 32) /
 
 ```
+
 ### Konnector
 
 Most of the Konnector code is located in `./pkg/konnector`. To test out your own changes to the
 Konnector build a new image using
 
 ```sh
-KO_DOCKER_REPO=<your container registry> ko build ./cmd/konnector --bare -t <some new tag here>
+KO_DOCKER_REPO=<your container registry> ko build ./cmd/konnector --bare -t <some new tag here> --platform=linux/amd64,linux/arm64
 ```
 
 Once you have a new image, you can either `kubectl edit -n bind deployment konnector` on your

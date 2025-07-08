@@ -31,11 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1/helpers"
-	conditionsapi "github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/util/conditions"
-	bindclient "github.com/anynines/klutch/bind/pkg/client/clientset/versioned"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1/helpers"
+	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/util/conditions"
+	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
 )
 
 func (b *BindAPIServiceOptions) createAPIServiceBindings(ctx context.Context, config *rest.Config, request *bindv1alpha1.APIServiceExportRequest, secretName string) ([]*bindv1alpha1.APIServiceBinding, error) {

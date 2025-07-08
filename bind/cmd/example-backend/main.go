@@ -28,8 +28,8 @@ import (
 	"k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 
-	backend "github.com/anynines/klutch/bind/contrib/example-backend"
-	"github.com/anynines/klutch/bind/contrib/example-backend/options"
+	backend "github.com/anynines/klutchio/bind/contrib/example-backend"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/options"
 )
 
 func main() {

@@ -19,8 +19,8 @@ limitations under the License.
 package examplebackend
 
 import (
-	v1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/client/informers/externalversions/examplebackend/v1alpha1"
-	internalinterfaces "github.com/anynines/klutch/bind/contrib/example-backend/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/client/informers/externalversions/examplebackend/v1alpha1"
+	internalinterfaces "github.com/anynines/klutchio/bind/contrib/example-backend/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

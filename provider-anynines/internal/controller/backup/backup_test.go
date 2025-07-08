@@ -32,14 +32,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	bkpmgrclient "github.com/anynines/klutch/clients/a9s-backup-manager"
-	fakebkpmgr "github.com/anynines/klutch/clients/a9s-backup-manager/fake"
-	v1 "github.com/anynines/klutch/provider-anynines/apis/backup/v1"
-	dsv1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/backup"
-	bkpcontroller "github.com/anynines/klutch/provider-anynines/internal/controller/backup"
-	a9stest "github.com/anynines/klutch/provider-anynines/internal/controller/test"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	bkpmgrclient "github.com/anynines/klutchio/clients/a9s-backup-manager"
+	fakebkpmgr "github.com/anynines/klutchio/clients/a9s-backup-manager/fake"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/backup/v1"
+	dsv1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/backup"
+	bkpcontroller "github.com/anynines/klutchio/provider-anynines/internal/controller/backup"
+	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 )
 
 // Unlike many Kubernetes projects Crossplane does not use third party testing
@@ -914,7 +914,7 @@ func TestDelete(t *testing.T) {
 			}
 
 			// invoke the method under test
-			err := e.Delete(context.Background(), inputMR)
+			_, err := e.Delete(context.Background(), inputMR)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\n%s\nDelete(...): -want error, +got error:\n%s", t.Name(), diff)
 			}

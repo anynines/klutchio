@@ -1,14 +1,18 @@
 IMAGE_NAME := dataservices
-ECR_REPO := public.ecr.aws/w5n9a2g2/anynines
+ECR_REPO := public.ecr.aws/w5n9a2g2/klutch
 
 providerconfig:
 # Populate Secrets and create PostgreSQL ProvideConfig using the instance name
 ifdef postgresInstanceName
 	@export PG_SERVICE_INSTANCE_NAME=$$postgresInstanceName; \
 	if [[ $$GET_BROKER_IP == "true" ]]; then \
-		export PG_SERVICEBROKER_IP=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$PG_SERVICE_INSTANCE_NAME instances" | grep "broker/" | sed 's/\t/ /g' | tr -s " " | cut -d " " -f4); \
+		if [[ $$PG_SERVICE_INSTANCE_NAME == "" ]]; then \
+			echo "ERROR: postgresInstanceName must not be empty!"; \
+			exit 1; \
+		fi; \
+		export PG_SERVICEBROKER_IP=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$PG_SERVICE_INSTANCE_NAME instances" --json | yq -p=json '.Tables.0.Rows.[] | select ( .instance == "broker/*") | .ips'); \
 		export PG_SERVICEBROKER_HOST="http://$$PG_SERVICEBROKER_IP:3000"; \
-		export PG_BACKUP_MANAGER_IP=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$PG_SERVICE_INSTANCE_NAME instances" | grep "backup-manager/" | sed 's/\t/ /g' | tr -s " " | cut -d " " -f4); \
+		export PG_BACKUP_MANAGER_IP=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$PG_SERVICE_INSTANCE_NAME instances" --json | yq -p=json '.Tables.0.Rows.[] | select ( .instance == "backup-manager/*") | .ips'); \
 		export PG_BACKUP_MANAGER_HOST="http://$$PG_BACKUP_MANAGER_IP:3000"; \
 		echo "Backup Manager IP: $$PG_BACKUP_MANAGER_IP"; \
 		echo "Service Broker IP: $$PG_SERVICEBROKER_IP"; \

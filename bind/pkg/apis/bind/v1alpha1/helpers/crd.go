@@ -19,10 +19,10 @@ package helpers
 import (
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 func IsOwnedByBinding(name string, uid types.UID, refs []v1.OwnerReference) bool {

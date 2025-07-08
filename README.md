@@ -4,7 +4,7 @@
 
 Klutch extends [Crossplane](https://www.crossplane.io/) to manage resources across multiple
 Kubernetes clusters. More details about Klutch's
-[core concepts can be found here](https://klutch.io/docs/core_concepts).
+[core concepts can be found here](https://klutch.io/docs/architecture/).
 
 Klutch makes it possible to share Kubernetes API-driven services of any `Kind` across a large number
 of clusters. Service providers remain in control of operations, service users can focus on using the
@@ -12,14 +12,14 @@ service and only need a lightweight adapter in their cluster.
 
 ## Getting started
 
-Please refer to our documentation [for platform operators](https://klutch.io/docs/platform-operator/)
+Please refer to our documentation [for platform operators](https://klutch.io/docs/platform-operator-guide/)
 if you want to enable your users to use various managed resources. If you're a software developer
-then please read [our documentation for developers](https://klutch.io/docs/for-developers/).
+then please read [our documentation for developers](https://klutch.io/docs/developer-guide/).
 
 ## Getting Involved
 
 If you want to contact the Klutch authors or you're looking for support, please read
-[this](https://klutch.io/docs/community.)
+[this](https://klutch.io/docs/community).
 
 ## What can Klutch do for you?
 
@@ -82,6 +82,22 @@ Advantages include:
    ```
 
 [go.work docs]: https://go.dev/doc/tutorial/workspaces
+
+## Documentation Workflow
+
+We use GitHub Actions to automate our documentation process:
+
+- Pull requests modifying `docs/` trigger preview builds.
+- Previews are deployed to PR-specific URLs for easy review.
+- Merges to main automatically update the production documentation.
+- Preview environments are cleaned up after PR merges.
+
+When contributing to documentation:
+
+1. Create a PR with your changes.
+2. Check the automatically posted comment for the preview link.
+3. Review your changes in the preview environment.
+4. After approval and merge, changes will go live on the main site.
 
 ## Credits
 

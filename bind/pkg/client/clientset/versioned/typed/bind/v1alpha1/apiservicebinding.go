@@ -27,8 +27,8 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
 
-	v1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	scheme "github.com/anynines/klutch/bind/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	scheme "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned/scheme"
 )
 
 // APIServiceBindingsGetter has a method to return a APIServiceBindingInterface.

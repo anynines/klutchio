@@ -11,19 +11,19 @@ base:
       name: a9s-postgresql
 
 valid_patches:
-# from smaller to larger single instances
-- spec: { plan: postgresql-single-small }
-- spec: { plan: postgresql-single-medium }
-# from single to replica instances
-- spec: { plan: postgresql-replica-small }
-- spec: { plan: postgresql-replica-medium }
+  # from smaller to larger single instances
+  - spec: { plan: postgresql-single-small }
+  - spec: { plan: postgresql-single-big }
+  # from single to replica instances
+  - spec: { plan: postgresql-replica-small }
+  - spec: { plan: postgresql-replica-big }
 
 invalid_patches:
-# from non-ssl to ssl
-- spec: { plan: postgresql-single-nano-ssl }
-- spec: { plan: postgresql-single-small-ssl }
-- spec: { plan: postgresql-single-medium-ssl }
-# from non-bionic to bionic
-- spec: { plan: postgresql-single-nano-bionic }
-- spec: { plan: postgresql-single-small-bionic }
-- spec: { plan: postgresql-single-medium-bionic }
+  # from non-ssl to ssl
+  - spec: { plan: postgresql-single-nano-ssl }
+  - spec: { plan: postgresql-single-small-ssl }
+  - spec: { plan: postgresql-single-big-ssl }
+  # from non-bionic to bionic
+  - spec: { plan: postgresql-single-nano-bionic }
+  - spec: { plan: postgresql-single-small-bionic }
+  - spec: { plan: postgresql-single-big-bionic }

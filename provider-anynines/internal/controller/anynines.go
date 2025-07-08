@@ -20,12 +20,12 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/anynines/klutch/provider-anynines/internal/controller/backup"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/config"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/confighealth"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/restore"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/servicebinding"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/serviceinstance"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/backup"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/config"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/confighealth"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/restore"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/servicebinding"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/serviceinstance"
 )
 
 // Setup creates all anynines controllers with the supplied logger and adds them to

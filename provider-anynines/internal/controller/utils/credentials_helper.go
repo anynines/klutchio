@@ -19,8 +19,8 @@ package utils
 import (
 	"context"
 
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 	resource "github.com/crossplane/crossplane-runtime/pkg/resource"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

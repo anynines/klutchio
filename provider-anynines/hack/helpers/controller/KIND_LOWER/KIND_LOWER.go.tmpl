@@ -1,3 +1,19 @@
+/*
+Copyright 2024 Klutch Authors. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package {{ .Env.KIND | strings.ToLower }}
 
 import (
@@ -19,13 +35,13 @@ import (
 	"{{ .Env.PROJECT_REPO | strings.ToLower }}/apis/{{ .Env.GROUP | strings.ToLower }}/{{ .Env.APIVERSION | strings.ToLower }}"
 	apisv1alpha1 "{{ .Env.PROJECT_REPO | strings.ToLower }}/apis/v1alpha1"
 	"{{ .Env.PROJECT_REPO | strings.ToLower }}/internal/features"
-	util "github.com/anynines/klutch/provider-anynines/internal/controller/utils"
 )
 
 const (
 	errNot{{ .Env.KIND }}    = "managed resource is not a {{ .Env.KIND }} custom resource"
 	errTrackPCUsage = "cannot track ProviderConfig usage"
 	errGetPC        = "cannot get ProviderConfig"
+	errGetCreds     = "cannot get credentials"
 
 	errNewClient = "cannot create new Service"
 )
@@ -40,7 +56,11 @@ var (
 // Setup adds a controller that reconciles {{ .Env.KIND }} managed resources.
 func Setup(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha1.{{ .Env.KIND }}GroupKind)
-	cps := util.GetConnectionPublisher(mgr, o)
+
+	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
+	if o.Features.Enabled(features.EnableAlphaExternalSecretStores) {
+		cps = append(cps, connection.NewDetailsManager(mgr.GetClient(), apisv1alpha1.StoreConfigGroupVersionKind))
+	}
 
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.{{ .Env.KIND }}GroupVersionKind),
@@ -89,12 +109,13 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errGetPC)
 	}
 
-	credentials, err := util.GetCredentialsFromProvider(ctx, pc, c.kube)
+	cd := pc.Spec.Credentials
+	data, err := resource.CommonCredentialExtractor(ctx, cd.Source, c.kube, cd.CommonCredentialSelectors)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errGetCreds)
 	}
 
-	svc, err := c.newServiceFn(credentials.Username, credentials.Password, pc.Spec.Url)
+	svc, err := c.newServiceFn(data)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
@@ -166,13 +187,17 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	cr, ok := mg.(*v1alpha1.{{ .Env.KIND }})
 	if !ok {
-		return errors.New(errNot{{ .Env.KIND }})
+		return managed.ExternalDelete{}, errors.New(errNot{{ .Env.KIND }})
 	}
 
 	fmt.Printf("Deleting: %+v", cr)
 
+	return managed.ExternalDelete{}, nil
+}
+
+func (c *external) Disconnect(ctx context.Context) error {
 	return nil
 }

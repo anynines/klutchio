@@ -11,16 +11,16 @@ base:
       name: a8s-postgresql
 
 valid_patches:
-# from smaller to larger single instances
-- spec: { plan: postgresql-single-large }
-# from single to replica instances
-- spec: { plan: postgresql-replica-medium }
-- spec: { plan: postgresql-replica-large }
+  # from smaller to larger single instances
+  - spec: { plan: postgresql-single-big }
+  # from single to replica instances
+  - spec: { plan: postgresql-replica-medium }
+  - spec: { plan: postgresql-replica-big }
 
 invalid_patches:
-# from larger to smaller instances
-- spec: { plan: postgresql-single-nano }
-- spec: { plan: postgresql-single-small }
-# from larger to smaller replica instances
-- spec: { plan: postgresql-replica-nano }
-- spec: { plan: postgresql-replica-small }
+  # from larger to smaller instances
+  - spec: { plan: postgresql-single-nano }
+  - spec: { plan: postgresql-single-small }
+  # from larger to smaller replica instances
+  - spec: { plan: postgresql-replica-nano }
+  - spec: { plan: postgresql-replica-small }

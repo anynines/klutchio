@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	conditionsapi "github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 )
 
 const (

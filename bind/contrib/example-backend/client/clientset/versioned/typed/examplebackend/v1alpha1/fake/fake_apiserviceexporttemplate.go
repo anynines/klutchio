@@ -28,7 +28,7 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
 
-	v1alpha1 "github.com/anynines/klutch/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	v1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
 )
 
 // FakeAPIServiceExportTemplates implements APIServiceExportTemplateInterface

@@ -160,7 +160,7 @@ codegen: $(CONTROLLER_GEN) $(YAML_PATCH) ## Run the codegenerators
 verify-codegen:
 	if [[ -n "${GITHUB_WORKSPACE}" ]]; then \
 		mkdir -p $$(go env GOPATH)/src/github.com/kube-bind; \
-		ln -s ${GITHUB_WORKSPACE} $$(go env GOPATH)/src/github.com/anynines/klutch/bind; \
+		ln -s ${GITHUB_WORKSPACE} $$(go env GOPATH)/src/github.com/anynines/klutchio/bind; \
 	fi
 
 	$(MAKE) codegen
@@ -176,7 +176,7 @@ $(OPENSHIFT_GOIMPORTS):
 
 .PHONY: imports
 imports: $(OPENSHIFT_GOIMPORTS)
-	$(OPENSHIFT_GOIMPORTS) -m github.com/anynines/klutch/bind
+	$(OPENSHIFT_GOIMPORTS) -m github.com/anynines/klutchio/bind
 
 $(TOOLS_DIR)/verify_boilerplate.py:
 	mkdir -p $(TOOLS_DIR)

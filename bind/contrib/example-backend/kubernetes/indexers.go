@@ -19,7 +19,7 @@ package kubernetes
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/anynines/klutch/bind/contrib/example-backend/kubernetes/resources"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes/resources"
 )
 
 const (

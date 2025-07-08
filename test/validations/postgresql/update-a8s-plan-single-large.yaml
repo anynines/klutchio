@@ -6,20 +6,20 @@ base:
     name: update-a8s-plan-single-large
   spec:
     service: a9s-postgresql13
-    plan: postgresql-single-large
+    plan: postgresql-single-big
     compositionRef:
       name: a8s-postgresql
 
 valid_patches:
-# from single to replica instances
-- spec: { plan: postgresql-replica-large }
+  # from single to replica instances
+  - spec: { plan: postgresql-replica-big }
 
 invalid_patches:
-# from larger to smaller instances
-- spec: { plan: postgresql-single-nano }
-- spec: { plan: postgresql-single-small }
-- spec: { plan: postgresql-single-medium }
-# from larger to smaller replica instances
-- spec: { plan: postgresql-replica-nano }
-- spec: { plan: postgresql-replica-small }
-- spec: { plan: postgresql-replica-medium }
+  # from larger to smaller instances
+  - spec: { plan: postgresql-single-nano }
+  - spec: { plan: postgresql-single-small }
+  - spec: { plan: postgresql-single-medium }
+  # from larger to smaller replica instances
+  - spec: { plan: postgresql-replica-nano }
+  - spec: { plan: postgresql-replica-small }
+  - spec: { plan: postgresql-replica-medium }

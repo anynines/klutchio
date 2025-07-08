@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog/v2"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 const annotation = "klutch.anynines.com/resource-owner"
