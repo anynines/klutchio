@@ -53,3 +53,15 @@ spec:
         - type: ToCompositeFieldPath
           fromFieldPath: status.conditions
           toFieldPath: status.managed.conditions
+
+        # Custom parameters
+        - fromFieldPath: spec.parameters.javaHeapspace
+          toFieldPath: spec.forProvider.parameters.java_heapspace
+        - fromFieldPath: spec.parameters.javaMaxmetaspace
+          toFieldPath: spec.forProvider.parameters.java_maxmetaspace
+        - fromFieldPath: spec.parameters.javaGarbageCollector
+          toFieldPath: spec.forProvider.parameters.java_garbage_collector
+        - fromFieldPath: spec.parameters.tlsProtocols
+          toFieldPath: spec.forProvider.parameters.tls-protocols
+        - fromFieldPath: spec.parameters.tlsCiphers
+          toFieldPath: spec.forProvider.parameters.tls-ciphers
