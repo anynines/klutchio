@@ -6,86 +6,94 @@ spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
     kind: XLogme2Instance
-  resources:
-    - name: a9s-logme2
-      base:
-        apiVersion: dataservices.anynines.com/v1
-        kind: ServiceInstance
-        spec:
-          forProvider:
-            # acceptsIncomplete indicates if the service broker can fulfill a
-            # request asynchronously. Since the anynines-provider controller
-            # reconciles the resources asynchronously, if 'acceptsIncomplete' is
-            # not specified by the user, it will default to 'true'.
-            acceptsIncomplete: true
-            # OrganizationGUID is the platform GUID for the organization under
-            # which the service is to be provisioned. This value is specific to
-            # Cloud Foundry.
-            organizationGuid: a1d46b5c-b639-4f43-85c7-e9a0e5f01f75
-            # SpaceGUID is the identifier for the project space within the
-            # platform organization. This value is specific to Cloud Foundry.
-            spaceGuid: 1bf71cf3-9017-4846-bffc-b9b31872bfaf
-          providerConfigRef:
-            name: logme2-service-broker
-      patches:
-        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-          toFieldPath: spec.forProvider.manifest.metadata.namespace
-        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-          toFieldPath: spec.forProvider.manifest.metadata.name
-        - fromFieldPath: spec.service
-          toFieldPath: spec.forProvider.serviceName
-        - fromFieldPath: spec.plan
-          toFieldPath: spec.forProvider.planName
-        - fromFieldPath: spec.acceptsIncomplete
-          toFieldPath: spec.forProvider.acceptsIncomplete
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.createdAt
-          toFieldPath: status.managed.createdAt
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.provisionedAt
-          toFieldPath: status.managed.provisionedAt
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.state
-          toFieldPath: status.managed.state
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.updatedAt
-          toFieldPath: status.managed.updatedAt
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.conditions
-          toFieldPath: status.managed.conditions
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: a9s-logme2
+            base:
+              apiVersion: dataservices.anynines.com/v1
+              kind: ServiceInstance
+              spec:
+                forProvider:
+                  # acceptsIncomplete indicates if the service broker can fulfill a
+                  # request asynchronously. Since the anynines-provider controller
+                  # reconciles the resources asynchronously, if 'acceptsIncomplete' is
+                  # not specified by the user, it will default to 'true'.
+                  acceptsIncomplete: true
+                  # OrganizationGUID is the platform GUID for the organization under
+                  # which the service is to be provisioned. This value is specific to
+                  # Cloud Foundry.
+                  organizationGuid: a1d46b5c-b639-4f43-85c7-e9a0e5f01f75
+                  # SpaceGUID is the identifier for the project space within the
+                  # platform organization. This value is specific to Cloud Foundry.
+                  spaceGuid: 1bf71cf3-9017-4846-bffc-b9b31872bfaf
+                providerConfigRef:
+                  name: logme2-service-broker
+            patches:
+              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+                toFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                toFieldPath: metadata.labels[crossplane.io/claim-name]
+              - fromFieldPath: spec.service
+                toFieldPath: spec.forProvider.serviceName
+              - fromFieldPath: spec.plan
+                toFieldPath: spec.forProvider.planName
+              - fromFieldPath: spec.acceptsIncomplete
+                toFieldPath: spec.forProvider.acceptsIncomplete
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.createdAt
+                toFieldPath: status.managed.createdAt
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.provisionedAt
+                toFieldPath: status.managed.provisionedAt
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.state
+                toFieldPath: status.managed.state
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.updatedAt
+                toFieldPath: status.managed.updatedAt
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.conditions
+                toFieldPath: status.managed.conditions
 
-        # Custom parameters
-        - fromFieldPath: spec.parameters.javaHeapspace
-          toFieldPath: spec.forProvider.parameters.java_heapspace
-        - fromFieldPath: spec.parameters.javaMaxmetaspace
-          toFieldPath: spec.forProvider.parameters.java_maxmetaspace
-        - fromFieldPath: spec.parameters.javaGarbageCollector
-          toFieldPath: spec.forProvider.parameters.java_garbage_collector
-        - fromFieldPath: spec.parameters.ismJobInterval
-          toFieldPath: spec.forProvider.parameters.ism_job_interval
-        - fromFieldPath: spec.parameters.ismJobInterval
-          toFieldPath: spec.forProvider.parameters.ism_job_interval
-        - fromFieldPath: spec.parameters.ismDeletionAfter
-          toFieldPath: spec.forProvider.parameters.ism_deletion_after 
-        - fromFieldPath: spec.parameters.ismJitter
-          toFieldPath: spec.forProvider.parameters.ism_jitter
-        - fromFieldPath: spec.parameters.opensearchTlsProtocols
-          toFieldPath: spec.forProvider.parameters.opensearch-tls-protocols
-        - fromFieldPath: spec.parameters.opensearchTlsCiphers
-          toFieldPath: spec.forProvider.parameters.opensearch-tls-ciphers
-        - fromFieldPath: spec.parameters.fluentdUdp
-          toFieldPath: spec.forProvider.parameters.fluentd-udp
-        - fromFieldPath: spec.parameters.fluentdTcp
-          toFieldPath: spec.forProvider.parameters.fluentd-tcp
-        - fromFieldPath: spec.parameters.fluentdTls
-          toFieldPath: spec.forProvider.parameters.fluentd-tls
-        - fromFieldPath: spec.parameters.fluentdTlsCiphers
-          toFieldPath: spec.forProvider.parameters.fluentd-tls-ciphers
-        - fromFieldPath: spec.parameters.fluentdTlsVersion
-          toFieldPath: spec.forProvider.parameters.fluentd-tls-version
-        - fromFieldPath: spec.parameters.fluentdTlsMinVersion
-          toFieldPath: spec.forProvider.parameters.fluentd-tls-min-version
-        - fromFieldPath: spec.parameters.fluentdTlsMaxVersion
-          toFieldPath: spec.forProvider.parameters.fluentd-tls-max-version
-        - fromFieldPath: spec.parameters.groks
-          toFieldPath: spec.forProvider.parameters.groks
+              # Custom parameters
+              - fromFieldPath: spec.parameters.javaHeapspace
+                toFieldPath: spec.forProvider.parameters.java_heapspace
+              - fromFieldPath: spec.parameters.javaMaxmetaspace
+                toFieldPath: spec.forProvider.parameters.java_maxmetaspace
+              - fromFieldPath: spec.parameters.javaGarbageCollector
+                toFieldPath: spec.forProvider.parameters.java_garbage_collector
+              - fromFieldPath: spec.parameters.ismJobInterval
+                toFieldPath: spec.forProvider.parameters.ism_job_interval
+              - fromFieldPath: spec.parameters.ismJobInterval
+                toFieldPath: spec.forProvider.parameters.ism_job_interval
+              - fromFieldPath: spec.parameters.ismDeletionAfter
+                toFieldPath: spec.forProvider.parameters.ism_deletion_after 
+              - fromFieldPath: spec.parameters.ismJitter
+                toFieldPath: spec.forProvider.parameters.ism_jitter
+              - fromFieldPath: spec.parameters.opensearchTlsProtocols
+                toFieldPath: spec.forProvider.parameters.opensearch-tls-protocols
+              - fromFieldPath: spec.parameters.opensearchTlsCiphers
+                toFieldPath: spec.forProvider.parameters.opensearch-tls-ciphers
+              - fromFieldPath: spec.parameters.fluentdUdp
+                toFieldPath: spec.forProvider.parameters.fluentd-udp
+              - fromFieldPath: spec.parameters.fluentdTcp
+                toFieldPath: spec.forProvider.parameters.fluentd-tcp
+              - fromFieldPath: spec.parameters.fluentdTls
+                toFieldPath: spec.forProvider.parameters.fluentd-tls
+              - fromFieldPath: spec.parameters.fluentdTlsCiphers
+                toFieldPath: spec.forProvider.parameters.fluentd-tls-ciphers
+              - fromFieldPath: spec.parameters.fluentdTlsVersion
+                toFieldPath: spec.forProvider.parameters.fluentd-tls-version
+              - fromFieldPath: spec.parameters.fluentdTlsMinVersion
+                toFieldPath: spec.forProvider.parameters.fluentd-tls-min-version
+              - fromFieldPath: spec.parameters.fluentdTlsMaxVersion
+                toFieldPath: spec.forProvider.parameters.fluentd-tls-max-version
+              - fromFieldPath: spec.parameters.groks
+                toFieldPath: spec.forProvider.parameters.groks

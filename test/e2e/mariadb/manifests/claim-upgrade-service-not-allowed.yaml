@@ -5,6 +5,6 @@ metadata:
   namespace: mariadb-lifecycle
 spec:
   service: a9s-mariadb9999
-  plan: mariadb-cluster-medium-ssl
+  plan: mariadb-cluster-small-ssl
   compositionRef:
     name: a9s-mariadb

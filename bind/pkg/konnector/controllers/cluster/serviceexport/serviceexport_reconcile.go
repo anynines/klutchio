@@ -33,16 +33,16 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	conditionsapi "github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/util/conditions"
-	bindlisters "github.com/anynines/klutch/bind/pkg/client/listers/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/cluster/claimedresources"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/cluster/serviceexport/adopt"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/cluster/serviceexport/multinsinformer"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/cluster/serviceexport/spec"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/cluster/serviceexport/status"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/dynamic"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/util/conditions"
+	bindlisters "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/cluster/claimedresources"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/cluster/serviceexport/adopt"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/cluster/serviceexport/multinsinformer"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/cluster/serviceexport/spec"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/cluster/serviceexport/status"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/dynamic"
 )
 
 type reconciler struct {

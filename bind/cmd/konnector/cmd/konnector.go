@@ -30,9 +30,9 @@ import (
 	componentbaseversion "k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 
-	"github.com/anynines/klutch/bind/pkg/konnector"
-	konnectoroptions "github.com/anynines/klutch/bind/pkg/konnector/options"
-	bindversion "github.com/anynines/klutch/bind/pkg/version"
+	"github.com/anynines/klutchio/bind/pkg/konnector"
+	konnectoroptions "github.com/anynines/klutchio/bind/pkg/konnector/options"
+	bindversion "github.com/anynines/klutchio/bind/pkg/version"
 )
 
 const LeaderElectionTimeout = 3 * time.Second

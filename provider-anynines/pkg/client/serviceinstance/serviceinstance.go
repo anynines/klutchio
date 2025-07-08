@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
-	v1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"k8s.io/apimachinery/pkg/runtime"

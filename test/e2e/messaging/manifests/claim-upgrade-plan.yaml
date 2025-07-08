@@ -6,6 +6,6 @@ metadata:
 spec:
   # Use a supported messaging service and plan
   service: a9s-messaging310
-  plan: messaging-single-medium-ssl
+  plan: messaging-single-big-ssl
   compositionRef:
     name: a9s-messaging

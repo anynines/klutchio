@@ -29,8 +29,8 @@ import (
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/rest"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	bindclient "github.com/anynines/klutch/bind/pkg/client/clientset/versioned"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
 )
 
 func (b *BindAPIServiceOptions) createServiceExportRequest(

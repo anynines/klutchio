@@ -16,7 +16,7 @@ limitations under the License.
 
 package serviceinstance
 
-import utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+import utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 
 const (
 	errNotServiceInstance = utilerr.PlainUserErr("managed resource is not a ServiceInstance custom resource")

@@ -17,19 +17,19 @@ between an application platform and the Open Service Broker API.
 
 ```go
 import (
-	osb "github.com/anynines/klutch/clients/a9s-open-service-broker"
+ osb "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 )
 
 func GetBrokerCatalog(URL string) (*osb.CatalogResponse, error) {
-	config := osb.DefaultClientConfiguration()
-	config.URL = URL
+ config := osb.DefaultClientConfiguration()
+ config.URL = URL
 
-	client, err := osb.NewClient(config)
-	if err != nil {
-		return nil, err
-	}
+ client, err := osb.NewClient(config)
+ if err != nil {
+  return nil, err
+ }
 
-	return client.GetCatalog()
+ return client.GetCatalog()
 }
 ```
 

@@ -26,8 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	kuberesources "github.com/anynines/klutch/bind/contrib/example-backend/kubernetes/resources"
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	kuberesources "github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes/resources"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 type reconciler struct {

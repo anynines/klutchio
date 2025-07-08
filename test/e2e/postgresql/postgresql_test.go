@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anynines/klutch/test/e2e/funcs"
+	"github.com/anynines/klutchio/test/e2e/funcs"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -133,6 +133,17 @@ func TestPostgresSQLInstanceLifecycle(t *testing.T) {
 		).
 		Feature()
 
+	invalidPlans := features.New("Attempt to apply plans which are not supported by postgresql v15 and v17").
+		Assess("'Bionic' plans are not supported in v15",
+			funcs.ApplyInvalid(fieldManager, manifests, "claim-initial-bionic-not-supported-v15.yaml",
+				"Bionic plans are only supported by a9s PostgreSQL 13"),
+		).
+		Assess("'Bionic' plans are not supported in v17",
+			funcs.ApplyInvalid(fieldManager, manifests, "claim-initial-bionic-not-supported-v17.yaml",
+				"Bionic plans are only supported by a9s PostgreSQL 13"),
+		).
+		Feature()
+
 	deprovisionPostgreSQLServiceBinding := features.New("Deprovision PostgreSQL servicebinding").
 		Assess("DeleteClaim", funcs.DeleteResources(manifests, "servicebinding-initial.yaml")).
 		Assess("ServiceBinding is being deleted",
@@ -166,5 +177,5 @@ func TestPostgresSQLInstanceLifecycle(t *testing.T) {
 		).
 		Feature()
 
-	testenv.Test(t, provisionPostgreSQL, createServiceBinding, takeBackup, restoreBackup, upgradePostgreSQL, invalidUpgrades, deleteBackup, deprovisionPostgreSQLServiceBinding, deleteRestore, deprovisionPostgreSQL)
+	testenv.Test(t, provisionPostgreSQL, createServiceBinding, takeBackup, restoreBackup, upgradePostgreSQL, invalidUpgrades, invalidPlans, deleteBackup, deprovisionPostgreSQLServiceBinding, deleteRestore, deprovisionPostgreSQL)
 }

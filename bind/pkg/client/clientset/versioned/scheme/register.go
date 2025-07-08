@@ -25,7 +25,7 @@ import (
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	klutchbindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	klutchbindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 var Scheme = runtime.NewScheme()

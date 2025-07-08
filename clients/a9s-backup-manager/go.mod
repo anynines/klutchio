@@ -1,4 +1,4 @@
-module github.com/anynines/klutch/clients/a9s-backup-manager
+module github.com/anynines/klutchio/clients/a9s-backup-manager
 
 go 1.22
 

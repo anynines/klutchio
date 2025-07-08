@@ -25,15 +25,15 @@ SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
 CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; go list -f '{{.Dir}}' -m k8s.io/code-generator)}
 
 bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
-  github.com/anynines/klutch/bind/pkg/client github.com/anynines/klutch/bind/pkg/apis \
+  github.com/anynines/klutchio/bind/pkg/client github.com/anynines/klutchio/bind/pkg/apis \
   "bind:v1alpha1" \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate/boilerplate.generatego.txt \
   --output-base "${SCRIPT_ROOT}" \
-  --trim-path-prefix github.com/anynines/klutch/bind
+  --trim-path-prefix github.com/anynines/klutchio/bind
 
 bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
-  github.com/anynines/klutch/bind/contrib/example-backend/client github.com/anynines/klutch/bind/contrib/example-backend/apis \
+  github.com/anynines/klutchio/bind/contrib/example-backend/client github.com/anynines/klutchio/bind/contrib/example-backend/apis \
   "examplebackend:v1alpha1" \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate/boilerplate.generatego.txt \
   --output-base "${SCRIPT_ROOT}" \
-  --trim-path-prefix github.com/anynines/klutch/bind
+  --trim-path-prefix github.com/anynines/klutchio/bind

@@ -9,14 +9,14 @@ kind: Configuration
 metadata:
   name: anynines-dataservices
 spec:
-  package: "public.ecr.aws/w5n9a2g2/anynines/dataservices:$CONFIG_VERSION"
+  package: "public.ecr.aws/w5n9a2g2/klutch/dataservices:$CONFIG_VERSION"
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
 metadata:
   name: provider-anynines
 spec:
-  package: "public.ecr.aws/w5n9a2g2/anynines/provider-anynines:$PROVIDER_ANYNINES_VERSION"
+  package: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines:$PROVIDER_ANYNINES_VERSION"
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
@@ -35,4 +35,4 @@ spec:
     spec:
       containers:
       - name: anynines-backend
-        image: "public.ecr.aws/w5n9a2g2/anynines/kubebind-backend:$KUBE_BIND_BACKEND_VERSION"
+        image: "public.ecr.aws/w5n9a2g2/klutch/example-backend:$KUBE_BIND_BACKEND_VERSION"

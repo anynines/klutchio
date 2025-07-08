@@ -20,7 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,14 +36,14 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1 "github.com/anynines/klutch/provider-anynines/apis/servicebinding/v1"
-	dsv1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	util "github.com/anynines/klutch/provider-anynines/internal/controller/utils"
-	client "github.com/anynines/klutch/provider-anynines/pkg/client/osb"
-	"github.com/anynines/klutch/provider-anynines/pkg/constants"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
-	utils "github.com/anynines/klutch/provider-anynines/pkg/utils"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/servicebinding/v1"
+	dsv1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	util "github.com/anynines/klutchio/provider-anynines/internal/controller/utils"
+	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
+	"github.com/anynines/klutchio/provider-anynines/pkg/constants"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
+	utils "github.com/anynines/klutchio/provider-anynines/pkg/utils"
 )
 
 const (
@@ -262,24 +263,43 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 	return instances.ToServiceInstance(sb.Name)
 }
 
-// initializeServiceBindingStatus initializes InstanceID, ServiceID and PlanID in the status
-// if not set.
+// GetServiceBindingSecret retrieves the servicebinding secret with postfix '-creds'.
+func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBinding) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+
+	err := c.kube.Get(ctx, types.NamespacedName{
+		Name:      sb.Labels[constants.LabelKeyClaimName] + "-creds",
+		Namespace: sb.Labels[constants.LabelKeyClaimNamespace],
+	}, secret)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get ServiceBinding secret: %w",
+			err)
+	}
+
+	return secret, nil
+}
+
+// initializeServiceBindingStatus initializes the status of ServiceBinding.
 func (c *external) initializeServiceBindingStatus(ctx context.Context, sb *v1.ServiceBinding) error {
-	if !sb.Status.AtProvider.HasMissingFields() {
+	if !sb.Status.AtProvider.HasMissingFields() &&
+		!sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
 		return nil
 	}
-	serviceInstance, err := c.GetServiceInstanceManagedResource(ctx, *sb)
-	if err != nil {
-		return err
+
+	// Populate ConnectionDetails
+	if sb.Annotations[AnnotationKeyServiceBindingCreated] == "true" {
+		err := c.initializeConnectionDetails(ctx, sb)
+		if err != nil {
+			return err
+		}
+	} else if !sb.Status.AtProvider.HasMissingFields() {
+		return nil
 	}
 
-	sb.Status.AtProvider.InstanceID = serviceInstance.Status.AtProvider.InstanceID
-	sb.Status.AtProvider.ServiceID = serviceInstance.Status.AtProvider.ServiceID
-	sb.Status.AtProvider.PlanID = serviceInstance.Status.AtProvider.PlanID
-
-	// Validate status
-	if sb.Status.AtProvider.HasMissingFields() {
-		return errInstanceNotReady
+	err := c.initializeInstanceFields(ctx, sb)
+	if err != nil {
+		return err
 	}
 
 	return errServiceBindingIsUnset
@@ -295,10 +315,10 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	sb, err := getServiceBindingFromResource(mg)
 	if err != nil {
-		return err
+		return managed.ExternalDelete{}, err
 	}
 
 	sb.Status.SetConditions(xpv1.Deleting())
@@ -314,9 +334,14 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	// TODO: handle response from client
 	_, err = c.service.Unbind(deleteReq)
 	if err != nil {
-		return errDeleteServiceBinding.WithCause(err)
+		return managed.ExternalDelete{}, errDeleteServiceBinding.WithCause(err)
 	}
 
+	return managed.ExternalDelete{}, nil
+}
+
+func (c *external) Disconnect(ctx context.Context) error {
+	// Unimplemented, required by newer versions of crossplane-runtime
 	return nil
 }
 
@@ -340,6 +365,45 @@ func getInstanceCredentials(instance osbclient.GetInstanceResponse, sb *v1.Servi
 			return &credential
 		}
 	}
+	return nil
+}
+
+// initializeConnectionDetails populates the servicebinding status with connection details
+// mainly HostURl and Port.
+func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.ServiceBinding) error {
+	secret, err := c.GetServiceBindingSecret(ctx, *sb)
+	if err != nil {
+		return err
+	}
+
+	sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
+	sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
+
+	// Validate status
+	if sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
+		return errInstanceNotReady
+	}
+
+	return nil
+}
+
+// initializeInstanceFields populates the servicebinding status with service instance
+// details like InstanceID, ServiceID and PlanID.
+func (c external) initializeInstanceFields(ctx context.Context, sb *v1.ServiceBinding) error {
+	serviceInstance, err := c.GetServiceInstanceManagedResource(ctx, *sb)
+	if err != nil {
+		return err
+	}
+
+	sb.Status.AtProvider.InstanceID = serviceInstance.Status.AtProvider.InstanceID
+	sb.Status.AtProvider.ServiceID = serviceInstance.Status.AtProvider.ServiceID
+	sb.Status.AtProvider.PlanID = serviceInstance.Status.AtProvider.PlanID
+
+	// Validate status
+	if sb.Status.AtProvider.HasMissingFields() {
+		return errInstanceNotReady
+	}
+
 	return nil
 }
 

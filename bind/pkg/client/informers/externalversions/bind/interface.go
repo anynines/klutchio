@@ -19,8 +19,8 @@ limitations under the License.
 package bind
 
 import (
-	v1alpha1 "github.com/anynines/klutch/bind/pkg/client/informers/externalversions/bind/v1alpha1"
-	internalinterfaces "github.com/anynines/klutch/bind/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions/bind/v1alpha1"
+	internalinterfaces "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

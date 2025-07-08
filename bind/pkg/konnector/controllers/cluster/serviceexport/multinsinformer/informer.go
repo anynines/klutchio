@@ -35,10 +35,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	bindlisters "github.com/anynines/klutch/bind/pkg/client/listers/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/indexers"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/dynamic"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindlisters "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/indexers"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/dynamic"
 )
 
 const (
