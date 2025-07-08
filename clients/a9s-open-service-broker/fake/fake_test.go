@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	v2 "github.com/anynines/klutch/clients/a9s-open-service-broker"
-	"github.com/anynines/klutch/clients/a9s-open-service-broker/fake"
+	v2 "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	"github.com/anynines/klutchio/clients/a9s-open-service-broker/fake"
 )
 
 func catalogResponse() *v2.CatalogResponse {

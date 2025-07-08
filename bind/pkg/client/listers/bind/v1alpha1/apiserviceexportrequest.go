@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 
-	v1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
+	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 // APIServiceExportRequestLister helps list APIServiceExportRequests.

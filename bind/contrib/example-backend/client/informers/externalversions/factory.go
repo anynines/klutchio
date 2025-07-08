@@ -28,9 +28,9 @@ import (
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 
-	versioned "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned"
-	examplebackend "github.com/anynines/klutch/bind/contrib/example-backend/client/informers/externalversions/examplebackend"
-	internalinterfaces "github.com/anynines/klutch/bind/contrib/example-backend/client/informers/externalversions/internalinterfaces"
+	versioned "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned"
+	examplebackend "github.com/anynines/klutchio/bind/contrib/example-backend/client/informers/externalversions/examplebackend"
+	internalinterfaces "github.com/anynines/klutchio/bind/contrib/example-backend/client/informers/externalversions/internalinterfaces"
 )
 
 // SharedInformerOption defines the functional option type for SharedInformerFactory.

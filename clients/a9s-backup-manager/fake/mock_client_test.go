@@ -19,8 +19,8 @@ package fake_test
 import (
 	"testing"
 
-	backupmanager "github.com/anynines/klutch/clients/a9s-backup-manager"
-	"github.com/anynines/klutch/clients/a9s-backup-manager/fake"
+	backupmanager "github.com/anynines/klutchio/clients/a9s-backup-manager"
+	"github.com/anynines/klutchio/clients/a9s-backup-manager/fake"
 	"github.com/google/go-cmp/cmp"
 	"k8s.io/utils/pointer"
 )

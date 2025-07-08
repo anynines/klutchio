@@ -17,8 +17,8 @@ limitations under the License.
 package utils
 
 import (
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	"github.com/anynines/klutch/provider-anynines/internal/controller/features"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	"github.com/anynines/klutchio/provider-anynines/internal/controller/features"
 	"github.com/crossplane/crossplane-runtime/pkg/connection"
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"

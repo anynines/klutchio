@@ -28,8 +28,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 
-	"github.com/anynines/klutch/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
-	templates "github.com/anynines/klutch/bind/contrib/example-backend/client/clientset/versioned"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	templates "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned"
 )
 
 type Index struct {

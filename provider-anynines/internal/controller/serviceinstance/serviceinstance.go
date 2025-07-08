@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,13 +35,13 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	v1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	util "github.com/anynines/klutch/provider-anynines/internal/controller/utils"
-	anynines "github.com/anynines/klutch/provider-anynines/pkg/client"
-	client "github.com/anynines/klutch/provider-anynines/pkg/client/osb"
-	"github.com/anynines/klutch/provider-anynines/pkg/client/serviceinstance"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	util "github.com/anynines/klutchio/provider-anynines/internal/controller/utils"
+	anynines "github.com/anynines/klutchio/provider-anynines/pkg/client"
+	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
+	"github.com/anynines/klutchio/provider-anynines/pkg/client/serviceinstance"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 )
 
 const (
@@ -344,10 +344,10 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalUpdate{}, nil
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	dsi, ok := mg.(*v1.ServiceInstance)
 	if !ok {
-		return errNotServiceInstance
+		return managed.ExternalDelete{}, errNotServiceInstance
 	}
 
 	dsi.SetConditions(xpv1.Deleting())
@@ -359,13 +359,18 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 		PlanID:            dsi.Status.AtProvider.PlanID,
 	})
 	if err != nil && !client.IsNotFound(err) {
-		return fmt.Errorf("%s: %w", errDeleteServiceInstance, utilerr.HandleHttpError(err))
+		return managed.ExternalDelete{}, fmt.Errorf("%s: %w", errDeleteServiceInstance, utilerr.HandleHttpError(err))
 	}
 
 	if response.Async {
 		c.logAsyncAction(*response.OperationKey, dsi)
 	}
 
+	return managed.ExternalDelete{}, nil
+}
+
+func (c *external) Disconnect(ctx context.Context) error {
+	// Unimplemented, required by newer versions of crossplane-runtime
 	return nil
 }
 

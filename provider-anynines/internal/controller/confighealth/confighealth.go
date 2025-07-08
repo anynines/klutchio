@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	osbclient "github.com/anynines/klutch/clients/a9s-open-service-broker"
+	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,9 +36,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
-	v1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	credhelp "github.com/anynines/klutch/provider-anynines/internal/controller/utils"
-	client "github.com/anynines/klutch/provider-anynines/pkg/client/osb"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	credhelp "github.com/anynines/klutchio/provider-anynines/internal/controller/utils"
+	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
 )
 
 const (
@@ -85,7 +85,7 @@ type reconciler struct {
 }
 
 func (r reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithTimeout(ctx, healthCheckTimeout)
+	timeoutContext, cancel := context.WithTimeout(ctx, healthCheckTimeout)
 	defer cancel()
 
 	var pc v1.ProviderConfig
@@ -104,10 +104,13 @@ func (r reconciler) Reconcile(ctx context.Context, req reconcile.Request) (recon
 	if isCheckNeeded(&pc, now) {
 		log := r.log.WithValues("request", req)
 		log.Debug("Performing Check")
-		updated := r.getUpdatedProviderConfig(ctx, &pc, now)
+		// by passing a dedicated context, we put a limit on how long the check is allowed to take
+		// FIXME the a9s client should handle contexts correctly, it currently ignores them
+		updated := r.getUpdatedProviderConfig(timeoutContext, &pc, now)
 		status := updated.Status.Health.LastStatus
 		log.Debug("Check complete", "status", status)
 
+		// use parent context in case timeoutContext has exceeded its deadline
 		if err := r.kube.Status().Patch(ctx, updated, k8sclient.MergeFrom(&pc)); err != nil {
 			return ctrl.Result{}, err
 		}

@@ -5,6 +5,6 @@ metadata:
   namespace: prometheus-lifecycle
 spec:
   service: a9s-prometheus
-  plan: prometheus-single-medium
+  plan: prometheus-single-big
   compositionRef:
     name: a9s-prometheus

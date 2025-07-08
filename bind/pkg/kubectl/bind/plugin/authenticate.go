@@ -31,8 +31,8 @@ import (
 
 	clientgoversion "k8s.io/client-go/pkg/version"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/version"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/version"
 )
 
 func getProvider(url string) (*bindv1alpha1.BindingProvider, error) {

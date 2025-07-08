@@ -23,7 +23,7 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
-	"github.com/anynines/klutch/test/e2e/funcs"
+	"github.com/anynines/klutchio/test/e2e/funcs"
 )
 
 func TestMongoDBInstanceLifecycle(t *testing.T) {

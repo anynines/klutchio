@@ -22,7 +22,7 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/component-base/cli"
 
-	"github.com/anynines/klutch/bind/cmd/konnector/cmd"
+	"github.com/anynines/klutchio/bind/cmd/konnector/cmd"
 )
 
 func main() {

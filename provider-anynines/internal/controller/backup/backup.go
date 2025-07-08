@@ -36,14 +36,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	bkpmgrclient "github.com/anynines/klutch/clients/a9s-backup-manager"
-	v1 "github.com/anynines/klutch/provider-anynines/apis/backup/v1"
-	dsv1 "github.com/anynines/klutch/provider-anynines/apis/serviceinstance/v1"
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
-	util "github.com/anynines/klutch/provider-anynines/internal/controller/utils"
-	bkpclient "github.com/anynines/klutch/provider-anynines/pkg/client/backupmanager"
-	"github.com/anynines/klutch/provider-anynines/pkg/constants"
-	utilerr "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	bkpmgrclient "github.com/anynines/klutchio/clients/a9s-backup-manager"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/backup/v1"
+	dsv1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
+	util "github.com/anynines/klutchio/provider-anynines/internal/controller/utils"
+	bkpclient "github.com/anynines/klutchio/provider-anynines/pkg/client/backupmanager"
+	"github.com/anynines/klutchio/provider-anynines/pkg/constants"
+	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 )
 
 const (
@@ -341,20 +341,20 @@ func (c *External) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
-func (c *External) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *External) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	bkp, ok := mg.(*v1.Backup)
 	if !ok {
-		return errors.New(errNotBackup)
+		return managed.ExternalDelete{}, errors.New(errNotBackup)
 	}
 
 	if bkp.Status.AtProvider.BackupID == nil {
 		if bkp.Annotations == nil || bkp.Annotations[AnnotationKeyBackupID] == "" {
 			klog.Warning("No BackupID set, assuming no Backup was ever provisioned on the service broker")
-			return nil
+			return managed.ExternalDelete{}, nil
 		} else {
 			backupID, err := strconv.Atoi(bkp.Annotations[AnnotationKeyBackupID])
 			if err != nil {
-				return fmt.Errorf("%s: %w", errDeleteBackup, err)
+				return managed.ExternalDelete{}, fmt.Errorf("%s: %w", errDeleteBackup, err)
 			}
 			bkp.Status.AtProvider.BackupID = ptr.To[int](backupID)
 		}
@@ -365,8 +365,13 @@ func (c *External) Delete(ctx context.Context, mg resource.Managed) error {
 		BackupID:   bkp.Status.AtProvider.BackupID,
 	})
 	if err != nil {
-		return fmt.Errorf("%s: %w", errDeleteBackup, utilerr.HandleHttpError(err))
+		return managed.ExternalDelete{}, fmt.Errorf("%s: %w", errDeleteBackup, utilerr.HandleHttpError(err))
 	}
+	return managed.ExternalDelete{}, nil
+}
+
+func (c *External) Disconnect(ctx context.Context) error {
+	// Unimplemented, required by newer versions of crossplane-runtime
 	return nil
 }
 

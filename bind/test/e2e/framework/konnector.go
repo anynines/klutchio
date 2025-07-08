@@ -27,10 +27,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 
-	"github.com/anynines/klutch/bind/deploy/crd"
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/konnector"
-	"github.com/anynines/klutch/bind/pkg/konnector/options"
+	"github.com/anynines/klutchio/bind/deploy/crd"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/konnector"
+	"github.com/anynines/klutchio/bind/pkg/konnector/options"
 )
 
 func StartKonnector(t *testing.T, clientConfig *rest.Config, args ...string) *konnector.Server {

@@ -38,13 +38,13 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/utils/pointer"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	bindclient "github.com/anynines/klutch/bind/pkg/client/clientset/versioned"
-	bindlisters "github.com/anynines/klutch/bind/pkg/client/listers/bind/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/indexers"
-	clusterscoped "github.com/anynines/klutch/bind/pkg/konnector/controllers/cluster/serviceexport/cluster-scoped"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/cluster/serviceexport/multinsinformer"
-	"github.com/anynines/klutch/bind/pkg/konnector/controllers/dynamic"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
+	bindlisters "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/indexers"
+	clusterscoped "github.com/anynines/klutchio/bind/pkg/konnector/controllers/cluster/serviceexport/cluster-scoped"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/cluster/serviceexport/multinsinformer"
+	"github.com/anynines/klutchio/bind/pkg/konnector/controllers/dynamic"
 )
 
 const (

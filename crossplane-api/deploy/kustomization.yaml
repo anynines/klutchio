@@ -10,3 +10,6 @@ resources:
 
   # Install anynines-configuration package
   - config-pkg-anynines.yaml
+
+  # Install composition functions
+  - functions/function-patch-and-transform.yaml

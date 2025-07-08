@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	apisv1 "github.com/anynines/klutch/provider-anynines/apis/v1"
+	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

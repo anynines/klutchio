@@ -1,0 +1,30 @@
+base:
+  apiVersion: anynines.com/v1
+  kind: PostgresqlInstance
+  metadata:
+    # This must be UNIQUE among the `update-*` tests!
+    name: update-a9s-plan-single-big
+  spec:
+    service: a9s-postgresql13
+    plan: postgresql-single-big
+    compositionRef:
+      name: a9s-postgresql
+
+valid_patches:
+  # from single to replica instances
+  - spec: { plan: postgresql-replica-big }
+
+invalid_patches:
+  # from larger to smaller single instances
+  - spec: { plan: postgresql-single-nano }
+  - spec: { plan: postgresql-single-small }
+  # from larger to smaller replica instances
+  - spec: { plan: postgresql-replica-small }
+  # from non-ssl to ssl
+  - spec: { plan: postgresql-single-nano-ssl }
+  - spec: { plan: postgresql-single-small-ssl }
+  - spec: { plan: postgresql-single-big-ssl }
+  # from non-bionic to bionic
+  - spec: { plan: postgresql-single-nano-bionic }
+  - spec: { plan: postgresql-single-small-bionic }
+  - spec: { plan: postgresql-single-big-bionic }

@@ -39,12 +39,12 @@ import (
 	componentbaseversion "k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 
-	"github.com/anynines/klutch/bind/contrib/example-backend/cookie"
-	"github.com/anynines/klutch/bind/contrib/example-backend/exporttemplate"
-	"github.com/anynines/klutch/bind/contrib/example-backend/kubernetes"
-	"github.com/anynines/klutch/bind/contrib/example-backend/template"
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	bindversion "github.com/anynines/klutch/bind/pkg/version"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/cookie"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/exporttemplate"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/template"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindversion "github.com/anynines/klutchio/bind/pkg/version"
 )
 
 var (

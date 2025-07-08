@@ -25,7 +25,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/providerconfig"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	v1 "github.com/anynines/klutch/provider-anynines/apis/v1"
+	v1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 )
 
 // Setup adds a controller that reconciles ProviderConfigs by accounting for

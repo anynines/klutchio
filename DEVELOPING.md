@@ -8,20 +8,20 @@ Klutch consists of multiple components that fulfill different roles. You can fin
 different folders of this repository. The diagram shows the different modules and how information
 flows between them, but does not represent the folder structure explained below.
 
-![Klutch Overview](./docs/Klutch_Overview.png)
+![Klutch Overview](./docs/img/high_level_architecture.png)
 
 ## Folder overview
 The following section explains the folder structure of this repository.
 * **bind** enables usage of Klutch's APIs across different Kubernetes clusters by synchronizing
-  state between the management cluster and API consumer clusters. To find out more about developing
+  state between the Control Plane Cluster and API App Clusters (consumer). To find out more about developing
   the bind subcomponent check out [the development instructions](./bind/DEVELOPING.md).Bind has
   multiple sub-components, which all are located in the `bind` directory:
   * **backend**: backend implementation is open to different approaches, as long as they follow the
     standard. The repo comes with an example-backend, that shows how a backend can be implemented.
-    The backend authenticates new users via OIDC before creating a binding space on the consumer
-    cluster for them.
-  * **konnector**: this component gets installed in the consumer's cluster and is responsible for
-    synchronization between the management cluster and the consumer cluster.
+    The backend authenticates new users via OIDC before creating a binding space on the App
+    Cluster for them.
+  * **konnector**: this component gets installed in the App's cluster and is responsible for
+    synchronization between the Control Plane Cluster and the App Cluster.
   * **kubectl-bind** plugin: a CLI for creating a binding. This gets called by a user if they want
     to bind an API. The CLI initiates the OIDC auth process and installs the konnector into the
     user's cluster.

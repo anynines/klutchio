@@ -29,8 +29,8 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	bindapiserviceplugin "github.com/anynines/klutch/bind/pkg/kubectl/bind-apiservice/plugin"
-	bindplugin "github.com/anynines/klutch/bind/pkg/kubectl/bind/plugin"
+	bindapiserviceplugin "github.com/anynines/klutchio/bind/pkg/kubectl/bind-apiservice/plugin"
+	bindplugin "github.com/anynines/klutchio/bind/pkg/kubectl/bind/plugin"
 )
 
 func Bind(t *testing.T, iostreams genericclioptions.IOStreams, authURLCh chan<- string, invocations chan<- SubCommandInvocation, positionalArg string, flags ...string) {

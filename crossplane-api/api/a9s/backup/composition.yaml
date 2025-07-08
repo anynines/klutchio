@@ -6,42 +6,51 @@ spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
     kind: XBackup
-  resources:
-    - name: a9s-backup
-      base:
-        apiVersion: dataservices.anynines.com/v1
-        kind: Backup
-      patches:
-        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-          toFieldPath: spec.forProvider.manifest.metadata.namespace
-        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-          toFieldPath: spec.forProvider.manifest.metadata.name
-        - fromFieldPath: spec.instanceRef
-          toFieldPath: spec.forProvider.instanceName
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.downloadable
-          toFieldPath: status.managed.downloadable
-        - fromFieldPath: spec.serviceInstanceType
-          toFieldPath: spec.providerConfigRef.name
-          transforms:
-          - type: string
-            string:
-              fmt: "%s-backup-manager"
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.finished_at
-          toFieldPath: status.managed.finished_at
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.id
-          toFieldPath: status.managed.id
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.size
-          toFieldPath: status.managed.size
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.status
-          toFieldPath: status.managed.status
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.triggered_at
-          toFieldPath: status.managed.triggered_at
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.conditions
-          toFieldPath: status.managed.conditions  
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: a9s-backup
+            base:
+              apiVersion: dataservices.anynines.com/v1
+              kind: Backup
+            patches:
+              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+                toFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                toFieldPath: metadata.labels[crossplane.io/claim-name]
+              - fromFieldPath: spec.instanceRef
+                toFieldPath: spec.forProvider.instanceName
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.downloadable
+                toFieldPath: status.managed.downloadable
+              - fromFieldPath: spec.serviceInstanceType
+                toFieldPath: spec.providerConfigRef.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-backup-manager"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.finished_at
+                toFieldPath: status.managed.finished_at
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.id
+                toFieldPath: status.managed.id
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.size
+                toFieldPath: status.managed.size
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.status
+                toFieldPath: status.managed.status
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.triggered_at
+                toFieldPath: status.managed.triggered_at
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.conditions
+                toFieldPath: status.managed.conditions

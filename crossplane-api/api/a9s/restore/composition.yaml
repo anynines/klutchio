@@ -6,36 +6,45 @@ spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
     kind: XRestore
-  resources:
-    - name: a9s-restore
-      base:
-        apiVersion: dataservices.anynines.com/v1
-        kind: Restore
-      patches:
-        - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-          toFieldPath: spec.forProvider.manifest.metadata.namespace
-        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-          toFieldPath: spec.forProvider.manifest.metadata.name
-        - fromFieldPath: spec.backupRef
-          toFieldPath: spec.forProvider.backupName
-        - fromFieldPath: spec.serviceInstanceType
-          toFieldPath: spec.providerConfigRef.name
-          transforms:
-          - type: string
-            string:
-              fmt: "%s-backup-manager"
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.finishedAt
-          toFieldPath: status.managed.finishedAt
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.restoreId
-          toFieldPath: status.managed.restoreId
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.state
-          toFieldPath: status.managed.state   
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.triggeredAt
-          toFieldPath: status.managed.triggeredAt   
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.conditions
-          toFieldPath: status.managed.conditions  
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: a9s-restore
+            base:
+              apiVersion: dataservices.anynines.com/v1
+              kind: Restore
+            patches:
+              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+                toFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                toFieldPath: metadata.labels[crossplane.io/claim-name]
+              - fromFieldPath: spec.backupRef
+                toFieldPath: spec.forProvider.backupName
+              - fromFieldPath: spec.serviceInstanceType
+                toFieldPath: spec.providerConfigRef.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-backup-manager"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.finishedAt
+                toFieldPath: status.managed.finishedAt
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.restoreId
+                toFieldPath: status.managed.restoreId
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.state
+                toFieldPath: status.managed.state
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.triggeredAt
+                toFieldPath: status.managed.triggeredAt
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.conditions
+                toFieldPath: status.managed.conditions

@@ -5,6 +5,6 @@ metadata:
   namespace: pg-lifecycle
 spec:
   service: a9s-postgresql15
-  plan: postgresql-replica-medium
+  plan: postgresql-replica-big
   compositionRef:
     name: a9s-postgresql

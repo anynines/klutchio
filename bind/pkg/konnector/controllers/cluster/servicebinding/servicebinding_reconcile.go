@@ -25,10 +25,10 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/utils/pointer"
 
-	bindv1alpha1 "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1"
-	kubebindhelpers "github.com/anynines/klutch/bind/pkg/apis/bind/v1alpha1/helpers"
-	conditionsapi "github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
-	"github.com/anynines/klutch/bind/pkg/apis/third_party/conditions/util/conditions"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	kubebindhelpers "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1/helpers"
+	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/util/conditions"
 )
 
 type reconciler struct {

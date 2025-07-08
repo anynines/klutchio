@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anynines/klutch/test/e2e/utils"
+	"github.com/anynines/klutchio/test/e2e/utils"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/fieldpath"
 	"k8s.io/apimachinery/pkg/api/errors"

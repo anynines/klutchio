@@ -26,7 +26,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/go-logr/logr"
 
-	logging "github.com/anynines/klutch/provider-anynines/pkg/utilerr"
+	logging "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 )
 
 func TestDecorated(t *testing.T) {
