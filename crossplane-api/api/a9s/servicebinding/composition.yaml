@@ -27,6 +27,8 @@ spec:
                   # not specified by the user, it will default to 'true'.
                   acceptsIncomplete: true
             patches:
+              - fromFieldPath: spec.serviceInstanceType
+                toFieldPath: metadata.labels[klutch.io/instance-type]
               - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
                 toFieldPath: metadata.labels[crossplane.io/claim-namespace]
               - fromFieldPath: metadata.labels[crossplane.io/claim-name]
