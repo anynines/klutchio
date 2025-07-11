@@ -18,6 +18,7 @@ package serviceinstance
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -35,7 +36,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	fakeosb "github.com/anynines/klutchio/clients/a9s-open-service-broker/fake"
@@ -44,6 +44,8 @@ import (
 	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
 	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
+
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 var defaultCatalogResponse = osbclient.CatalogResponse{
@@ -591,7 +593,7 @@ func TestObserve(t *testing.T) {
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
 					withPlanID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withPlanName("postgresql-single-small"),
-					withIntParameter("maxConnections", 200),
+					withIntParameter("max_connections", 200),
 				),
 			},
 			want: want{
@@ -606,8 +608,8 @@ func TestObserve(t *testing.T) {
 					withPlanName("postgresql-single-small"),
 					withState("provisioned"),
 					withCondition(xpv1.Available()),
-					withIntParameter("maxConnections", 200),
-					withStatusIntParameter("maxConnections", 200),
+					withIntParameter("max_connections", 200),
+					withStatusIntParameter("max_connections", 200),
 				),
 			},
 		},
@@ -624,7 +626,7 @@ func TestObserve(t *testing.T) {
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
 					withPlanID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withPlanName("postgresql-single-small"),
-					withIntParameter("maxConnections", 200),
+					withIntParameter("max_connections", 200),
 				),
 			},
 			want: want{
@@ -639,8 +641,8 @@ func TestObserve(t *testing.T) {
 					withPlanName("postgresql-single-small"),
 					withState("provisioned"),
 					withCondition(xpv1.Available()),
-					withIntParameter("maxConnections", 200),
-					withStatusIntParameter("maxConnections", 100),
+					withIntParameter("max_connections", 200),
+					withStatusIntParameter("max_connections", 100),
 				),
 			},
 		},
@@ -671,7 +673,7 @@ func TestObserve(t *testing.T) {
 					withPlanName("postgresql-single-small"),
 					withState("provisioned"),
 					withCondition(xpv1.Available()),
-					withStatusIntParameter("maxConnections", 100),
+					withStatusIntParameter("max_connections", 100),
 				),
 			},
 		},
@@ -997,7 +999,7 @@ func TestCreate(t *testing.T) {
 							OrganizationGUID:  "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
 							SpaceGUID:         "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
 							Parameters: map[string]interface{}{
-								"max_connections": 100,
+								"max_connections": float64(100),
 							},
 						},
 					}},
@@ -1116,7 +1118,7 @@ func TestUpdate(t *testing.T) {
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
 					withPlanID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
-					withIntParameter("maxConnections", 250),
+					withIntParameter("max_connections", 250),
 				),
 			},
 			want: want{
@@ -1130,7 +1132,37 @@ func TestUpdate(t *testing.T) {
 							ServiceID:         "0f3f9e21-f960-41f4-b787-b2b47b567996",
 							PlanID:            ptr.To[string]("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 							Parameters: map[string]interface{}{
-								"max_connections": 250,
+								"max_connections": float64(250),
+							},
+						},
+					},
+				},
+			},
+		},
+		"successUpdateWithBooleanParameters": {
+			args: args{
+				updateInstanceReaction: fakeosb.UpdateInstanceReaction{
+					Response: &osbclient.UpdateInstanceResponse{},
+				},
+				mr: newServiceInstance(
+					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
+					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
+					withPlanID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
+					withBoolParameter("wal_level_logical", true),
+				),
+			},
+			want: want{
+				actions: []fakeosb.Action{
+					{Type: "GetCatalog"},
+					{
+						Type: "UpdateInstance",
+						Request: &osbclient.UpdateInstanceRequest{
+							InstanceID:        "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
+							AcceptsIncomplete: true,
+							ServiceID:         "0f3f9e21-f960-41f4-b787-b2b47b567996",
+							PlanID:            ptr.To[string]("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
+							Parameters: map[string]interface{}{
+								"wal_level_logical": true,
 							},
 						},
 					},
@@ -1146,7 +1178,7 @@ func TestUpdate(t *testing.T) {
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
 					withPlanID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
-					withStatusIntParameter("maxConnections", 250),
+					withStatusIntParameter("max_connections", 250),
 				),
 			},
 			want: want{
@@ -1176,9 +1208,9 @@ func TestUpdate(t *testing.T) {
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
 					withPlanID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
-					withIntParameter("maxConnections", 250),
-					withStringParameter("synchronousCommit", "local"),
-					withStatusIntParameter("maxConnections", 250),
+					withIntParameter("max_connections", 250),
+					withStringParameter("synchronous_commit", "local"),
+					withStatusIntParameter("max_connections", 250),
 				),
 			},
 			want: want{
@@ -1208,8 +1240,8 @@ func TestUpdate(t *testing.T) {
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
 					withPlanID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
-					withIntParameter("maxConnections", 200),
-					withStatusIntParameter("maxConnections", 250),
+					withIntParameter("max_connections", 200),
+					withStatusIntParameter("max_connections", 250),
 				),
 			},
 			want: want{
@@ -1223,7 +1255,7 @@ func TestUpdate(t *testing.T) {
 							ServiceID:         "0f3f9e21-f960-41f4-b787-b2b47b567996",
 							PlanID:            ptr.To[string]("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 							Parameters: map[string]interface{}{
-								"max_connections": 200,
+								"max_connections": float64(200),
 							},
 						},
 					},
@@ -1596,34 +1628,67 @@ func withPlanName(name string) serviceInstanceOption {
 
 func withEmptyParameters() serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
-		pg.Spec.ForProvider.Parameters = map[string]intstr.IntOrString{}
+		pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
 	}
 }
 
 func withIntParameter(key string, value int) serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
 		if pg.Spec.ForProvider.Parameters == nil {
-			pg.Spec.ForProvider.Parameters = map[string]intstr.IntOrString{}
+			pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
 		}
-		pg.Spec.ForProvider.Parameters[key] = intstr.FromInt(value)
+
+		rawBytes, err := json.Marshal(value)
+		if err != nil {
+			panic(err)
+		}
+
+		pg.Spec.ForProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
 	}
 }
 
 func withStringParameter(key string, value string) serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
 		if pg.Spec.ForProvider.Parameters == nil {
-			pg.Spec.ForProvider.Parameters = map[string]intstr.IntOrString{}
+			pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
 		}
-		pg.Spec.ForProvider.Parameters[key] = intstr.FromString(value)
+
+		rawBytes, err := json.Marshal(value)
+		if err != nil {
+			panic(err)
+		}
+
+		pg.Spec.ForProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
+	}
+}
+
+func withBoolParameter(key string, value bool) serviceInstanceOption {
+	return func(pg *v1.ServiceInstance) {
+		if pg.Spec.ForProvider.Parameters == nil {
+			pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
+		}
+
+		rawBytes, err := json.Marshal(value)
+		if err != nil {
+			panic(err)
+		}
+
+		pg.Spec.ForProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
 	}
 }
 
 func withStatusIntParameter(key string, value int) serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
 		if pg.Status.AtProvider.Parameters == nil {
-			pg.Status.AtProvider.Parameters = map[string]intstr.IntOrString{}
+			pg.Status.AtProvider.Parameters = map[string]apiextv1.JSON{}
 		}
-		pg.Status.AtProvider.Parameters[key] = intstr.FromInt(value)
+
+		rawBytes, err := json.Marshal(value)
+		if err != nil {
+			panic(err)
+		}
+
+		pg.Status.AtProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
 	}
 }
 

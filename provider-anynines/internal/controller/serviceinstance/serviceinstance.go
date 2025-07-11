@@ -244,6 +244,11 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, err
 	}
 
+	params, err := serviceinstance.KubernetesParamsToServiceBroker(dsi.Spec.ForProvider.Parameters)
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
+
 	response, err := c.osb.ProvisionInstance(&osbclient.ProvisionRequest{
 		// We use the Kubernetes resource UID to ensure that each managed resource is associated
 		// with only one service instance throughout its lifecycle. The Instance UID need not be
@@ -254,7 +259,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		PlanID:            planID,
 		OrganizationGUID:  *dsi.Spec.ForProvider.OrganizationGUID,
 		SpaceGUID:         *dsi.Spec.ForProvider.SpaceGUID,
-		Parameters:        serviceinstance.KubernetesParamsToServiceBroker(dsi.Spec.ForProvider.Parameters),
+		Parameters:        params,
 	})
 	if err != nil {
 		return managed.ExternalCreation{}, fmt.Errorf("cannot create ServiceInstance: %w", utilerr.HandleHttpError(err))
@@ -314,7 +319,10 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, fmt.Errorf("%s: %w", errUpdateServiceInstance, err)
 	}
 
-	parameterUpdate := c.updateParameters(dsi)
+	parameterUpdate, err := c.updateParameters(dsi)
+	if err != nil {
+		return managed.ExternalUpdate{}, fmt.Errorf("%s: %w", errUpdateServiceInstance, err)
+	}
 
 	response, err := c.osb.UpdateInstance(&osbclient.UpdateInstanceRequest{
 		InstanceID:        dsi.Status.AtProvider.InstanceID,
@@ -375,16 +383,23 @@ func (c *external) setUidWithError(dsi *v1.ServiceInstance) error {
 	return errors.New(errInstanceIDStatusUnset)
 }
 
-func (c *external) updateParameters(dsi *v1.ServiceInstance) map[string]interface{} {
-	parameterUpdate := serviceinstance.ParameterUpdateForBroker(
-		serviceinstance.KubernetesParamsToServiceBroker(dsi.Status.AtProvider.Parameters),
-		serviceinstance.KubernetesParamsToServiceBroker(dsi.Spec.ForProvider.Parameters),
-	)
+func (c *external) updateParameters(dsi *v1.ServiceInstance) (map[string]interface{}, error) {
+	observedParams, err := serviceinstance.KubernetesParamsToServiceBroker(dsi.Status.AtProvider.Parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	expectedParams, err := serviceinstance.KubernetesParamsToServiceBroker(dsi.Spec.ForProvider.Parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	parameterUpdate := serviceinstance.ParameterUpdateForBroker(observedParams, expectedParams)
 
 	if parameterUpdate != nil {
 		c.logger.Debug("Updating instance parameters", "parameterUpdate", parameterUpdate)
 	}
-	return parameterUpdate
+	return parameterUpdate, nil
 }
 
 func (c *external) logAsyncAction(opKey osbclient.OperationKey, dsi *v1.ServiceInstance) {
@@ -424,7 +439,10 @@ func (c *external) getInstanceAndUpdateObservation(dsi *v1.ServiceInstance) (*os
 	}
 
 	// Update the status
-	dsi.Status.AtProvider = serviceinstance.GenerateObservation(*instance)
+	dsi.Status.AtProvider, err = serviceinstance.GenerateObservation(*instance)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", errGetServiceInstance, err)
+	}
 
 	if dsi.Status.AtProvider.State == v1.StateDeleted {
 		// When a service instance is deleted the object is still retrievable from the API but it

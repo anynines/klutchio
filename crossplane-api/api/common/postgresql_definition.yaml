@@ -237,6 +237,7 @@ spec:
                     rolePrivileges: # only a9s
                       description: |
                         Configures default privileges for the credentials.
+                        Note: Values for this parameter must be enabled on the broker by your platform operator. Please consult with your platform operator.
                       type: array
                       items:
                         type: string

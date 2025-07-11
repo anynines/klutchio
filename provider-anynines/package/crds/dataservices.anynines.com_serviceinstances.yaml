@@ -117,10 +117,7 @@ spec:
                     type: object
                   parameters:
                     additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      x-kubernetes-int-or-string: true
+                      x-kubernetes-preserve-unknown-fields: true
                     description: |-
                       Parameters is a set of configuration options for the service instance.
                       Optional.
@@ -335,10 +332,7 @@ spec:
                     type: string
                   parameters:
                     additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      x-kubernetes-int-or-string: true
+                      x-kubernetes-preserve-unknown-fields: true
                     description: Parameters are the user parameters of the currently
                       deployed instance.
                     type: object
