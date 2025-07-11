@@ -27,7 +27,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -45,6 +44,8 @@ import (
 	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
 	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
+
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 var defaultCatalogResponse = osbclient.CatalogResponse{
@@ -1627,14 +1628,14 @@ func withPlanName(name string) serviceInstanceOption {
 
 func withEmptyParameters() serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
-		pg.Spec.ForProvider.Parameters = map[string]runtime.RawExtension{}
+		pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
 	}
 }
 
 func withIntParameter(key string, value int) serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
 		if pg.Spec.ForProvider.Parameters == nil {
-			pg.Spec.ForProvider.Parameters = map[string]runtime.RawExtension{}
+			pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
 		}
 
 		rawBytes, err := json.Marshal(value)
@@ -1642,14 +1643,14 @@ func withIntParameter(key string, value int) serviceInstanceOption {
 			panic(err)
 		}
 
-		pg.Spec.ForProvider.Parameters[key] = runtime.RawExtension{Raw: rawBytes}
+		pg.Spec.ForProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
 	}
 }
 
 func withStringParameter(key string, value string) serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
 		if pg.Spec.ForProvider.Parameters == nil {
-			pg.Spec.ForProvider.Parameters = map[string]runtime.RawExtension{}
+			pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
 		}
 
 		rawBytes, err := json.Marshal(value)
@@ -1657,14 +1658,14 @@ func withStringParameter(key string, value string) serviceInstanceOption {
 			panic(err)
 		}
 
-		pg.Spec.ForProvider.Parameters[key] = runtime.RawExtension{Raw: rawBytes}
+		pg.Spec.ForProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
 	}
 }
 
 func withBoolParameter(key string, value bool) serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
 		if pg.Spec.ForProvider.Parameters == nil {
-			pg.Spec.ForProvider.Parameters = map[string]runtime.RawExtension{}
+			pg.Spec.ForProvider.Parameters = map[string]apiextv1.JSON{}
 		}
 
 		rawBytes, err := json.Marshal(value)
@@ -1672,14 +1673,14 @@ func withBoolParameter(key string, value bool) serviceInstanceOption {
 			panic(err)
 		}
 
-		pg.Spec.ForProvider.Parameters[key] = runtime.RawExtension{Raw: rawBytes}
+		pg.Spec.ForProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
 	}
 }
 
 func withStatusIntParameter(key string, value int) serviceInstanceOption {
 	return func(pg *v1.ServiceInstance) {
 		if pg.Status.AtProvider.Parameters == nil {
-			pg.Status.AtProvider.Parameters = map[string]runtime.RawExtension{}
+			pg.Status.AtProvider.Parameters = map[string]apiextv1.JSON{}
 		}
 
 		rawBytes, err := json.Marshal(value)
@@ -1687,7 +1688,7 @@ func withStatusIntParameter(key string, value int) serviceInstanceOption {
 			panic(err)
 		}
 
-		pg.Status.AtProvider.Parameters[key] = runtime.RawExtension{Raw: rawBytes}
+		pg.Status.AtProvider.Parameters[key] = apiextv1.JSON{Raw: rawBytes}
 	}
 }
 

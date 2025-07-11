@@ -13,7 +13,7 @@ spec:
     maxConnections: 200
     tempFileLimit: 4096
     trackIoTiming: "on"
-    archiveTimeout: 10
+    archiveTimeout: 700
     statementTimeout: 3000
     walWriterDelay: 400
     maxReplicationSlots: 12
@@ -25,3 +25,4 @@ spec:
     logStatement: ddl
     logErrorVerbosity: VERBOSE
     walLevelLogical: true
+    # rolePrivileges: ["CREATEDB", "CREATEROLE","REPLICATION"] # Note: Make sure your broker is configured to enable role privileges before using this parameter.

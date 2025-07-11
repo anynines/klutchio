@@ -25,8 +25,9 @@ import (
 	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 // The Service Broker API provides a generic abstraction for all Data Services so much of the logic
@@ -69,7 +70,7 @@ func LateInitializeBool(b *bool, from bool) *bool {
 }
 
 // LateInitializeIntOrStringMap implements late initialization for a RawExtension map type
-func LateInitializeJsonMap(s map[string]runtime.RawExtension, from map[string]runtime.RawExtension) map[string]runtime.RawExtension {
+func LateInitializeJsonMap(s map[string]apiextv1.JSON, from map[string]apiextv1.JSON) map[string]apiextv1.JSON {
 	if len(s) != 0 || len(from) == 0 {
 		return s
 	}
@@ -112,7 +113,7 @@ func SpecMatchesObservedState(spec v1.ServiceInstanceParameters, in osbclient.Ge
 	LateInitialize(observed, in.Metadata)
 
 	if spec.Parameters != nil && observed.Parameters == nil {
-		observed.Parameters = map[string]runtime.RawExtension{}
+		observed.Parameters = map[string]apiextv1.JSON{}
 	}
 
 	return cmp.Equal(*observed, spec), cmp.Diff(*observed, spec)
@@ -120,12 +121,12 @@ func SpecMatchesObservedState(spec v1.ServiceInstanceParameters, in osbclient.Ge
 
 // ServiceBrokerParamsToKubernetes converts parameters from the format used by the service broker to
 // the format used by our internal ServiceInstance API.
-func ServiceBrokerParamsToKubernetes(parameters map[string]interface{}) (map[string]runtime.RawExtension, error) {
+func ServiceBrokerParamsToKubernetes(parameters map[string]interface{}) (map[string]apiextv1.JSON, error) {
 	if parameters == nil {
 		return nil, nil
 	}
 
-	result := map[string]runtime.RawExtension{}
+	result := map[string]apiextv1.JSON{}
 
 	for key, value := range parameters {
 		b, err := json.Marshal(value)
@@ -133,14 +134,14 @@ func ServiceBrokerParamsToKubernetes(parameters map[string]interface{}) (map[str
 			return nil, fmt.Errorf("failed to marshal key %q: %w", key, err)
 		}
 
-		result[key] = runtime.RawExtension{Raw: b}
+		result[key] = apiextv1.JSON{Raw: b}
 	}
 
 	return result, nil
 }
 
 // KubernetesParamsToServiceBroker is the inverse of serviceBrokerParamsToKubernetes
-func KubernetesParamsToServiceBroker(parameters map[string]runtime.RawExtension) (map[string]interface{}, error) {
+func KubernetesParamsToServiceBroker(parameters map[string]apiextv1.JSON) (map[string]interface{}, error) {
 	if parameters == nil {
 		return nil, nil
 	}
