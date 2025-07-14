@@ -71,8 +71,6 @@ spec:
                 toFieldPath: spec.forProvider.parameters.java_garbage_collector
               - fromFieldPath: spec.parameters.ismJobInterval
                 toFieldPath: spec.forProvider.parameters.ism_job_interval
-              - fromFieldPath: spec.parameters.ismJobInterval
-                toFieldPath: spec.forProvider.parameters.ism_job_interval
               - fromFieldPath: spec.parameters.ismDeletionAfter
                 toFieldPath: spec.forProvider.parameters.ism_deletion_after 
               - fromFieldPath: spec.parameters.ismJitter
