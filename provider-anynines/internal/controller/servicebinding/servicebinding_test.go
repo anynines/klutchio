@@ -1057,8 +1057,10 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("hosts", ` ["hostname.node.dcx.consul"]`),
 					a9stest.WithKey("password", "password"),
 					a9stest.WithKey("port", "5672"),
-					a9stest.WithKey("http_api_uri", "http://username:password@hostname.node.dcx.consul/api/"),
-					a9stest.WithKey("http_api_uris", "['http://username:password@hostname.node.dcx.consul/api/']"),
+					a9stest.WithKey("http_api_uri", "https://a9s-brk-usr-xxxxxxxx:a9sxxxxxxx@hsdxxxxxx.service.dc1.dsf2.a9ssvc:15672/api/"),
+					a9stest.WithKey("http_api_uris", "[https://a9s-brk-usr-xxxxxxxx:a9sxxxxxxx@hsdxxxxxx.service.dc1.dsf2.a9ssvc:15672/api/]"),
+					a9stest.WithKey("protocols.amqp_ssl.uri", "amqps://a9s-brk-usr-xxxxxxxx:a9sxxxxxxxx@hsdxxxxxx.service.dc1.dsf2.a9ssvc:5671"),
+					a9stest.WithKey("protocols.management.uri", "https://a9s-brk-usr-xxxxxxxx:a9sxxxxxxxx@hsdxxxxxx.service.dc1.dsf2.a9ssvc:15672/api/"),
 					a9stest.WithKey("protocols", `{
 						"amqp": {
 							"host": "hostname.node.dcx.consul",
@@ -1097,7 +1099,9 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "hostname.node.dcx.consul", port: "5672"},
+						{hostURL: "https://hsdxxxxxx.service.dc1.dsf2.a9ssvc", port: "15672"},
+						{hostURL: "amqps://hsdxxxxxx.service.dc1.dsf2.a9ssvc", port: "5671"},
+						{hostURL: "https://hsdxxxxxx.service.dc1.dsf2.a9ssvc", port: "15672"},
 					},
 				),
 			),
