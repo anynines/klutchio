@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.1
   name: servicebindings.dataservices.anynines.com
 spec:
   group: dataservices.anynines.com
@@ -77,7 +77,6 @@ spec:
                     description: |-
                       AcceptsIncomplete requires a client API version >= 2.14.
 
-
                       AcceptsIncomplete indicates whether the client can accept asynchronous
                       binding. If the broker cannot fulfill a request synchronously and
                       AcceptsIncomplete is set to false, the broker will reject the request. A
@@ -105,7 +104,6 @@ spec:
                     description: |-
                       Context requires a client API version >= 2.13.
 
-
                       Context is platform-specific contextual information under which the
                       service binding is to be created.
                     type: object
@@ -123,7 +121,6 @@ spec:
                   originatingIdentity:
                     description: |-
                       OriginatingIdentity requires a client API version >= 2.13.
-
 
                       OriginatingIdentity is the identity on the platform of the user making
                       this request.
@@ -326,16 +323,20 @@ spec:
                   connectionDetails:
                     description: ConnectionDetails is a struct that contains the network
                       details of the data service instance.
-                    properties:
-                      hostURL:
-                        description: HostURL is the URL used to connect with the data
-                          service instance.
-                        type: string
-                      port:
-                        description: Port is the Port used to connect with the data
-                          service instance.
-                        type: string
-                    type: object
+                    items:
+                      description: ConnectionDetails contains the network details
+                        required for connecting to the data service instance.
+                      properties:
+                        hostURL:
+                          description: HostURL is the URL used to connect with the
+                            data service instance.
+                          type: string
+                        port:
+                          description: Port is the Port used to connect with the data
+                            service instance.
+                          type: string
+                      type: object
+                    type: array
                   instanceId:
                     description: InstanceID is the ID of the data service instance
                       to bind.
@@ -370,6 +371,13 @@ spec:
                         A Message containing details about this condition's last transition from
                         one status to another, if any.
                       type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
                     reason:
                       description: A Reason for this condition's last transition from
                         one status to another.
@@ -393,6 +401,13 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
             type: object
         required:
         - spec

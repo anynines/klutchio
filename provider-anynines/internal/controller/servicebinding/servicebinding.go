@@ -19,6 +19,8 @@ package servicebinding
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	corev1 "k8s.io/api/core/v1"
@@ -61,6 +63,7 @@ const (
 	// of servicebinding is unset
 	errServiceBindingIsUnset   = utilerr.PlainUserErr("servicebinding status field is unset, setting required values")
 	errInstanceNotReady        = utilerr.PlainUserErr("service instance is not ready")
+	errNoSuchDataservice       = utilerr.PlainUserErr("referenced data service not found.")
 	errServiceInstanceNotFound = utilerr.PlainUserErr("data service instance was not found")
 	errNewClient               = "cannot create new Service"
 )
@@ -283,7 +286,7 @@ func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBind
 // initializeServiceBindingStatus initializes the status of ServiceBinding.
 func (c *external) initializeServiceBindingStatus(ctx context.Context, sb *v1.ServiceBinding) error {
 	if !sb.Status.AtProvider.HasMissingFields() &&
-		!sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
+		sb.ConnectionDetailsIsNotEmpty() {
 		return nil
 	}
 
@@ -368,6 +371,73 @@ func getInstanceCredentials(instance osbclient.GetInstanceResponse, sb *v1.Servi
 	return nil
 }
 
+// parseHostAndPort parses an input string in the format "host:port".
+// It separates the host and port by finding the last occurrence of ':'.
+// Returns the extracted host and port as separate strings.
+func (c external) parseHostAndPort(input string) (host, port string, err error) {
+	if strings.Contains(input, ":") {
+		index := strings.LastIndex(input, ":")
+		host = input[:index]
+		port = input[index+1:]
+		return host, port, nil
+	}
+	return "", "", fmt.Errorf("invalid host:port format: %q", input)
+}
+
+func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
+	host, found := secret[key]
+	if found && len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
+		hostURL, port, err := c.parseHostAndPort(string(host[1 : len(host)-1]))
+		if err != nil {
+			return err
+		}
+		sb.AddConnectionDetails(hostURL, port)
+	} else {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	return nil
+}
+
+func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
+	host, found := secret[key]
+	if found && len(host) > 0 {
+		hostURL, port, err := c.parseHostAndPort(string(host))
+		if err != nil {
+			return err
+		}
+		sb.AddConnectionDetails(hostURL, port)
+	} else {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	return nil
+}
+
+func (c external) extractPrometheusHost(sb *v1.ServiceBinding, secret map[string][]byte, key string, port string) error {
+	host, found := secret[key]
+	if found && len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
+		if strings.Contains(key, "graphite_exporters") {
+			hostURL := string(string(host[1 : len(host)-1]))
+			port, found := secret[port]
+			if found {
+				sb.AddConnectionDetails(hostURL, string(port))
+			}
+		} else {
+			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
+			if err != nil {
+				return err
+			}
+			hostURL, port, err := c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
+			if err != nil {
+				return err
+			}
+			sb.AddConnectionDetails(hostURL, port)
+		}
+	} else {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	return nil
+}
+
 // initializeConnectionDetails populates the servicebinding status with connection details
 // mainly HostURl and Port.
 func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.ServiceBinding) error {
@@ -376,12 +446,54 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 		return err
 	}
 
-	sb.Status.AtProvider.ConnectionDetails.HostURL = string(secret.Data["host"])
-	sb.Status.AtProvider.ConnectionDetails.Port = string(secret.Data["port"])
+	instanceName := sb.ObjectMeta.Labels["klutch.io/instance-type"]
 
-	// Validate status
-	if sb.Status.AtProvider.ConnectionDetails.HasMissingFields() {
-		return errInstanceNotReady
+	if strings.Contains(instanceName, "search") {
+		err = c.extractBracketHost(sb, secret.Data, "host")
+		if err != nil {
+			return err
+		}
+	} else if strings.Contains(instanceName, "logme2") {
+		err = c.extractPlainHost(sb, secret.Data, "host")
+		if err != nil {
+			return err
+		}
+	} else if strings.Contains(instanceName, "mongodb") {
+		err = c.extractBracketHost(sb, secret.Data, "hosts")
+		if err != nil {
+			return err
+		}
+	} else if strings.Contains(instanceName, "prometheus") {
+		err = c.extractPrometheusHost(sb, secret.Data, "prometheus_urls", "")
+		if err != nil {
+			return err
+		}
+
+		err = c.extractPrometheusHost(sb, secret.Data, "alertmanager_urls", "")
+		if err != nil {
+			return err
+		}
+
+		err = c.extractPrometheusHost(sb, secret.Data, "grafana_urls", "")
+		if err != nil {
+			return err
+		}
+
+		err = c.extractPrometheusHost(sb, secret.Data, "graphite_exporters", "graphite_exporter_port")
+		if err != nil {
+			return err
+		}
+
+	} else if strings.Contains(instanceName, "postgresql") ||
+		strings.Contains(instanceName, "messaging") ||
+		strings.Contains(instanceName, "mariadb") {
+		hostURL, hostFound := secret.Data["host"]
+		port, portFound := secret.Data["port"]
+		if hostFound && portFound {
+			sb.AddConnectionDetails(string(hostURL), string(port))
+		}
+	} else {
+		return errNoSuchDataservice
 	}
 
 	return nil
