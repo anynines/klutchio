@@ -17,12 +17,17 @@ limitations under the License.
 package serviceinstance
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
-	"github.com/anynines/klutchio/provider-anynines/pkg/utils"
 	"github.com/google/go-cmp/cmp"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"k8s.io/utils/ptr"
+
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 // The Service Broker API provides a generic abstraction for all Data Services so much of the logic
@@ -32,12 +37,20 @@ import (
 
 // LateInitialize fills the empty fields of ServiceInstanceParameters if the corresponding
 // fields are given in GetInstanceResponse.
-func LateInitialize(spec *v1.ServiceInstanceParameters, meta osbclient.Metadata) {
+func LateInitialize(spec *v1.ServiceInstanceParameters, meta osbclient.Metadata) error {
 	// AcceptsIncomplete must always be set since we always require asynchronous service operations.
-	spec.AcceptsIncomplete = ptr.To[bool](true)
+	spec.AcceptsIncomplete = ptr.To(true)
 	spec.OrganizationGUID = LateInitializeString(spec.OrganizationGUID, meta.OrganizationGUID)
 	spec.SpaceGUID = LateInitializeString(spec.SpaceGUID, meta.SpaceGUID)
-	spec.Parameters = LateInitializeIntOrStringMap(spec.Parameters, ServiceBrokerParamsToKubernetes(meta.Parameters))
+
+	params, err := ServiceBrokerParamsToKubernetes(meta.Parameters)
+	if err != nil {
+		return err
+	}
+
+	spec.Parameters = LateInitializeJsonMap(spec.Parameters, params)
+
+	return nil
 }
 
 // LateInitializeString implements late initialization for string type.
@@ -56,8 +69,8 @@ func LateInitializeBool(b *bool, from bool) *bool {
 	return &from
 }
 
-// LateInitializeIntOrStringMap implements late initialization for an IntOrString map type
-func LateInitializeIntOrStringMap(s map[string]intstr.IntOrString, from map[string]intstr.IntOrString) map[string]intstr.IntOrString {
+// LateInitializeIntOrStringMap implements late initialization for a RawExtension map type
+func LateInitializeJsonMap(s map[string]apiextv1.JSON, from map[string]apiextv1.JSON) map[string]apiextv1.JSON {
 	if len(s) != 0 || len(from) == 0 {
 		return s
 	}
@@ -66,7 +79,12 @@ func LateInitializeIntOrStringMap(s map[string]intstr.IntOrString, from map[stri
 
 // GenerateObservation is used to produce an observation object from a Service Broker
 // GetInstanceResponse
-func GenerateObservation(in osbclient.GetInstanceResponse) v1.ServiceInstanceObservation {
+func GenerateObservation(in osbclient.GetInstanceResponse) (v1.ServiceInstanceObservation, error) {
+	params, err := ServiceBrokerParamsToKubernetes(in.Metadata.Parameters)
+	if err != nil {
+		return v1.ServiceInstanceObservation{}, fmt.Errorf("cannot generate observation: %w", err)
+	}
+
 	return v1.ServiceInstanceObservation{
 		State:         in.State,
 		ProvisionedAt: in.ProvisionedAt,
@@ -76,8 +94,8 @@ func GenerateObservation(in osbclient.GetInstanceResponse) v1.ServiceInstanceObs
 		PlanID:        in.PlanGUID,
 		ServiceID:     in.ServiceGUID,
 		InstanceID:    in.GUIDAtTenant,
-		Parameters:    ServiceBrokerParamsToKubernetes(in.Metadata.Parameters),
-	}
+		Parameters:    params,
+	}, nil
 }
 
 // SpecMatchesObservedState checks whether current state is up-to-date compared to the given set of parameters.
@@ -95,7 +113,7 @@ func SpecMatchesObservedState(spec v1.ServiceInstanceParameters, in osbclient.Ge
 	LateInitialize(observed, in.Metadata)
 
 	if spec.Parameters != nil && observed.Parameters == nil {
-		observed.Parameters = map[string]intstr.IntOrString{}
+		observed.Parameters = map[string]apiextv1.JSON{}
 	}
 
 	return cmp.Equal(*observed, spec), cmp.Diff(*observed, spec)
@@ -103,46 +121,44 @@ func SpecMatchesObservedState(spec v1.ServiceInstanceParameters, in osbclient.Ge
 
 // ServiceBrokerParamsToKubernetes converts parameters from the format used by the service broker to
 // the format used by our internal ServiceInstance API.
-//
-// The differences are:
-//   - Keys on the service broker side are in underscore format (e.g. "max_connections"),
-//     while in the ServiceInstance API we use camel case ("maxConnections").
-//   - The service broker can in theory return parameters of any JSON type (expressed as `interface{}`),
-//     while the ServiceInstance API only supports integers or strings.
-func ServiceBrokerParamsToKubernetes(parameters map[string]interface{}) map[string]intstr.IntOrString {
+func ServiceBrokerParamsToKubernetes(parameters map[string]interface{}) (map[string]apiextv1.JSON, error) {
 	if parameters == nil {
-		return nil
+		return nil, nil
 	}
-	result := map[string]intstr.IntOrString{}
+
+	result := map[string]apiextv1.JSON{}
+
 	for key, value := range parameters {
-		key := utils.UnderscoreToCamelCase(key)
-		if floatValue, ok := value.(float64); ok {
-			// all JSON numbers are interpreted as float64
-			intValue := int(floatValue)
-			result[key] = intstr.FromInt(intValue)
-		} else if stringValue, ok := value.(string); ok {
-			result[key] = intstr.FromString(stringValue)
+		b, err := json.Marshal(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal key %q: %w", key, err)
 		}
-		// discard other values.
+
+		result[key] = apiextv1.JSON{Raw: b}
 	}
-	return result
+
+	return result, nil
 }
 
 // KubernetesParamsToServiceBroker is the inverse of serviceBrokerParamsToKubernetes
-func KubernetesParamsToServiceBroker(parameters map[string]intstr.IntOrString) map[string]interface{} {
+func KubernetesParamsToServiceBroker(parameters map[string]apiextv1.JSON) (map[string]interface{}, error) {
 	if parameters == nil {
-		return nil
+		return nil, nil
 	}
+
 	result := map[string]interface{}{}
 	for key, value := range parameters {
-		key := utils.CamelCaseToUnderscore(key)
-		if value.Type == intstr.Int {
-			result[key] = value.IntValue()
-		} else {
-			result[key] = value.StrVal
+		var v interface{}
+		dec := json.NewDecoder(bytes.NewReader(value.Raw))
+		err := dec.Decode(&v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal key %q: %w", key, err)
 		}
+
+		result[key] = v
 	}
-	return result
+
+	return result, nil
 }
 
 // ParameterUpdateForBroker takes two sets of broker parameters, compares them and computes
@@ -159,9 +175,21 @@ func ParameterUpdateForBroker(observed map[string]interface{}, expected map[stri
 			update[key] = nil
 		}
 	}
+
+	// we want to ignore the order of elements when comparing arrays, in case the broker returns
+	// parameters in a different order during an observation.
+	var diffOpts = []cmp.Option{
+		cmpopts.SortSlices(func(a, b interface{}) bool {
+			aj, _ := json.Marshal(a)
+			bj, _ := json.Marshal(b)
+			return string(aj) < string(bj)
+		}),
+		cmpopts.EquateEmpty(),
+	}
+
 	// set parameters that are wanted
 	for key, value := range expected {
-		if gotValue, ok := observed[key]; ok && gotValue == value {
+		if gotValue, ok := observed[key]; ok && cmp.Equal(gotValue, value, diffOpts...) {
 			// ... unless they are already set to the same value
 			continue
 		}
