@@ -162,6 +162,6 @@ operators, and technical leaders in simplifying management of data services acro
 cloud providers.
 
 - **Need Assistance?** Browse our [documentation](https://klutch.io/docs/) or connect with us in our [Github Discussions](https://github.com/anynines/klutchio/discussions).
-- **Have Ideas or Feedback?** We'd love to hear from you in our [Slack community](https://app.slack.com/workspace-signin?redir=%2Fgantry%2Fauth%3Fapp%3Dclient%26lc%3D1741268665%26return_to%3D%252Fclient%252FT07FST6U1T7%252FC07FVLWBDDH%26teams%3DT29DGCMKQ%252CT09NY5SBT%252CTDSBA9B9V%252CTEGUU4LMD%252CT07FST6U1T7).
+- **Have Ideas or Feedback?** We'd love to hear from you in our [GitHub Discussions](https://github.com/anynines/klutchio/discussions).
 - **Found a Bug?** Let's fix it together in our [GitHub repository](https://github.com/anynines/klutchio).
 - **First-Time Contributor?** Everyone starts somewhere! Check out our [contributing guide](https://github.com/anynines/klutchio/blob/main/CONTRIBUTING.md) to begin contributing in no time.
