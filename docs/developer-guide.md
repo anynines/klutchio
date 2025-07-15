@@ -151,6 +151,5 @@ As a developer, your access is typically limited to your App Cluster. Troublesho
 Control Plane Cluster or Crossplane® configuration may require additional permissions or support from your platform
 operators.
 
-For further questions or assistance, feel free to raise an issue on our [GitHub repository](https://github.com/anynines/klutchio),
-or join our [Slack workspace](https://app.slack.com/client/T07FST6U1T7/C07FVLWBDDH). If you’re enjoying the software,
-don’t forget to leave us a star on GitHub, it really makes our day!
+For further questions or assistance, feel free to raise an issue on our [GitHub repository](https://github.com/anynines/klutchio).
+If you’re enjoying the software, don’t forget to leave us a star on GitHub, it really makes our day!
