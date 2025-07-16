@@ -1,0 +1,31 @@
+apiVersion: anynines.com/v1
+kind: Logme2Instance
+metadata:
+  name: example-a9s-logme2-parameters
+  namespace: default
+spec:
+  # Use a supported logme2 serviceName and planName
+  service: a9s-logme2
+  plan: logme-single-small-ssl
+  compositionRef:
+    name: a9s-logme2
+  parameters:
+    javaHeapspace: 512
+    javaMaxmetaspace: 256
+    javaGarbageCollector: "UseParallelGC"
+    ismJobInterval: 60
+    ismDeletionAfter: "1h"
+    ismJitter: 0.5
+    opensearchTlsProtocols: ["TLSv1.2", "TLSv1.3"]
+    opensearchTlsCiphers: ["TLS_DHE_RSA_WITH_AES_256_CBC_SHA"]
+    fluentdUdp: 60001
+    fluentdTcp: 60002
+    fluentdTls: 60003
+    fluentdTlsCiphers: "ALL:!aNULL:!eNULL:!SSLv2" 
+    fluentdTlsVersion: "TLS1_3"
+    fluentdTlsMinVersion: "TLS1_2"
+    fluentdTlsMaxVersion: "TLS1_3"
+    groks:
+      - pattern: "%{WORD:Some} %{WORD:Grok} %{WORD:Pattern}"
+      - pattern: "%{WORD:Some2} %{WORD:Grok2} %{WORD:Pattern2}"
+
