@@ -447,11 +447,7 @@ func (c external) extractMessagingHost(sb *v1.ServiceBinding, secret map[string]
 		if err != nil {
 			return err
 		}
-		hostURL, port, err := c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
-		if err != nil {
-			return err
-		}
-		sb.AddConnectionDetails(hostURL, port)
+		sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
 	} else {
 		return fmt.Errorf("invalid host format: %q", host)
 	}
