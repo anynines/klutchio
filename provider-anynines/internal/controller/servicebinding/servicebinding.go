@@ -402,11 +402,11 @@ func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]
 func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
 	host, found := secret[key]
 	if found && len(host) > 0 {
-		hostURL, port, err := c.parseHostAndPort(string(host))
+		parsedURL, err := url.Parse(string(host))
 		if err != nil {
 			return err
 		}
-		sb.AddConnectionDetails(hostURL, port)
+		sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
 	} else {
 		return fmt.Errorf("invalid host format: %q", host)
 	}
@@ -428,11 +428,7 @@ func (c external) extractPrometheusHost(sb *v1.ServiceBinding, secret map[string
 			if err != nil {
 				return err
 			}
-			hostURL, port, err := c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
+			sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
 		}
 	} else {
 		return fmt.Errorf("invalid host format: %q", host)
