@@ -1,0 +1,20 @@
+apiVersion: anynines.com/v1
+kind: PrometheusInstance
+metadata:
+  name: example-a9s-prometheus-parameters
+  namespace: default
+spec:
+  # Use a supported prometheus serviceName and planName
+  service: a9s-prometheus
+  plan: prometheus-single-small
+  compositionRef:
+    name: a9s-prometheus
+  parameters:
+    mappingStrictMatch: false
+    scrapeConfigs:
+    - job_name: example_metrics
+      scrape_interval: 60s
+      scrape_timeout: 30s
+      static_configs:
+        - targets:
+          - example-app-prometheus-hungry-hippopotamus-ow.apps.example.a9s-dummy.de

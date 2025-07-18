@@ -74,6 +74,24 @@ spec:
                   #   message: "Plan migrations not possible from Non-SSL to SSL and
                   #     SSL to Non-SSL"
 
+                parameters:
+                  type: object
+                  properties:
+                    mappingStrictMatch:
+                      type: boolean
+                      description: |
+                        This property is used to configure the setting mapping-strict-match of the Graphite exporter. The default value is true.
+                        If mappingStrictMatch is set to true, only the metrics specified in the Graphite mapping configuration are allowed. Thus metrics that don't match the mapping configuration are skipped. This is useful if you have a very large set of metrics.
+                        For more information please see the Graphite Documentation: https://github.com/prometheus/graphite_exporter#yaml-config
+                    scrapeConfigs:
+                      type: array
+                      description: |
+                        This custom parameter is disabled by default. Please contact your Platform Operator for further details.
+                        The scrape_configs parameter allows the Application Developer to configure scraping targets for your a9s Prometheus Service Instance..
+                        Note: Please keep in mind that while scraping targets can be set, the default targets are always set and take precedence over the ones provided by the custom parameter.
+                      items:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
               required:
                 - service
                 - plan
