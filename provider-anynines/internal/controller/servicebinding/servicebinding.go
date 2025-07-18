@@ -386,55 +386,76 @@ func (c external) parseHostAndPort(input string) (host, port string, err error) 
 
 func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
 	host, found := secret[key]
-	if found && len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
-		hostURL, port, err := c.parseHostAndPort(string(host[1 : len(host)-1]))
-		if err != nil {
-			return err
-		}
-		sb.AddConnectionDetails(hostURL, port)
-	} else {
+	if !found {
+		return fmt.Errorf("%q field not found in secret", key)
+	}
+	if len(host) <= 2 || (host[0] != '[' && host[len(host)-1] != ']') {
 		return fmt.Errorf("invalid host format: %q", host)
 	}
+	host = host[1 : len(host)-1]
+	hostURL, port, err := c.parseHostAndPort(string(host))
+	if err != nil {
+		return err
+	}
+	sb.AddConnectionDetails(hostURL, port)
 	return nil
 }
 
 func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
 	host, found := secret[key]
-	if found && len(host) > 0 {
-		hostURL, port, err := c.parseHostAndPort(string(host))
-		if err != nil {
-			return err
-		}
-		sb.AddConnectionDetails(hostURL, port)
-	} else {
+	if !found {
+		return fmt.Errorf("%q field not found in secret", key)
+	}
+	if len(host) == 0 {
 		return fmt.Errorf("invalid host format: %q", host)
 	}
+	parsedURL, err := url.Parse(string(host))
+	if err != nil {
+		return err
+	}
+	sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
 	return nil
 }
 
 func (c external) extractPrometheusHost(sb *v1.ServiceBinding, secret map[string][]byte, key string, port string) error {
 	host, found := secret[key]
-	if found && len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
-		if strings.Contains(key, "graphite_exporters") {
-			hostURL := string(string(host[1 : len(host)-1]))
-			port, found := secret[port]
-			if found {
-				sb.AddConnectionDetails(hostURL, string(port))
-			}
-		} else {
-			parsedURL, err := url.Parse(string(host[1 : len(host)-1]))
-			if err != nil {
-				return err
-			}
-			hostURL, port, err := c.parseHostAndPort(parsedURL.Scheme + "://" + parsedURL.Host)
-			if err != nil {
-				return err
-			}
-			sb.AddConnectionDetails(hostURL, port)
-		}
-	} else {
+	if !found {
+		return fmt.Errorf("%q field not found in secret", key)
+	}
+	if len(host) <= 2 || (host[0] != '[' && host[len(host)-1] != ']') {
 		return fmt.Errorf("invalid host format: %q", host)
 	}
+	host = host[1 : len(host)-1]
+	if strings.Contains(key, "graphite_exporters") {
+		hostURL := string(string(host))
+		port, found := secret[port]
+		if !found {
+			return fmt.Errorf("%q field not found in secret", port)
+		}
+		sb.AddConnectionDetails(hostURL, string(port))
+	} else {
+		parsedURL, err := url.Parse(string(host))
+		if err != nil {
+			return err
+		}
+		sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
+	}
+	return nil
+}
+
+func (c external) extractMessagingHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
+	host, found := secret[key]
+	if !found {
+		return fmt.Errorf("%q field not found in secret", key)
+	}
+	if len(host) == 0 {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	parsedURL, err := url.Parse(string(host))
+	if err != nil {
+		return err
+	}
+	sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
 	return nil
 }
 
@@ -484,14 +505,30 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 			return err
 		}
 
+	} else if strings.Contains(instanceName, "messaging") {
+		err = c.extractMessagingHost(sb, secret.Data, "http_api_uri")
+		if err != nil {
+			return err
+		}
+		err = c.extractMessagingHost(sb, secret.Data, "protocols.amqp_ssl.uri")
+		if err != nil {
+			return err
+		}
+		err = c.extractMessagingHost(sb, secret.Data, "protocols.management.uri")
+		if err != nil {
+			return err
+		}
 	} else if strings.Contains(instanceName, "postgresql") ||
-		strings.Contains(instanceName, "messaging") ||
 		strings.Contains(instanceName, "mariadb") {
 		hostURL, hostFound := secret.Data["host"]
-		port, portFound := secret.Data["port"]
-		if hostFound && portFound {
-			sb.AddConnectionDetails(string(hostURL), string(port))
+		if !hostFound {
+			return fmt.Errorf("host field not found in secret")
 		}
+		port, portFound := secret.Data["port"]
+		if !portFound {
+			return fmt.Errorf("port field not found in secret")
+		}
+		sb.AddConnectionDetails(string(hostURL), string(port))
 	} else {
 		return errNoSuchDataservice
 	}
