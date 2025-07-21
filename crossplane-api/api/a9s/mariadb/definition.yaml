@@ -89,9 +89,7 @@ spec:
                       description: |
                         The number of days that the binary log should be kept
                         on the instance that is running MariaDB before purging.
-                      x-kubernetes-validations:
-                        - rule: "self > 0"
-                          message: "Must be greater than 0"
+                      minimum: 1
                     databases:
                       description: |
                         List of the names of the databases that should exist in
