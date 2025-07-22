@@ -113,14 +113,6 @@ spec:
                       type: array
                       items:
                         type: string
-                    roles:
-                      description: |
-                        You can create a new user with specific permissions (roles) giving using
-                        this custom parameter. This parameter receives an array of roles.
-                      type: array
-                      items:
-                        type: string
-
               required:
                 - service
                 - plan

@@ -13,4 +13,3 @@ spec:
     consumerTimeout: 1800001
     tlsProtocols: ["tlsv1.2", "tlsv1.3"]
     tlsCiphers: ["TLS_DHE_RSA_WITH_AES_256_CBC_SHA"]
-    roles: ["administrator", "management"]
