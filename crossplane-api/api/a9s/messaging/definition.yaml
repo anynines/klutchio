@@ -89,9 +89,7 @@ spec:
                       description: |
                         RabbitMQ's consumer_timeout parameter in milliseconds.
                         See https://www.rabbitmq.com/docs/consumers#acknowledgement-timeout
-                      x-kubernetes-validations:
-                        - rule: "self >= 1800000"
-                          message: "Must be greater than or equal to 1800000"
+                      minimum: 1800000
                     tlsProtocols:
                       description: |
                         You can specify the TLS protocol version via the custom parameter tls-protocols.
