@@ -61,3 +61,11 @@ spec:
               - type: ToCompositeFieldPath
                 fromFieldPath: status.conditions
                 toFieldPath: status.managed.conditions
+
+              # Custom parameters
+              - fromFieldPath: spec.parameters.binlogExpireDays
+                toFieldPath: spec.forProvider.parameters.binlog_expire_days
+              - fromFieldPath: spec.parameters.databases
+                toFieldPath: spec.forProvider.parameters.databases
+              - fromFieldPath: spec.parameters.grantPerformanceSchemaPermissions
+                toFieldPath: spec.forProvider.parameters.grant_performance_schema_permissions

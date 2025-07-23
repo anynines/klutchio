@@ -55,8 +55,8 @@ spec:
                 plan:
                   description:
                     Plan specifies the service plan. There are options
-                    for single or clustered Data Service Instances and options for
-                    different underlying computing resources (e.g.
+                    for single or clustered Data Service Instances and options
+                    for different underlying computing resources (e.g.
                     mariadb-cluster-small).
                   type: string
                   enum: *mariadbPlans
@@ -79,6 +79,30 @@ spec:
                       message:
                         "Plan migrations not possible from Non-SSL to SSL and
                         SSL to Non-SSL"
+
+                # Custom Parameters
+                parameters:
+                  type: object
+                  properties:
+                    binlogExpireDays:
+                      type: integer
+                      description: |
+                        The number of days that the binary log should be kept
+                        on the instance that is running MariaDB before purging.
+                      minimum: 1
+                    databases:
+                      description: |
+                        List of the names of the databases that should exist in
+                        the instance other than the default database.
+                        See https://docs.anynines.com/docs/application-developer/a9s-mariadb/a9s-ad-mariadb-custom-parameters/#databases-parameter
+                      type: array
+                      items:
+                        type: string
+                    grantPerformanceSchemaPermissions:
+                      description: |
+                        Whether to grant Performance Schema permissions to the
+                        Cloud Foundry (CF) binding credentials.
+                      type: boolean
               required:
                 - service
                 - plan
