@@ -79,6 +79,38 @@ spec:
                       message:
                         "Plan migrations not possible from Non-SSL to SSL and
                         SSL to Non-SSL"
+
+                # Custom Parameters
+                parameters:
+                  type: object
+                  properties:
+                    consumerTimeout:
+                      type: integer
+                      description: |
+                        RabbitMQ's consumer_timeout parameter in milliseconds.
+                        See https://www.rabbitmq.com/docs/consumers#acknowledgement-timeout
+                      minimum: 1800000
+                    tlsProtocols:
+                      description: |
+                        You can specify the TLS protocol version via the custom parameter tls-protocols.
+                        The custom parameter tls-protocols correlates with RabbitMQ's configuration
+                        parameter ssl_options.versions, see https://www.rabbitmq.com/ssl.html#tls-versions
+                      type: array
+                      items:
+                        type: string
+                        enum: ["tlsv1.2", "tlsv1.3"]
+                    tlsCiphers:
+                      description: |
+                        You can limit the TLS ciphers via the custom parameter.
+                        The custom parameter tls-ciphers correlates with RabbitMQ's configuration
+                        parameter ssl_options.ciphers, see https://www.rabbitmq.com/ssl.html#configuring-cipher-suites
+
+                        An array with cipher names is expected. Only Java format is supported.
+                        WARNING: There is no validation enabled for the user provided value and
+                        therefore existing instances can break when applying this parameter.
+                      type: array
+                      items:
+                        type: string
               required:
                 - service
                 - plan

@@ -61,3 +61,10 @@ spec:
               - type: ToCompositeFieldPath
                 fromFieldPath: status.conditions
                 toFieldPath: status.managed.conditions
+
+              - fromFieldPath: spec.parameters.consumerTimeout
+                toFieldPath: spec.forProvider.parameters.consumer_timeout
+              - fromFieldPath: spec.parameters.tlsProtocols
+                toFieldPath: spec.forProvider.parameters.tls-protocols
+              - fromFieldPath: spec.parameters.tlsCiphers
+                toFieldPath: spec.forProvider.parameters.tls-ciphers
