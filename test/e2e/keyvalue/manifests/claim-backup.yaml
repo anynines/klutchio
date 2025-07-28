@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: backup-keyvalue-sample
+  namespace: keyvalue-lifecycle
+spec:
+  instanceRef: example-keyvalue-instance
+  serviceInstanceType: keyvalue
+  compositionRef:
+    name: a9s-backup
