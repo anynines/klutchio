@@ -11,4 +11,5 @@ resources:
 - ../../bases/configure/anynines-providerconfig-logme2.yaml
 - ../../bases/configure/anynines-providerconfig-mongodb.yaml
 - ../../bases/configure/anynines-providerconfig-prometheus.yaml
+- ../../bases/configure/anynines-providerconfig-keyvalue.yaml
 - ../../bases/configure/anynines-providerconfig-search.yaml

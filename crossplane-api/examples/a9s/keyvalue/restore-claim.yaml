@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: example-a9s-keyvalue
+spec:
+    backupRef: example-a9s-keyvalue
+    serviceInstanceType: keyvalue
+    # If no compositionRef is provided, the default choice will be a8s-restore.
+    compositionRef:
+      name: a9s-restore
