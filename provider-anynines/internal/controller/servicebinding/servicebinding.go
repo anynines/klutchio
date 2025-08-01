@@ -518,6 +518,16 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 		if err != nil {
 			return err
 		}
+	} else if strings.Contains(instanceName, "keyvalue") {
+		hostURL, hostFound := secret.Data["host"]
+		if !hostFound {
+			return fmt.Errorf("host field not found in secret")
+		}
+		port, portFound := secret.Data["valkey.port"]
+		if !portFound {
+			return fmt.Errorf("port field not found in secret")
+		}
+		sb.AddConnectionDetails(string(hostURL), string(port))
 	} else if strings.Contains(instanceName, "postgresql") ||
 		strings.Contains(instanceName, "mariadb") {
 		hostURL, hostFound := secret.Data["host"]

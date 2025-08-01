@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: keyvalue-service-broker-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_KEYVALUE_SERVICE_BROKER_USERNAME
+  password: $BASE64ENCODED_KEYVALUE_SERVICE_BROKER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: keyvalue-service-broker
+spec:
+  url: "http://dockerhost:9089" # Connect to k8s service
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: keyvalue-service-broker-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: keyvalue-service-broker-credentials
+        key: password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: keyvalue-backup-manager-credentials
+type: Opaque
+data:
+  username: $BASE64ENCODED_KEYVALUE_BACKUP_MANAGER_USERNAME
+  password: $BASE64ENCODED_KEYVALUE_BACKUP_MANAGER_PASSWORD
+---
+apiVersion: dataservices.anynines.com/v1
+kind: ProviderConfig
+metadata:
+  name: keyvalue-backup-manager
+spec:
+  url: "http://dockerhost:9088" # Connect to k8s service
+  providerCredentials:
+    source: Secret
+    username:
+      secretRef:
+        namespace: crossplane-system
+        name: keyvalue-backup-manager-credentials
+        key: username
+    password:
+      secretRef:
+        namespace: crossplane-system
+        name: keyvalue-backup-manager-credentials
+        key: password

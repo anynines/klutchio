@@ -919,6 +919,60 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 		otherResources              []client.Object
 		kube                        client.Client
 	}{
+		"status_connection_details_keyvalue": {
+			sb: serviceBinding("keyvalue",
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					nil,
+				),
+			),
+			serviceInstance: *serviceInstance(
+				afterInstanceCreation(),
+				withAnnotations(
+					map[string]string{
+						"crossplane.io/claim-name":      "keyvalue-1",
+						"crossplane.io/claim-namespace": "test",
+					}),
+				serviceInstanceWithStatus(
+					dsv1.ServiceInstanceObservation{
+						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
+						PlanID:     "63d05ec8-254e-11ee-be56-0242ac120002",
+						ServiceID:  "76c0089e-254e-11ee-be56-0242ac120002",
+					},
+				),
+			),
+			otherResources: []client.Object{
+				a9stest.Secret(a9stest.Name[corev1.Secret]("test-sb-creds"),
+					a9stest.Namespace[corev1.Secret]("test"),
+					a9stest.WithKey("cacrt", "-----BEGIN CERTIFICATE-----\nMIIDGzszfasde....8tn9ebYK0k2Qt\n-----END CERTIFICATE-----\n"),
+					a9stest.WithKey("host", "hostname"),
+					a9stest.WithKey("hosts", "[hostname]"),
+					a9stest.WithKey("load_balanced_host", "lbhostname"),
+					a9stest.WithKey("valkey.password", "a9scbe8462ee571f12d95b3a950e1bf8b2445a59983"),
+					a9stest.WithKey("valkey.port", "6379"),
+					a9stest.WithKey("valkey.username", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2"),
+				),
+			},
+			getInstancesReaction: &GetInstancesReaction{
+				Error: errServiceBindingIsUnset,
+			},
+			expectedServiceBinding: serviceBinding("keyvalue",
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					[]connectionDetails{
+						{hostURL: "hostname", port: "6379"},
+					},
+				),
+			),
+		},
 		"status_connection_details_logme2": {
 			sb: serviceBinding("logme2",
 				withServiceBindingParameters(defaultBindingParameters),
@@ -1863,6 +1917,98 @@ func TestCreate(t *testing.T) {
 					},
 				},
 				sb: serviceBinding("messaging",
+					withServiceBindingParameters(defaultBindingParameters),
+					initializeSBStatus(
+						"6e2c036c-254f-11ee-be56-0242ac120002",
+						"63d05ec8-254e-11ee-be56-0242ac120002",
+						"76c0089e-254e-11ee-be56-0242ac120002",
+						nil,
+					),
+				),
+			},
+		},
+		"sb_successfully_created_for_keyvalue": {
+			args: args{
+				sb: serviceBinding("keyvalue",
+					withServiceBindingParameters(defaultBindingParameters),
+					initializeSBStatus(
+						"6e2c036c-254f-11ee-be56-0242ac120002",
+						"63d05ec8-254e-11ee-be56-0242ac120002",
+						"76c0089e-254e-11ee-be56-0242ac120002",
+						nil,
+					),
+				),
+				bindReaction: &BindReaction{
+					Response: &osbclient.BindResponse{
+						Credentials: map[string]interface{}{
+							"cacrt": `-----BEGIN CERTIFICATE-----
+			MIIDHTCCAgWgAwIBAgIUawyLe2ioKWcZVHq6+IEQQeTmfp8wDQYJKoZIhvcNAQEL
+			BQAwHjEcMBoGA1UEAxMTYTlzIExvZ01lMiAtIFNQSSBDQTAeFw0yMzAyMjcxMTU3
+			NDRaFw0yNDAyMjcxMTU3NDRaMB4xHDAaBgNVBAMTE2E5cyBMb2dNZTIgLSBTUEkg
+			Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC+POlrVAm65aVCWfk3
+			S+CJfEUbjMpPh9tWGL8NtmVpmf/E1zGjXIVBH7nksx7oQDxbwoqMcr/fMVGUhwrv
+			v16TytKz/v4us5yEI1Sh8niIeexZlukuF7VundxjF4W3U9s6WqzK/0JErEM6duhy
+			rEY1Z9T1eob8LViXuc4GuLGduIRp28FLNdMBNAm3kJ4WqxL/ja8JIMCqswYXVE9I
+			0AqR6CSoxPHsOxtGFAf78RwjrjCjI/DoYLkAVqhd+fqkH6/BJIvi2HWSBqpxP5Td
+			W4S2wipowuXKM4RJ+Ex6Va67BlHRdqjeu3OXAMuxZFASWHkFacMcEQykRDhuYsGa
+			fpp5AgMBAAGjUzBRMB0GA1UdDgQWBBQXS8UPTqUbI4vkJMFhk1quC9JUxDAfBgNV
+			HSMEGDAWgBQXS8UPTqUbI4vkJMFhk1quC9JUxDAPBgNVHRMBAf8EBTADAQH/MA0G
+			CSqGSIb3DQEBCwUAA4IBAQBq2Pi4zIl5rRpXinhaH2F/RwfbbXddrASd/8Hr512j
+			FFvOn44X28PJ7onG9m2RBzHm7WF6pHdrSL3bAbrXg7b9pbggOktPf+cEnJtQ6SOj
+			komSQDfLvVONnlnWEwxXGePOkZ3XXUp0Yx7tK7nuqZAgyD66+0E1TqVBhqu/BPFu
+			EhrYd9MP6uXynzyHg7RDToac/RW8uB6eYHe/6WPhWNXRPJIi+QsizHpPByF0xagz
+			aFxOp5nDVg+MBKfqsHuO7uPACefNh5VbGKBahtVcHtCkkaxd0uJ14/wZogUbVZh7
+			K5VZYh0ZdLd68Ftx93Ub6k6IpzJ6ruZXedfTBJSCYDgs
+			-----END CERTIFICATE-----`,
+							"host":               "hostname",
+							"hosts":              "[hostname]",
+							"load_balanced_host": "lbhostname",
+							"valkey.password":    "a9scbe8462ee571f12d95b3a950e1bf8b2445a59983",
+							"valkey.port":        "6379",
+							"valkey.username":    "a9s94bd153ddf5978f1eae7c88b57a27721430600d2",
+						},
+					},
+					Error: nil,
+				},
+			},
+			want: want{
+				bindRequest: &osbclient.BindRequest{
+					BindingID:         "1a6a6b3e-254e-11ee-be56-0242ac120002",
+					InstanceID:        "6e2c036c-254f-11ee-be56-0242ac120002",
+					AcceptsIncomplete: false,
+					ServiceID:         "76c0089e-254e-11ee-be56-0242ac120002",
+					PlanID:            "63d05ec8-254e-11ee-be56-0242ac120002",
+				},
+				externalCreation: managed.ExternalCreation{
+					ConnectionDetails: managed.ConnectionDetails{
+						"cacrt": []byte(fmt.Sprintf("%+v", `-----BEGIN CERTIFICATE-----
+			MIIDHTCCAgWgAwIBAgIUawyLe2ioKWcZVHq6+IEQQeTmfp8wDQYJKoZIhvcNAQEL
+			BQAwHjEcMBoGA1UEAxMTYTlzIExvZ01lMiAtIFNQSSBDQTAeFw0yMzAyMjcxMTU3
+			NDRaFw0yNDAyMjcxMTU3NDRaMB4xHDAaBgNVBAMTE2E5cyBMb2dNZTIgLSBTUEkg
+			Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC+POlrVAm65aVCWfk3
+			S+CJfEUbjMpPh9tWGL8NtmVpmf/E1zGjXIVBH7nksx7oQDxbwoqMcr/fMVGUhwrv
+			v16TytKz/v4us5yEI1Sh8niIeexZlukuF7VundxjF4W3U9s6WqzK/0JErEM6duhy
+			rEY1Z9T1eob8LViXuc4GuLGduIRp28FLNdMBNAm3kJ4WqxL/ja8JIMCqswYXVE9I
+			0AqR6CSoxPHsOxtGFAf78RwjrjCjI/DoYLkAVqhd+fqkH6/BJIvi2HWSBqpxP5Td
+			W4S2wipowuXKM4RJ+Ex6Va67BlHRdqjeu3OXAMuxZFASWHkFacMcEQykRDhuYsGa
+			fpp5AgMBAAGjUzBRMB0GA1UdDgQWBBQXS8UPTqUbI4vkJMFhk1quC9JUxDAfBgNV
+			HSMEGDAWgBQXS8UPTqUbI4vkJMFhk1quC9JUxDAPBgNVHRMBAf8EBTADAQH/MA0G
+			CSqGSIb3DQEBCwUAA4IBAQBq2Pi4zIl5rRpXinhaH2F/RwfbbXddrASd/8Hr512j
+			FFvOn44X28PJ7onG9m2RBzHm7WF6pHdrSL3bAbrXg7b9pbggOktPf+cEnJtQ6SOj
+			komSQDfLvVONnlnWEwxXGePOkZ3XXUp0Yx7tK7nuqZAgyD66+0E1TqVBhqu/BPFu
+			EhrYd9MP6uXynzyHg7RDToac/RW8uB6eYHe/6WPhWNXRPJIi+QsizHpPByF0xagz
+			aFxOp5nDVg+MBKfqsHuO7uPACefNh5VbGKBahtVcHtCkkaxd0uJ14/wZogUbVZh7
+			K5VZYh0ZdLd68Ftx93Ub6k6IpzJ6ruZXedfTBJSCYDgs
+			-----END CERTIFICATE-----`)),
+						"host":               []byte(fmt.Sprintf("%+v", "hostname")),
+						"hosts":              []byte(fmt.Sprintf("%+v", "[hostname]")),
+						"load_balanced_host": []byte(fmt.Sprintf("%+v", "lbhostname")),
+						"valkey.password":    []byte(fmt.Sprintf("%+v", "a9scbe8462ee571f12d95b3a950e1bf8b2445a59983")),
+						"valkey.port":        []byte(fmt.Sprintf("%+v", "6379")),
+						"valkey.username":    []byte(fmt.Sprintf("%+v", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2")),
+					},
+				},
+				sb: serviceBinding("keyvalue",
 					withServiceBindingParameters(defaultBindingParameters),
 					initializeSBStatus(
 						"6e2c036c-254f-11ee-be56-0242ac120002",

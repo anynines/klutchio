@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: KeyvalueInstance
+metadata:
+  name: example-keyvalue-instance
+  namespace: keyvalue-lifecycle
+spec:
+  service: a9s-keyvalue7
+  plan: keyvalue-cluster-medium-ssl
+  compositionRef:
+    name: a9s-keyvalue

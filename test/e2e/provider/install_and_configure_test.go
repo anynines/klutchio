@@ -43,6 +43,7 @@ func TestProviderInstallAndConfigure(t *testing.T) {
 		"xmongodbinstances.anynines.com",
 		"xpostgresqlinstances.anynines.com",
 		"xprometheusinstances.anynines.com",
+		"xkeyvalueinstances.anynines.com",
 		"xrestores.anynines.com",
 		"xsearchinstances.anynines.com",
 		"xservicebindings.anynines.com",
