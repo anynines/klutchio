@@ -59,20 +59,9 @@ spec:
 kind: APIServiceExportTemplate
 apiVersion: bind.anynines.com/v1alpha1
 metadata:
-  name: keyvaluees
+  name: keyvalues
   namespace: crossplane-system
 spec:
   APIServiceSelector:
     resource: keyvalueinstances
     group: anynines.com
-  permissionClaims:
-    - group: ""
-      resource: secrets
-      version: v1
-      selector:
-        owner: Provider
-    - group: ""
-      resource: configmaps
-      version: v1
-      selector:
-        owner: Provider
