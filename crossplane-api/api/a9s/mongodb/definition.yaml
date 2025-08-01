@@ -74,6 +74,34 @@ spec:
                       message:
                         "Plan migrations not possible from Non-SSL to SSL and
                         SSL to Non-SSL"
+
+                parameters:
+                  type: object
+                  properties:
+                    setClusterParameter:
+                      type: object
+                      properties:
+                        changeStreamOptions:
+                          type: object
+                          properties:
+                            preAndPostImages:
+                              type: object
+                              properties:
+                                expireAfterSeconds:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  x-kubernetes-int-or-string: true
+                                  x-kubernetes-validations:
+                                    - rule: "type(self) == string ? self == 'off' : self >= 0"
+                                      message: "must be 'off' or an integer >= 0"
+                                  description: |
+                                    Controls how long MongoDB retains pre- and post-images.
+                                    When the value is set to `off` MongoDB uses the default retention policy
+                                    (i.e, until the corresponding change stream events are removed from the oplog).
+                                    Other values can only be integers greater than or equal to 0.
+                                    The integer represents the retention time given in seconds.
+                                    See https://docs.anynines.com/docs/application-developer/a9s-mongodb/a9s-ad-mongodb-custom-parameters#set_cluster_parameter
               required:
                 - service
                 - plan

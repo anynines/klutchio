@@ -61,3 +61,5 @@ spec:
               - type: ToCompositeFieldPath
                 fromFieldPath: status.conditions
                 toFieldPath: status.managed.conditions
+              - fromFieldPath: spec.parameters.setClusterParameter.changeStreamOptions.preAndPostImages.expireAfterSeconds
+                toFieldPath: spec.forProvider.parameters.set_cluster_parameter.changeStreamOptions.preAndPostImages.expireAfterSeconds
