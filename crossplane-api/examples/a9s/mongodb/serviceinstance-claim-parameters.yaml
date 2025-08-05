@@ -1,0 +1,16 @@
+apiVersion: anynines.com/v1
+kind: MongodbInstance
+metadata:
+  name: example-a9s-mongodb-parameters
+  namespace: default
+spec:
+  # Use a supported mongodb serviceName and planName
+  service: a9s-mongodb70
+  plan: mongodbsspl-replica-small-ssl
+  compositionRef:
+    name: a9s-mongodb
+  parameters:
+    setClusterParameter:
+      changeStreamOptions:
+        preAndPostImages:
+          expireAfterSeconds: 100
