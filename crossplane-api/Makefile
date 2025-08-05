@@ -2,7 +2,7 @@ IMAGE_NAME := dataservices
 ECR_REPO := public.ecr.aws/w5n9a2g2/klutch
 
 providerconfig:
-# Populate Secrets and create PostgreSQL ProvideConfig using the instance name
+# Populate Secrets and create PostgreSQL ProviderConfig using the instance name
 ifdef postgresInstanceName
 	@export PG_SERVICE_INSTANCE_NAME=$$postgresInstanceName; \
 	if [[ $$GET_BROKER_IP == "true" ]]; then \
@@ -45,7 +45,21 @@ ifdef postgresInstanceName
 	echo "Successfully created ProviderConfig for postgres instance: $$postgresInstanceName" || \
 	echo "There was a problem creating the ProviderConfig for postgres instance: $$postgresInstanceName"
 endif
-# Populate Secrets and create Mongodb ProvideConfig using the instance name
+# Populate Secrets and create KeyValue ProviderConfig using the instance name
+ifdef keyvalueInstanceName
+	@export KEYVALUE_SERVICEBROKER_USERNAME=admin; \
+	export KEYVALUE_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /keyvalue_service_broker_password | grep value:" | awk '{print $2}'); \
+	export KEYVALUE_SERVICE_INSTANCE_NAME=$$keyvalueInstanceName; \
+	export KEYVALUE_BACKUP_MANAGER_USERNAME=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$KEYVALUE_SERVICE_INSTANCE_NAME ssh backup-manager -c 'cat /var/vcap/jobs/anynines-backup-manager/config/export_env.sh'" | grep HTTP_USERNAME= | cut -d '=' -f2 | tr -d '\r'); \
+	export KEYVALUE_BACKUP_MANAGER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$KEYVALUE_SERVICE_INSTANCE_NAME ssh backup-manager -c 'cat /var/vcap/jobs/anynines-backup-manager/config/export_env.sh'" | grep HTTP_PASSWORD= | cut -d '=' -f2 | tr -d '\r'); \
+	export BASE64ENCODED_KEYVALUE_SERVICE_BROKER_USERNAME=$$(echo "$$KEYVALUE_SERVICEBROKER_USERNAME" | base64); \
+	export BASE64ENCODED_KEYVALUE_SERVICE_BROKER_PASSWORD=$$(echo "$$KEYVALUE_SERVICEBROKER_PASSWORD" | sed 's/^value: //' | base64); \
+	export BASE64ENCODED_KEYVALUE_BACKUP_MANAGER_USERNAME=$$(echo "$$KEYVALUE_BACKUP_MANAGER_USERNAME" | base64); \
+	export BASE64ENCODED_KEYVALUE_BACKUP_MANAGER_PASSWORD=$$(echo "$$KEYVALUE_BACKUP_MANAGER_PASSWORD" | base64); \
+	envsubst < ../provider-anynines/examples/provider/config-keyvalue.yaml | kubectl apply -f - ; \
+	echo "Successfully created ProviderConfig for keyvalue instance: $$keyvalueInstanceName";
+endif
+# Populate Secrets and create Mongodb ProviderConfig using the instance name
 ifdef mongodbInstanceName
 	@export MONGODB_SERVICEBROKER_USERNAME=admin; \
 	export MONGODB_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /mongodb_service_broker_password | grep value:" | awk '{print $2}'); \
@@ -59,7 +73,7 @@ ifdef mongodbInstanceName
 	envsubst < ../provider-anynines/examples/provider/config-mongodb.yaml | kubectl apply -f - ; \
 	echo "Successfully created ProviderConfig for mongodb instance: $$mongodbInstanceName";
 endif
-# Populate Secrets and create Search ProvideConfig using the instance name
+# Populate Secrets and create Search ProviderConfig using the instance name
 ifdef searchInstanceName
 	@export SEARCH_SERVICEBROKER_USERNAME=admin; \
 	export SEARCH_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /search_service_broker_password | grep value:" | awk '{print $2}'); \
@@ -73,7 +87,7 @@ ifdef searchInstanceName
 	envsubst < ../provider-anynines/examples/provider/config-search.yaml | kubectl apply -f - ; \
 	echo "Successfully created ProviderConfig for search instance: $$searchInstanceName";
 endif
-# Populate Secrets and create Mariadb ProvideConfig using the instance name
+# Populate Secrets and create Mariadb ProviderConfig using the instance name
 ifdef mariadbInstanceName
 	@export MARIADB_SERVICEBROKER_USERNAME=admin; \
 	export MARIADB_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /mariadb_service_broker_password | grep value:" | awk '{print $2}'); \
@@ -87,7 +101,7 @@ ifdef mariadbInstanceName
 	envsubst < ../provider-anynines/examples/provider/config-mariadb.yaml | kubectl apply -f - ; \
 	echo "Successfully created ProviderConfig for mariadb instance: $$mariadbInstanceName";
 endif
-# Populate Secrets and create Messaging ProvideConfig using the instance name
+# Populate Secrets and create Messaging ProviderConfig using the instance name
 ifdef messagingInstanceName
 	@export MESSAGING_SERVICEBROKER_USERNAME=admin; \
 	export MESSAGING_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /rabbitmq_service_broker_password | grep value:" | awk '{print $2}'); \
@@ -101,7 +115,7 @@ ifdef messagingInstanceName
 	envsubst < ../provider-anynines/examples/provider/config-messaging.yaml | kubectl apply -f - ; \
 	echo "Successfully created ProviderConfig for messaging instance: $$messagingInstanceName";
 endif
-# Populate Secrets and create Logme2 ProvideConfig using the instance name
+# Populate Secrets and create Logme2 ProviderConfig using the instance name
 ifdef logme2InstanceName
 	@export LOGME2_SERVICEBROKER_USERNAME=admin; \
 	export LOGME2_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /logme2_service_broker_password | grep value:" | awk '{print $2}'); \
@@ -115,7 +129,7 @@ ifdef logme2InstanceName
 	envsubst < ../provider-anynines/examples/provider/config-logme2.yaml | kubectl apply -f - ; \
 	echo "Successfully created ProviderConfig for logme2 instance: $$logme2InstanceName";
 endif
-# Populate Secrets and create Prometheus ProvideConfig using the instance name
+# Populate Secrets and create Prometheus ProviderConfig using the instance name
 ifdef prometheusInstanceName
 	@export PROMETHEUS_SERVICEBROKER_USERNAME=admin; \
 	export PROMETHEUS_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /prometheus_service_broker_password | grep value:" | awk '{print $2}'); \
@@ -134,7 +148,7 @@ dataservices-config-push:
 ifdef dataservicesConfigVersion
 		# Build and push configuration package
 		crossplane xpkg build -f ./api
-		crossplane xpkg push -f ./api/anynines-dataservices-*.xpkg $(ECR_REPO)/$(IMAGE_NAME):$(dataservicesConfigVersion)
+		crossplane xpkg push -f ./api/anynines-dataservices-*.xpkg $(REPO)/$(IMAGE_NAME):$(dataservicesConfigVersion)
 		rm ./api/anynines-dataservices-*
 endif
 

@@ -23,12 +23,13 @@ instance_type=$(echo "$instance_name" | cut -d '-' -f 1)
 ports=$(
     cat <<EOF | grep "^${instance_type}" || ( echo "Unknown instance type: ${instance_type}" ; false )
 postgresql	8989	8988
+keyvalue	9089	9088
 search		9189	9188
 mongodb		9389	9388
 logme2		9489	9488
 mariadb		9589	9588
 rabbitmq	9689	9688 # aka messaging
-prometheus     	9789	9788
+prometheus	9789	9788
 EOF
 )
 

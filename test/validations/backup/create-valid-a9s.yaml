@@ -4,6 +4,16 @@ metadata:
   name: sample-backup
 spec:
   instanceRef: sample-instance
+  serviceInstanceType: keyvalue
+  compositionRef:
+    name: a9s-backup
+---
+apiVersion: anynines.com/v1
+kind: Backup
+metadata:
+  name: sample-backup
+spec:
+  instanceRef: sample-instance
   serviceInstanceType: postgresql
   compositionRef:
     name: a9s-backup

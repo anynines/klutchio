@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: sample-keyvalue-servicebinding
+  namespace: keyvalue-lifecycle
+spec:
+  instanceRef: example-keyvalue-instance
+  serviceInstanceType: keyvalue
+  compositionRef:
+    name: a9s-servicebinding

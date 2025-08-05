@@ -21,7 +21,7 @@ spec:
       openAPIV3Schema:
         supported:
           - region: &region ["eu-central-1", "us-east-1"]
-          - types: &serviceInstanceTypes ["postgresql", "mongodb",
+          - types: &serviceInstanceTypes ["keyvalue","postgresql", "mongodb",
               "search", "logme2", "prometheus", "messaging", "mariadb"]
         properties:
           spec:
