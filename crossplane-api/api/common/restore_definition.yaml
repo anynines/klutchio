@@ -20,7 +20,7 @@ spec:
     schema:
       openAPIV3Schema:
         supported:
-          - types: &serviceInstanceTypes ["postgresql", "mongodb",
+          - types: &serviceInstanceTypes ["keyvalue", "postgresql", "mongodb",
               "search", "logme2", "prometheus", "messaging", "mariadb",
               "messaging"]
         properties:

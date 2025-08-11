@@ -377,6 +377,7 @@ port forwarding. The prescribed convention is as follows:
 - MariaDB: `9589` and `9588` for `Service Broker` and `Backup Manager` respectively.
 - Messaging: `9689` and `9688` for `Service Broker` and `Backup Manager` respectively.
 - Prometheus: `9789` and `9788` for `Service Broker` and `Backup Manager` respectively.
+- KeyValue: `9089` and `9088` for `Service Broker` and `Backup Manager` respectively.
 
 ### Create a k8s Service to access localhost
 
