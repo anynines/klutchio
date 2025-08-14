@@ -9,6 +9,8 @@ resources:
   - api/a8s/servicebinding/composition.yaml
   # a9s
   - api/a9s/backup/composition.yaml
+  - api/a9s/keyvalue/composition.yaml
+  - api/a9s/keyvalue/definition.yaml
   - api/a9s/logme2/composition.yaml
   - api/a9s/logme2/definition.yaml
   - api/a9s/mariadb/composition.yaml
