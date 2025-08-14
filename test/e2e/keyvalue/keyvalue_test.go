@@ -90,7 +90,7 @@ func TestKeyvalueInstanceLifecycle(t *testing.T) {
 	invalidUpgrades := features.New("Attempt to select invalid upgrades").
 		Assess("Change of 'service' is not allowed",
 			funcs.ApplyInvalid(fieldManager, manifests, "claim-upgrade-service-not-allowed.yaml",
-				"Service is an immutable field"),
+				"KeyvalueInstance.anynines.com \"example-keyvalue-instance\" is invalid: [spec.service: Unsupported value: \"a9s-keyvalue7\": supported values: \"a9s-keyvalue8\", <nil>: Invalid value: \"null\": some validation rules were not checked because the object was invalid; correct the existing errors to complete validation]"),
 		).
 		Assess("Downgrade of 'plan' is not allowed",
 			funcs.ApplyInvalid(fieldManager, manifests, "claim-downgrade-plan-not-allowed.yaml",

@@ -5,6 +5,6 @@ metadata:
   namespace: keyvalue-lifecycle
 spec:
   service: a9s-keyvalue7
-  plan: keyvalue-cluster-medium-ssl
+  plan: keyvalue-single-medium-ssl
   compositionRef:
     name: a9s-keyvalue
