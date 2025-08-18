@@ -4,7 +4,7 @@ metadata:
   name: example-keyvalue-instance
   namespace: keyvalue-lifecycle
 spec:
-  service: a9s-keyvalue6
+  service: a9s-keyvalue8
   plan: keyvalue-single-nano-ssl
   compositionRef:
     name: a9s-keyvalue
