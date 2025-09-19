@@ -74,7 +74,7 @@ Before proceeding, review the changelog for the new version and follow any migra
 
 3. **Introduce New Data Service Types**
 
-    If the update includes new data service types, implement the [binding creation steps](https://klutch.io/docs/platform-operator/binding-creation)
+    If the update includes new data service types, implement the [binding creation steps](../platform-operator-guide/setting-up-klutch-clusters/app-cluster.md)
     to make them available in App Clusters.
 
 **Downtime Considerations During Updates**
