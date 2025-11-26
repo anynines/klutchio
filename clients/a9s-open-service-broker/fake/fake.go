@@ -288,7 +288,7 @@ func (c *FakeClient) GetBinding(*v2.GetBindingRequest) (*v2.GetBindingResponse, 
 }
 
 // CheckAvailability implements the Client.CheckAvailability method for the FakeClient.
-func (c *FakeClient) CheckAvailability() error {
+func (c *FakeClient) CheckAvailability(endpoint string) error {
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
 

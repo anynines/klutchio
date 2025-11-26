@@ -163,6 +163,8 @@ spec:
                 type: object
               url:
                 type: string
+              healthCheckEndpoint:
+                type: string
             required:
             - providerCredentials
             - url

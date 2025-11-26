@@ -98,7 +98,7 @@ type ClientConfiguration struct {
 func DefaultClientConfiguration() *ClientConfiguration {
 	return &ClientConfiguration{
 		APIVersion:          LatestAPIVersion(),
-		TimeoutSeconds:      60,
+		TimeoutSeconds:      300, // TODO: reduce back to 60 once we moved away from the /instances endpoint completely
 		EnableAlphaFeatures: false,
 	}
 }
@@ -119,7 +119,7 @@ func DefaultClientConfiguration() *ClientConfiguration {
 type Client interface {
 	// CheckAvailability attempts to contact the service broker, and authenticate
 	// with it. If an error occurs doing that, the error is returned.
-	CheckAvailability() error
+	CheckAvailability(string) error
 	// GetCatalog returns information about the services the broker offers and
 	// their plans or an error.  GetCatalog calls GET on the Broker's catalog
 	// endpoint (/v2/catalog).

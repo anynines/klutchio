@@ -28,6 +28,9 @@ import (
 // A ProviderConfigSpec defines the desired state of a ProviderConfig.
 type ProviderConfigSpec struct {
 	Url string `json:"url"`
+	// Endpoint to use for broker health checks. If not set, the endpoint /instances is used.
+	// +kubebuilder:validation:Optional
+	HealthCheckEndpoint string `json:"healthCheckEndpoint,omitempty"`
 	// Credentials required to authenticate to this provider.
 	ProviderCredentials ProviderCredentials `json:"providerCredentials"`
 }

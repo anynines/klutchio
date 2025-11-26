@@ -19,10 +19,13 @@ package v2
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
-func (c *client) CheckAvailability() error {
-	fullURL := fmt.Sprintf(instancesURLFmt, c.URL)
+func (c *client) CheckAvailability(endpoint string) error {
+	endpointFmt := prepareEndpointFmtOrDefault(endpoint)
+
+	fullURL := fmt.Sprintf(endpointFmt, c.URL)
 	response, err := c.prepareAndDo(http.MethodHead, fullURL, nil, nil, nil)
 
 	if err != nil {
@@ -40,4 +43,15 @@ func (c *client) CheckAvailability() error {
 	default:
 		return AvailabilityInvalidStatusError{response.StatusCode}
 	}
+}
+
+func prepareEndpointFmtOrDefault(endpoint string) string {
+	if endpoint == "" {
+		return healthCheckURLFmt
+	}
+
+	endpoint = strings.TrimPrefix(endpoint, "/")
+	endpoint = "%s/" + endpoint
+
+	return endpoint
 }

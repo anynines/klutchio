@@ -1045,7 +1045,7 @@ func TestCheckAvailability(t *testing.T) {
 		fakeClient := &fake.FakeClient{
 			CheckAvailabilityReaction: tc.reaction,
 		}
-		err := fakeClient.CheckAvailability()
+		err := fakeClient.CheckAvailability("")
 
 		if !reflect.DeepEqual(tc.expectedErr, err) {
 			t.Errorf("%v: unexpected error; expected %+v, got %+v", tc.name, tc.expectedErr, err)
