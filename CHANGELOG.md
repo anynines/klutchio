@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Provider-anynines: Make health check endpoint configurable in the providerconfig spec.
+- Provider-anynines: Increase default request timeout.
+
 ### Chores
 
 - Update the supported plans and services for a9s Data Services.
