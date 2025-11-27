@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- **breaking**: ServiceBinding resources now use semantic connection labels (e.g., "SQL", "Logme2", "Search") for improved clarity in status and connection secrets.
+- All connection details in ServiceBinding status and secrets are now consistently labeled for easier integration and troubleshooting.
+
 ### Chores
 
 - Update the supported plans and services for a9s Data Services.
