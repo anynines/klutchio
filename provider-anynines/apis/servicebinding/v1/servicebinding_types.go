@@ -116,6 +116,11 @@ type ConnectionDetails struct {
 
 	// Port is the Port used to connect with the data service instance.
 	Port string `json:"port,omitempty"`
+
+	// Label is a user-facing description of what this connection is for.
+	// Used to differentiate between multiple connection endpoints (e.g., "HTTP API", "AQMP SSL",
+	// "Management").
+	Label string `json:"label,omitempty"`
 }
 
 // A ServiceBindingSpec defines the desired state of a ServiceBinding.
@@ -175,8 +180,9 @@ func (sbo *ServiceBindingObservation) HasMissingFields() bool {
 		sbo.PlanID == ""
 }
 
-func (sb *ServiceBinding) AddConnectionDetails(hostURL, port string) {
-	sb.Status.AtProvider.ConnectionDetails = append(sb.Status.AtProvider.ConnectionDetails, ConnectionDetails{hostURL, port})
+// AddConnectionDetailsWithLabel adds a connection detail with a user-facing label.
+func (sb *ServiceBinding) AddConnectionDetailsWithLabel(hostURL, port, label string) {
+	sb.Status.AtProvider.ConnectionDetails = append(sb.Status.AtProvider.ConnectionDetails, ConnectionDetails{HostURL: hostURL, Port: port, Label: label})
 }
 
 func (sb *ServiceBinding) ConnectionDetailsIsNotEmpty() bool {

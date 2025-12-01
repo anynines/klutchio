@@ -384,7 +384,7 @@ func (c external) parseHostAndPort(input string) (host, port string, err error) 
 	return "", "", fmt.Errorf("invalid host:port format: %q", input)
 }
 
-func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
+func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key, label string) error {
 	host, found := secret[key]
 	if !found {
 		return fmt.Errorf("%q field not found in secret", key)
@@ -397,11 +397,11 @@ func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]
 	if err != nil {
 		return err
 	}
-	sb.AddConnectionDetails(hostURL, port)
+	sb.AddConnectionDetailsWithLabel(hostURL, port, label)
 	return nil
 }
 
-func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
+func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key, label string) error {
 	host, found := secret[key]
 	if !found {
 		return fmt.Errorf("%q field not found in secret", key)
@@ -413,11 +413,11 @@ func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]by
 	if err != nil {
 		return err
 	}
-	sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
+	sb.AddConnectionDetailsWithLabel(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port(), label)
 	return nil
 }
 
-func (c external) extractPrometheusHost(sb *v1.ServiceBinding, secret map[string][]byte, key string, port string) error {
+func (c external) extractPrometheusURL(sb *v1.ServiceBinding, secret map[string][]byte, key string, label string) error {
 	host, found := secret[key]
 	if !found {
 		return fmt.Errorf("%q field not found in secret", key)
@@ -426,36 +426,67 @@ func (c external) extractPrometheusHost(sb *v1.ServiceBinding, secret map[string
 		return fmt.Errorf("invalid host format: %q", host)
 	}
 	host = host[1 : len(host)-1]
-	if strings.Contains(key, "graphite_exporters") {
-		hostURL := string(string(host))
-		port, found := secret[port]
-		if !found {
-			return fmt.Errorf("%q field not found in secret", port)
-		}
-		sb.AddConnectionDetails(hostURL, string(port))
-	} else {
-		parsedURL, err := url.Parse(string(host))
-		if err != nil {
-			return err
-		}
-		sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
-	}
-	return nil
-}
-
-func (c external) extractMessagingHost(sb *v1.ServiceBinding, secret map[string][]byte, key string) error {
-	host, found := secret[key]
-	if !found {
-		return fmt.Errorf("%q field not found in secret", key)
-	}
-	if len(host) == 0 {
-		return fmt.Errorf("invalid host format: %q", host)
-	}
 	parsedURL, err := url.Parse(string(host))
 	if err != nil {
 		return err
 	}
-	sb.AddConnectionDetails(parsedURL.Scheme+"://"+parsedURL.Hostname(), parsedURL.Port())
+	hostURL := parsedURL.Scheme + "://" + parsedURL.Hostname()
+	port := parsedURL.Port()
+	sb.AddConnectionDetailsWithLabel(hostURL, port, label)
+	return nil
+}
+
+func (c external) extractGraphiteExporter(sb *v1.ServiceBinding, secret map[string][]byte) error {
+	host, found := secret["graphite_exporters"]
+	if !found {
+		return fmt.Errorf("graphite_exporters field not found in secret")
+	}
+	if len(host) <= 2 || (host[0] != '[' && host[len(host)-1] != ']') {
+		return fmt.Errorf("invalid host format: %q", host)
+	}
+	host = host[1 : len(host)-1]
+	hostURL := string(host)
+	port, found := secret["graphite_exporter_port"]
+	if !found {
+		return fmt.Errorf("graphite_exporter_port field not found in secret")
+	}
+	sb.AddConnectionDetailsWithLabel(hostURL, string(port), "Graphite Exporter")
+	return nil
+}
+
+func (c external) extractMessagingEndpoints(sb *v1.ServiceBinding, secret map[string][]byte) error {
+	// HTTP API endpoint
+	if httpAPI, found := secret["http_api_uri"]; found && len(httpAPI) > 0 {
+		if err := c.parseAndAddURI(sb, string(httpAPI), "HTTP API"); err != nil {
+			return err
+		}
+	}
+
+	// AMQP SSL endpoint
+	if amqpSSL, found := secret["protocols.amqp_ssl.uri"]; found && len(amqpSSL) > 0 {
+		if err := c.parseAndAddURI(sb, string(amqpSSL), "AMQP SSL"); err != nil {
+			return err
+		}
+	}
+
+	// Management endpoint
+	if mgmt, found := secret["protocols.management.uri"]; found && len(mgmt) > 0 {
+		if err := c.parseAndAddURI(sb, string(mgmt), "Management"); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c external) parseAndAddURI(sb *v1.ServiceBinding, uriStr string, label string) error {
+	parsedURL, err := url.Parse(uriStr)
+	if err != nil {
+		return err
+	}
+	hostURL := parsedURL.Scheme + "://" + parsedURL.Hostname()
+	port := parsedURL.Port()
+	sb.AddConnectionDetailsWithLabel(hostURL, port, label)
 	return nil
 }
 
@@ -470,52 +501,35 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 	instanceName := sb.ObjectMeta.Labels["klutch.io/instance-type"]
 
 	if strings.Contains(instanceName, "search") {
-		err = c.extractBracketHost(sb, secret.Data, "host")
+		err = c.extractBracketHost(sb, secret.Data, "host", "Search")
 		if err != nil {
 			return err
 		}
 	} else if strings.Contains(instanceName, "logme2") {
-		err = c.extractPlainHost(sb, secret.Data, "host")
+		err = c.extractPlainHost(sb, secret.Data, "host", "Logme2")
 		if err != nil {
 			return err
 		}
 	} else if strings.Contains(instanceName, "mongodb") {
-		err = c.extractBracketHost(sb, secret.Data, "hosts")
+		err = c.extractBracketHost(sb, secret.Data, "hosts", "MongoDB")
 		if err != nil {
 			return err
 		}
 	} else if strings.Contains(instanceName, "prometheus") {
-		err = c.extractPrometheusHost(sb, secret.Data, "prometheus_urls", "")
-		if err != nil {
+		if err := c.extractPrometheusURL(sb, secret.Data, "prometheus_urls", "Prometheus"); err != nil {
 			return err
 		}
-
-		err = c.extractPrometheusHost(sb, secret.Data, "alertmanager_urls", "")
-		if err != nil {
+		if err := c.extractPrometheusURL(sb, secret.Data, "alertmanager_urls", "Alertmanager"); err != nil {
 			return err
 		}
-
-		err = c.extractPrometheusHost(sb, secret.Data, "grafana_urls", "")
-		if err != nil {
+		if err := c.extractPrometheusURL(sb, secret.Data, "grafana_urls", "Grafana"); err != nil {
 			return err
 		}
-
-		err = c.extractPrometheusHost(sb, secret.Data, "graphite_exporters", "graphite_exporter_port")
-		if err != nil {
+		if err := c.extractGraphiteExporter(sb, secret.Data); err != nil {
 			return err
 		}
-
 	} else if strings.Contains(instanceName, "messaging") {
-		err = c.extractMessagingHost(sb, secret.Data, "http_api_uri")
-		if err != nil {
-			return err
-		}
-		err = c.extractMessagingHost(sb, secret.Data, "protocols.amqp_ssl.uri")
-		if err != nil {
-			return err
-		}
-		err = c.extractMessagingHost(sb, secret.Data, "protocols.management.uri")
-		if err != nil {
+		if err := c.extractMessagingEndpoints(sb, secret.Data); err != nil {
 			return err
 		}
 	} else if strings.Contains(instanceName, "keyvalue") {
@@ -525,9 +539,9 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 		}
 		port, portFound := secret.Data["valkey.port"]
 		if !portFound {
-			return fmt.Errorf("port field not found in secret")
+			return fmt.Errorf("valkey.port field not found in secret")
 		}
-		sb.AddConnectionDetails(string(hostURL), string(port))
+		sb.AddConnectionDetailsWithLabel(string(hostURL), string(port), "KeyValue")
 	} else if strings.Contains(instanceName, "postgresql") ||
 		strings.Contains(instanceName, "mariadb") {
 		hostURL, hostFound := secret.Data["host"]
@@ -538,7 +552,7 @@ func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.Servic
 		if !portFound {
 			return fmt.Errorf("port field not found in secret")
 		}
-		sb.AddConnectionDetails(string(hostURL), string(port))
+		sb.AddConnectionDetailsWithLabel(string(hostURL), string(port), "SQL")
 	} else {
 		return errNoSuchDataservice
 	}

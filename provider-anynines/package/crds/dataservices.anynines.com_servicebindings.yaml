@@ -331,6 +331,12 @@ spec:
                           description: HostURL is the URL used to connect with the
                             data service instance.
                           type: string
+                        label:
+                          description: |-
+                            Label is a user-facing description of what this connection is for.
+                            Used to differentiate between multiple connection endpoints (e.g., "HTTP API", "AQMP SSL",
+                            "Management").
+                          type: string
                         port:
                           description: Port is the Port used to connect with the data
                             service instance.

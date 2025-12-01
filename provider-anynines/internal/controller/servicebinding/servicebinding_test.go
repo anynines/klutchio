@@ -63,6 +63,7 @@ func TestMain(m *testing.M) {
 type connectionDetails struct {
 	hostURL string
 	port    string
+	label   string
 }
 
 // Unlike many Kubernetes projects Crossplane does not use third party testing
@@ -129,7 +130,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 			),
@@ -148,7 +149,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 			),
@@ -179,7 +180,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 			),
@@ -208,7 +209,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withAtProvider("Pending", 0),
@@ -238,7 +239,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withAtProvider("Pending", 0),
@@ -271,7 +272,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withConditions(xpv1.Available()),
@@ -304,7 +305,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 			),
@@ -336,7 +337,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withConditions(xpv1.Available()),
@@ -371,7 +372,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withAtProvider("Created", 0),
@@ -405,7 +406,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				deletionTimestamp(),
@@ -438,7 +439,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withConditions(xpv1.Available()),
@@ -472,7 +473,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withConditions(xpv1.Available()),
@@ -704,7 +705,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 			),
@@ -798,7 +799,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withConditions(xpv1.Available()),
@@ -832,7 +833,7 @@ func TestObserve(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120003",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432"},
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
 				withConditions(xpv1.Available()),
@@ -968,7 +969,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "hostname", port: "6379"},
+						{hostURL: "hostname", port: "6379", label: "KeyValue"},
 					},
 				),
 			),
@@ -1020,7 +1021,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "https://hsdxxxxxx-os.service.dc1.dsf2.a9ssvc", port: "9200"},
+						{hostURL: "https://hsdxxxxxx-os.service.dc1.dsf2.a9ssvc", port: "9200", label: "Logme2"},
 					},
 				),
 			),
@@ -1073,7 +1074,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "d15575b.service.dc1.a9s-mariadb-consul", port: "3306"},
+						{hostURL: "d15575b.service.dc1.a9s-mariadb-consul", port: "3306", label: "SQL"},
 					},
 				),
 			),
@@ -1153,9 +1154,9 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "https://hxxx.service", port: "15672"},
-						{hostURL: "amqps://hxxx.service", port: "5671"},
-						{hostURL: "https://hxxx.service", port: "15672"},
+						{hostURL: "https://hxxx.service", port: "15672", label: "HTTP API"},
+						{hostURL: "amqps://hxxx.service", port: "5671", label: "AMQP SSL"},
+						{hostURL: "https://hxxx.service", port: "15672", label: "Management"},
 					},
 				),
 			),
@@ -1207,7 +1208,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "hsdxxxxxx-mongodb-0.node.dc1.dsf2.a9ssvc", port: "27017"},
+						{hostURL: "hsdxxxxxx-mongodb-0.node.dc1.dsf2.a9ssvc", port: "27017", label: "MongoDB"},
 					},
 				),
 			),
@@ -1261,7 +1262,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "EXAMPLE-HOST", port: "5432"},
+						{hostURL: "EXAMPLE-HOST", port: "5432", label: "SQL"},
 					},
 				),
 			),
@@ -1315,10 +1316,10 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "http://hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc", port: "9090"},
-						{hostURL: "http://hsdxxxxxx-alertmanager-0.node.dc1.dsf2.a9ssvc", port: "9093"},
-						{hostURL: "http://hsdxxxxxx-grafana-0.node.dc1.dsf2.a9ssvc", port: "3000"},
-						{hostURL: "hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc", port: "9109"},
+						{hostURL: "http://hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc", port: "9090", label: "Prometheus"},
+						{hostURL: "http://hsdxxxxxx-alertmanager-0.node.dc1.dsf2.a9ssvc", port: "9093", label: "Alertmanager"},
+						{hostURL: "http://hsdxxxxxx-grafana-0.node.dc1.dsf2.a9ssvc", port: "3000", label: "Grafana"},
+						{hostURL: "hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc", port: "9109", label: "Graphite Exporter"},
 					},
 				),
 			),
@@ -1371,7 +1372,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					"63d05ec8-254e-11ee-be56-0242ac120002",
 					"76c0089e-254e-11ee-be56-0242ac120002",
 					[]connectionDetails{
-						{hostURL: "https://hsdxxxxxx.service.dc1.dsf2.a9ssvc", port: "9200"},
+						{hostURL: "https://hsdxxxxxx.service.dc1.dsf2.a9ssvc", port: "9200", label: "Search"},
 					},
 				),
 			),
@@ -1436,7 +1437,7 @@ func TestObserveReturnsError(t *testing.T) {
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
 			[]connectionDetails{
-				{hostURL: "test.URL.com", port: "5432"},
+				{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 			},
 		),
 	)
@@ -1470,7 +1471,7 @@ func TestObserveReturnsError(t *testing.T) {
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
 			[]connectionDetails{
-				{hostURL: "test.URL.com", port: "5432"},
+				{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 			},
 		),
 	)
@@ -2377,7 +2378,7 @@ func TestDeleteClientErr(t *testing.T) {
 			"63d05ec8-254e-11ee-be56-0242ac120002",
 			"76c0089e-254e-11ee-be56-0242ac120002",
 			[]connectionDetails{
-				{hostURL: "test.URL.com", port: "5432"},
+				{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 			},
 		),
 	)
@@ -2501,7 +2502,7 @@ func afterBindingCreation() func(*v1.ServiceBinding) {
 
 func addConnectionDetails(conD []connectionDetails, sb *v1.ServiceBinding) {
 	for i := 0; i < len(conD); i++ {
-		sb.AddConnectionDetails(conD[i].hostURL, conD[i].port)
+		sb.AddConnectionDetailsWithLabel(conD[i].hostURL, conD[i].port, conD[i].label)
 	}
 }
 
