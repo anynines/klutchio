@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- Provider-anynines: Make health check endpoint configurable in the providerconfig spec.
+### Changed
+
+- **breaking**: ServiceBinding resources now use semantic connection labels (e.g., "SQL", "Logme2", "Search") for improved clarity in status and connection secrets.
+- All connection details in ServiceBinding status and secrets are now consistently labeled for easier integration and troubleshooting.
+- Provider-anynines: Make health check endpoint configurable in the ProviderConfig spec.
 - Provider-anynines: Increase default request timeout.
 
 ### Chores
