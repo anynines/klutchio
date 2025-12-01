@@ -179,7 +179,7 @@ func (r reconciler) performCheck(ctx context.Context, pc *v1.ProviderConfig) (bo
 		return false, fmt.Sprintf("Constructing service client: %v", err)
 	}
 
-	if err := svc.CheckAvailability(); err != nil {
+	if err := svc.CheckAvailability(pc.Spec.HealthCheckEndpoint); err != nil {
 		return false, err.Error()
 	}
 

@@ -57,7 +57,59 @@ func TestCheckAvailability(t *testing.T) {
 
 		klient := newTestClient(t, tc.name, LatestAPIVersion(), false, httpChecks, tc.httpReaction)
 
-		err := klient.CheckAvailability()
+		err := klient.CheckAvailability("")
+
+		if err == nil && tc.expectedErrMessage != nil {
+			t.Fatalf("Expected check to fail with %v, but it did not", tc.expectedErrMessage)
+		} else if err != nil && tc.expectedErrMessage == nil {
+			t.Fatalf("Expected check to succeed, but it failed with %v", err)
+		} else if err != nil && err.Error() != *tc.expectedErrMessage {
+			t.Fatalf("Expected error %v, got %v", *tc.expectedErrMessage, err.Error())
+		}
+	}
+}
+
+func TestCheckAvailabilityEndpoint(t *testing.T) {
+	cases := []struct {
+		name               string
+		endpoint           string
+		httpReaction       httpReaction
+		httpChecks         httpChecks
+		expectedErrMessage *string
+	}{
+		{
+			name:     "uses default endpoint",
+			endpoint: "",
+			httpReaction: httpReaction{
+				status: http.StatusOK,
+			},
+			httpChecks:         httpChecks{URL: "/instances"},
+			expectedErrMessage: nil,
+		},
+		{
+			name:     "uses passed endpoint with slash",
+			endpoint: "/osb_ext/v1/healthy",
+			httpReaction: httpReaction{
+				status: http.StatusOK,
+			},
+			httpChecks:         httpChecks{URL: "/osb_ext/v1/healthy"},
+			expectedErrMessage: nil,
+		},
+		{
+			name:     "uses passed endpoint without slash",
+			endpoint: "osb_ext/v1/healthy",
+			httpReaction: httpReaction{
+				status: http.StatusOK,
+			},
+			httpChecks:         httpChecks{URL: "/osb_ext/v1/healthy"},
+			expectedErrMessage: nil,
+		},
+	}
+
+	for _, tc := range cases {
+		klient := newTestClient(t, tc.name, LatestAPIVersion(), false, tc.httpChecks, tc.httpReaction)
+
+		err := klient.CheckAvailability(tc.endpoint)
 
 		if err == nil && tc.expectedErrMessage != nil {
 			t.Fatalf("Expected check to fail with %v, but it did not", tc.expectedErrMessage)

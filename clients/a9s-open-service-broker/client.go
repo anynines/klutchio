@@ -50,6 +50,7 @@ const (
 	serviceInstanceURLFmt      = "%s/v2/service_instances/%s"
 	instanceURLFmt             = "%s/instances/%s"
 	instancesURLFmt            = "%s/instances"
+	healthCheckURLFmt          = "%s/instances"
 	lastOperationURLFmt        = "%s/v2/service_instances/%s/last_operation"
 	bindingLastOperationURLFmt = "%s/v2/service_instances/%s/service_bindings/%s/last_operation"
 	bindingURLFmt              = "%s/v2/service_instances/%s/service_bindings/%s"

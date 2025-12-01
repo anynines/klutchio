@@ -26,7 +26,7 @@ func TestDefaultClientConfiguration(t *testing.T) {
 	if testConfiguration.APIVersion != LatestAPIVersion() {
 		t.Error("unexpected API Version")
 	}
-	if testConfiguration.TimeoutSeconds != 60 {
+	if testConfiguration.TimeoutSeconds != 300 {
 		t.Error("unexpected TimeoutSeconds")
 	}
 	if testConfiguration.EnableAlphaFeatures != false {

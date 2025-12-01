@@ -163,6 +163,9 @@ spec:
                 type: object
               url:
                 type: string
+              healthCheckEndpoint:
+                description: Endpoint to use for health checks. Defaults to `/instances`.
+                type: string
             required:
             - providerCredentials
             - url
