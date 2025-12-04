@@ -286,7 +286,7 @@ func TestReconcile(t *testing.T) {
 
 				nowFn: func() time.Time { return tc.now },
 
-				newServiceFn: func(username, password []byte, url string) (osbclient.Client, error) {
+				newOsbServiceFn: func(username, password []byte, url string) (osbclient.Client, error) {
 					creds = append(creds, string(username), string(password))
 					return fakeOSB, nil
 				},

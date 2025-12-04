@@ -22,19 +22,20 @@ instance_type=$(echo "$instance_name" | cut -d '-' -f 1)
 
 ports=$(
     cat <<EOF | grep "^${instance_type}" || ( echo "Unknown instance type: ${instance_type}" ; false )
-postgresql	8989	8988
-keyvalue	9089	9088
-search		9189	9188
-mongodb		9389	9388
-logme2		9489	9488
-mariadb		9589	9588
-rabbitmq	9689	9688 # aka messaging
-prometheus	9789	9788
+postgresql	8989	8988    8987
+keyvalue	9089	9088    9087
+search		9189	9188    9187
+mongodb		9389	9388    9387
+logme2		9489	9488    9487
+mariadb		9589	9588    9587
+rabbitmq	9689	9688    9687 # aka messaging
+prometheus	9789	9788    9787
 EOF
 )
 
 broker_port=$(echo "$ports" | awk '{print $2}')
 backup_port=$(echo "$ports" | awk '{print $3}')
+backup_port_https=$(echo "$ports" | awk '{print $4}')
 
 echo "Retrieving IPs..."
 
@@ -47,11 +48,13 @@ echo "Got backup IP: ${backup_service_ip}"
 
 echo ""
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo "  Exposing ${instance_name} on local ports ${broker_port} and ${backup_port}"
+echo "  Exposing ${instance_name} on local ports ${broker_port} and ${backup_port} http and ${backup_port_https} https"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo ""
-ssh -L "${broker_port}:${broker_service_ip}:3000" \
+ssh -N \
+    -L "${broker_port}:${broker_service_ip}:3000" \
     -L "${backup_port}:${backup_service_ip}:3000" \
+    -L "${backup_port_https}:${backup_service_ip}:3001" \
     -o "ServerAliveInterval 30" \
     -o "ServerAliveCountMax 3" \
     aws-s1-inception

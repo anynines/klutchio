@@ -45,6 +45,15 @@ type ClientConfiguration struct {
 	TimeoutSeconds int
 	// Verbose is whether the client will log to klog.
 	Verbose bool
+	// InsecureSkipVerify skips certificate verification for TLS connections.
+	// Useful for self-signed certificates. Should only be used in development.
+	InsecureSkipVerify bool
+	// CABundle is the PEM-encoded certificate authority certificate(s) to use
+	// for verifying the backup manager's TLS certificate.
+	CABundle []byte
+	// OverrideServerName overrides the server name used for certificate verification.
+	// This is useful when the certificate is issued for a different name than the URL hostname.
+	OverrideServerName string
 }
 
 // DefaultClientConfiguration returns a default ClientConfiguration:
@@ -117,6 +126,11 @@ type Client interface {
 	// requested instance ID and the requested backup id
 	// (/instances/{instance-id}/backups/{backup-id})
 	DeleteBackup(r *DeleteBackupRequest) (*DeleteBackupResponse, error)
+
+	// CheckAvailability verifies that the backup manager is reachable and responding.
+	// The endpoint parameter allows customization of which endpoint to check (e.g., "/instances").
+	// If the endpoint is empty, a default endpoint will be used.
+	CheckAvailability(endpoint string) error
 }
 
 // CreateFunc allows control over which implementation of a Client is

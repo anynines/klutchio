@@ -21,7 +21,9 @@ import (
 
 	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	resource "github.com/crossplane/crossplane-runtime/pkg/resource"
+	v1 "k8s.io/api/core/v1"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,8 +32,11 @@ var (
 )
 
 type Credentials struct {
-	Username []byte
-	Password []byte
+	Username           []byte
+	Password           []byte
+	CABundle           []byte // TLS CA certificate(s)
+	InsecureSkipVerify bool
+	OverrideServerName string // Override server name for TLS certificate verification
 }
 
 func GetCredentialsFromProvider(ctx context.Context, pc *apisv1.ProviderConfig, kube k8sclient.Client) (Credentials, error) {
@@ -48,5 +53,50 @@ func GetCredentialsFromProvider(ctx context.Context, pc *apisv1.ProviderConfig, 
 		return Credentials{}, errGetCreds.WithCause(err)
 	}
 
-	return Credentials{usernameData, passwordData}, nil
+	creds := Credentials{usernameData, passwordData, nil, false, ""}
+
+	// Extract TLS configuration if provided
+	if pc.Spec.TLS != nil {
+		creds.InsecureSkipVerify = pc.Spec.TLS.InsecureSkipVerify
+		creds.OverrideServerName = pc.Spec.TLS.OverrideServerName
+
+		// Extract CA bundle from secret if referenced
+		if pc.Spec.TLS.CABundleSecretRef != nil {
+			caBundle, err := extractSecretData(ctx, kube, pc.Spec.TLS.CABundleSecretRef)
+			if err != nil {
+				return Credentials{}, err
+			}
+			creds.CABundle = caBundle
+		}
+	}
+
+	return creds, nil
+}
+
+// extractSecretData retrieves the value of a key from a Kubernetes secret
+func extractSecretData(ctx context.Context, kube k8sclient.Client, ref *xpv1.SecretKeySelector) ([]byte, error) {
+	if ref == nil || ref.Name == "" {
+		return nil, nil
+	}
+
+	secret := &v1.Secret{}
+	err := kube.Get(ctx, k8sclient.ObjectKey{
+		Namespace: ref.Namespace,
+		Name:      ref.Name,
+	}, secret)
+	if err != nil {
+		return nil, utilerr.FromStr("cannot get secret").WithCause(err)
+	}
+
+	key := ref.Key
+	if key == "" {
+		key = "ca.crt" // default key for CA certificates
+	}
+
+	data, ok := secret.Data[key]
+	if !ok {
+		return nil, utilerr.PlainUserErr("secret key not found in CA certificate secret: " + key)
+	}
+
+	return data, nil
 }

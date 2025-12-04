@@ -29,13 +29,30 @@ const (
 	InstanceNotFound = "InstanceNotFound"
 )
 
-// NewBackupManagerService is meant to return a "client" to connext to the external resource
-// API.
-// TODO: Finish implementation of this function
+// NewBackupManagerService is the default backup manager service factory that creates a client
+// with the provided credentials. It maintains backward compatibility with the existing API.
+// For advanced TLS configuration, use NewBackupManagerServiceWithTLS.
+// username: username for basic auth
+// password: password for basic auth
+// url: URL of the backup manager
 func NewBackupManagerService(username, password []byte, url string) (bkpmgrclient.Client, error) {
+	return NewBackupManagerServiceWithTLS(username, password, url, false, nil, "")
+}
+
+// NewBackupManagerServiceWithTLS creates a backup manager client with custom TLS configuration.
+// username: username for basic auth
+// password: password for basic auth
+// url: URL of the backup manager
+// insecureSkipVerify: if true, skips TLS certificate verification (useful for self-signed certs in development)
+// caBundle: PEM-encoded CA certificate(s) for TLS verification
+// overrideServerName: if set, overrides the server name used for certificate verification
+func NewBackupManagerServiceWithTLS(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (bkpmgrclient.Client, error) {
 	cfg := bkpmgrclient.DefaultClientConfiguration()
 	cfg.Name = "BackupManagerClient"
 	cfg.URL = url
+	cfg.InsecureSkipVerify = insecureSkipVerify
+	cfg.CABundle = caBundle
+	cfg.OverrideServerName = overrideServerName
 	cfg.AuthConfig = &bkpmgrclient.AuthConfig{
 		BasicAuthConfig: &bkpmgrclient.BasicAuthConfig{
 			Username: strings.TrimSpace(string(username)),
