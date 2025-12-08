@@ -167,7 +167,18 @@ kind: ProviderConfig
 metadata:
   name: <data-service>-backup-manager
 spec:
-  url: <backup-manager-url> # e.g. http://example.com:3000
+  url: <backup-manager-url> # e.g. http://example.com:3000 or https://example.com:3001
+  tls: #optional if tweaking is required
+    # required if the name used to connect to the backup manager does not match the hostname
+    # in the certificate. Set to the name in the certificate.
+    overrideServerName: <cert-host-name> # e.g. example.com
+    insecureSkipVerify: false # can be set to true to skip certificate validation
+    # Can be used to manually configure certificate to be used. Skip if the
+    # certificate is already valid within your org or globally.
+    caBundleSecretRef: # ref to certificate chain in pem format.
+      key: cert
+      name: <data-service>-backup-manager-creds
+      namespace: crossplane-system
   providerCredentials:
     source: Secret
     username:

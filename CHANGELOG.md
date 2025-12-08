@@ -17,6 +17,12 @@
   - `function-patch-and-transform` upgraded to v0.8.2
 - Fixed security vulnerabilities identified by Dependabot.
 
+### Added
+
+- Added TLS support for communication with backup-manager in provider-anynines. Changing the URL in
+  the ProviderConfig from http:// to https:// switches to encrypted communication. A new optional
+  configuration field `tls` has been added to configure custom certificates.
+
 ## [1.3.2] - 2025-01-23
 
 ### Added
