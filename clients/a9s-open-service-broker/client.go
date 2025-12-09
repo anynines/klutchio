@@ -54,7 +54,6 @@ const (
 	lastOperationURLFmt        = "%s/v2/service_instances/%s/last_operation"
 	bindingLastOperationURLFmt = "%s/v2/service_instances/%s/service_bindings/%s/last_operation"
 	bindingURLFmt              = "%s/v2/service_instances/%s/service_bindings/%s"
-	operationURLFmt            = "%s/v2/operations/%s"
 
 	errCacheFreshnessNegative = "the value of CacheFreshnessSeconds must not be a negative number"
 )

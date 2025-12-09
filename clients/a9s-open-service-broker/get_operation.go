@@ -22,9 +22,13 @@ import (
 )
 
 func (c *client) GetOperation(r *GetOperationRequest) (*GetOperationResponse, error) {
-	fullUrl := fmt.Sprintf(operationURLFmt, c.URL, r.OperationKey)
+	fullUrl := fmt.Sprintf(lastOperationURLFmt, c.URL, r.InstanceID)
 
-	response, err := c.prepareAndDo(http.MethodGet, fullUrl, nil /* params */, nil /* request body */, nil /* originating identity */)
+	params := map[string]string{}
+
+	params[VarOperationKey] = string(r.OperationKey)
+
+	response, err := c.prepareAndDo(http.MethodGet, fullUrl, params, nil /* request body */, nil /* originating identity */)
 	if err != nil {
 		return nil, err
 	}

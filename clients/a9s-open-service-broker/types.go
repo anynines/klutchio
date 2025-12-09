@@ -658,6 +658,8 @@ type GetBindingResponse struct {
 }
 
 type GetOperationRequest struct {
+	// InstanceID is the ID of the instance the OperationKey is for.
+	InstanceID   string
 	OperationKey OperationKey
 }
 
@@ -666,12 +668,12 @@ type GetOperationResponse struct {
 }
 
 func (r *GetOperationResponse) IsDone() bool {
-	return r.State == "done"
+	return r.State == "succeeded"
 }
 
 func (r *GetOperationResponse) IsFailure() (bool, error) {
 	switch r.State {
-	case "error", "cancelled", "timeout":
+	case "failed":
 		return true, OperationStateError{r.State}
 	default:
 		return false, nil
