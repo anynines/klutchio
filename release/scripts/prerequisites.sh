@@ -6,7 +6,7 @@ helm install crossplane \
     --namespace crossplane-system \
     --create-namespace crossplane-stable/crossplane \
 	--set args='{"--enable-ssa-claims"}' \
-    --version 1.19.0
+    --version 1.20.0
 
 kubectl -n crossplane-system wait --for=condition=available \
 	deployment/crossplane \
