@@ -33,6 +33,9 @@ type ProviderConfigSpec struct {
 	HealthCheckEndpoint string `json:"healthCheckEndpoint,omitempty"`
 	// Credentials required to authenticate to this provider.
 	ProviderCredentials ProviderCredentials `json:"providerCredentials"`
+	// TLS configuration for the provider connection.
+	// +kubebuilder:validation:Optional
+	TLS *ProviderConfigTLS `json:"tls,omitempty"`
 }
 
 // ProviderCredentials required to authenticate.
@@ -43,6 +46,20 @@ type ProviderCredentials struct {
 
 	Username xpv1.CommonCredentialSelectors `json:"username"`
 	Password xpv1.CommonCredentialSelectors `json:"password"`
+}
+
+// ProviderConfigTLS contains TLS configuration for the provider connection.
+type ProviderConfigTLS struct {
+	// InsecureSkipVerify skips certificate verification. Should only be used in development.
+	// +kubebuilder:validation:Optional
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+	// CABundleSecretRef references a secret containing the CA certificate(s) in PEM format.
+	// +kubebuilder:validation:Optional
+	CABundleSecretRef *xpv1.SecretKeySelector `json:"caBundleSecretRef,omitempty"`
+	// OverrideServerName overrides the server name used for certificate verification.
+	// This is useful when the certificate is issued for a different name than the URL hostname.
+	// +kubebuilder:validation:Optional
+	OverrideServerName string `json:"overrideServerName,omitempty"`
 }
 
 // A ProviderConfigStatus reflects the observed state of a ProviderConfig.

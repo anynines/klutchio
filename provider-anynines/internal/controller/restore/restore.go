@@ -91,7 +91,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 			Connector: &connector{
 				kube:         mgr.GetClient(),
 				usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &apisv1.ProviderConfigUsage{}),
-				newServiceFn: bkpclient.NewBackupManagerService},
+				newServiceFn: bkpclient.NewBackupManagerServiceWithTLS},
 			Logger: log,
 		}),
 		managed.WithLogger(log),
@@ -110,7 +110,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 type connector struct {
 	kube         k8sclient.Client
 	usage        resource.Tracker
-	newServiceFn func(username, password []byte, url string) (a9sbackupmanager.Client, error)
+	newServiceFn func(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (a9sbackupmanager.Client, error)
 }
 
 // Connect typically produces an ExternalClient by:
@@ -138,7 +138,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	svc, err := c.newServiceFn(credentials.Username, credentials.Password, pc.Spec.Url)
+	svc, err := c.newServiceFn(credentials.Username, credentials.Password, pc.Spec.Url, credentials.InsecureSkipVerify, credentials.CABundle, credentials.OverrideServerName)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errNewClient, err)
 	}

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	bmclient "github.com/anynines/klutchio/clients/a9s-backup-manager"
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +39,8 @@ import (
 
 	v1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 	credhelp "github.com/anynines/klutchio/provider-anynines/internal/controller/utils"
-	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
+	bmpkg "github.com/anynines/klutchio/provider-anynines/pkg/client/backupmanager"
+	osbpkg "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
 )
 
 const (
@@ -62,11 +64,12 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 	name := fmt.Sprintf("health/%s", v1.ProviderConfigGroupKind)
 
 	r := reconciler{
-		kube:         mgr.GetClient(),
-		log:          o.Logger.WithValues("controller", name),
-		nowFn:        time.Now,
-		newServiceFn: client.NewOsbService,
-		recorder:     mgr.GetEventRecorderFor(name),
+		kube:               mgr.GetClient(),
+		log:                o.Logger.WithValues("controller", name),
+		nowFn:              time.Now,
+		newOsbServiceFn:    osbpkg.NewOsbService,
+		newBackupManagerFn: bmpkg.NewBackupManagerServiceWithTLS,
+		recorder:           mgr.GetEventRecorderFor(name),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -77,11 +80,12 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 }
 
 type reconciler struct {
-	kube         k8sclient.Client
-	log          logging.Logger
-	nowFn        func() time.Time
-	newServiceFn func(username, password []byte, url string) (osbclient.Client, error)
-	recorder     record.EventRecorder
+	kube               k8sclient.Client
+	log                logging.Logger
+	nowFn              func() time.Time
+	newOsbServiceFn    func(username, password []byte, url string) (osbclient.Client, error)
+	newBackupManagerFn func(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (bmclient.Client, error)
+	recorder           record.EventRecorder
 }
 
 func (r reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -174,11 +178,47 @@ func (r reconciler) performCheck(ctx context.Context, pc *v1.ProviderConfig) (bo
 		return false, fmt.Sprintf("Extracting credentials: %v", err)
 	}
 
-	svc, err := r.newServiceFn(credentials.Username, credentials.Password, pc.Spec.Url)
-	if err != nil {
-		return false, fmt.Sprintf("Constructing service client: %v", err)
+	// Use HTTPS to distinguish between backup manager (HTTPS) and OSB (HTTP)
+	if isBackupManagerService(pc.Spec.Url) {
+		return r.performBackupManagerCheck(ctx, pc, credentials)
 	}
 
+	return r.performOsbCheck(ctx, pc, credentials)
+}
+
+// isBackupManagerService detects if this is a backup manager service based on HTTPS usage
+func isBackupManagerService(url string) bool {
+	// Backup manager services use HTTPS; OSB services typically use HTTP
+	return len(url) > 5 && url[:5] == "https"
+}
+
+func (r reconciler) performOsbCheck(ctx context.Context, pc *v1.ProviderConfig, credentials credhelp.Credentials) (bool, string) {
+	svc, err := r.newOsbServiceFn(credentials.Username, credentials.Password, pc.Spec.Url)
+	if err != nil {
+		return false, fmt.Sprintf("Constructing OSB service client: %v", err)
+	}
+
+	if err := svc.CheckAvailability(pc.Spec.HealthCheckEndpoint); err != nil {
+		return false, err.Error()
+	}
+
+	return true, "Available"
+}
+
+func (r reconciler) performBackupManagerCheck(ctx context.Context, pc *v1.ProviderConfig, credentials credhelp.Credentials) (bool, string) {
+	svc, err := r.newBackupManagerFn(
+		credentials.Username,
+		credentials.Password,
+		pc.Spec.Url,
+		credentials.InsecureSkipVerify,
+		credentials.CABundle,
+		credentials.OverrideServerName,
+	)
+	if err != nil {
+		return false, fmt.Sprintf("Constructing backup manager client: %v", err)
+	}
+
+	// For backup manager, check if we can reach the health check endpoint
 	if err := svc.CheckAvailability(pc.Spec.HealthCheckEndpoint); err != nil {
 		return false, err.Error()
 	}

@@ -386,6 +386,11 @@ func (c *Client) DeleteBackup(r *backupmanager.DeleteBackupRequest) (*backupmana
 	return nil, UnexpectedActionError()
 }
 
+// CheckAvailability mocks the CheckAvailability method
+func (c *Client) CheckAvailability(string) error {
+	return nil
+}
+
 // UnexpectedActionError returns an error message when an action is not found
 // in the FakeClient's action array.
 func UnexpectedActionError() error {

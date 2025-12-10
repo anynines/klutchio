@@ -50,6 +50,10 @@ spec:
           spec:
             description: A ProviderConfigSpec defines the desired state of a ProviderConfig.
             properties:
+              healthCheckEndpoint:
+                description: Endpoint to use for broker health checks. If not set,
+                  the endpoint /instances is used.
+                type: string
               providerCredentials:
                 description: Credentials required to authenticate to this provider.
                 properties:
@@ -161,10 +165,38 @@ spec:
                 - source
                 - username
                 type: object
+              tls:
+                description: TLS configuration for the provider connection.
+                properties:
+                  caBundleSecretRef:
+                    description: CABundleSecretRef references a secret containing
+                      the CA certificate(s) in PEM format.
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
+                  insecureSkipVerify:
+                    description: InsecureSkipVerify skips certificate verification.
+                      Should only be used in development.
+                    type: boolean
+                  overrideServerName:
+                    description: |-
+                      OverrideServerName overrides the server name used for certificate verification.
+                      This is useful when the certificate is issued for a different name than the URL hostname.
+                    type: string
+                type: object
               url:
-                type: string
-              healthCheckEndpoint:
-                description: Endpoint to use for health checks. Defaults to `/instances`.
                 type: string
             required:
             - providerCredentials

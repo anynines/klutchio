@@ -19,8 +19,11 @@ package backupmanager
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -61,6 +64,22 @@ func NewClient(config *ClientConfiguration) (Client, error) {
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
+	// Configure TLS if needed
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: config.InsecureSkipVerify,
+		ServerName:         config.OverrideServerName,
+	}
+
+	// Add CA bundle if provided
+	if len(config.CABundle) > 0 {
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(config.CABundle) {
+			return nil, errors.New("failed to parse CA certificate")
+		}
+		tlsConfig.RootCAs = caCertPool
+	}
+
+	transport.TLSClientConfig = tlsConfig
 	httpClient.Transport = transport
 
 	c := &client{
@@ -218,4 +237,40 @@ func drainReader(reader io.Reader) error {
 	}
 	_, drainError := io.Copy(io.Discard, io.LimitReader(reader, 4096))
 	return drainError
+}
+
+// CheckAvailability verifies that the backup manager is reachable and responding.
+// The endpoint parameter allows customization of which endpoint to check (e.g., "/instances").
+// If the endpoint is empty, a default endpoint will be used.
+func (c *client) CheckAvailability(endpoint string) error {
+	// Use provided endpoint or default to /instances
+	if endpoint == "" {
+		endpoint = "/instances"
+	}
+
+	url := fmt.Sprintf("%s%s", c.URL, endpoint)
+
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	if c.AuthConfig != nil && c.AuthConfig.BasicAuthConfig != nil {
+		request.SetBasicAuth(
+			c.AuthConfig.BasicAuthConfig.Username,
+			c.AuthConfig.BasicAuthConfig.Password,
+		)
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("health check request failed: %w", err)
+	}
+	defer drainReader(response.Body)
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		return fmt.Errorf("health check failed with status code %d", response.StatusCode)
+	}
+
+	return nil
 }
