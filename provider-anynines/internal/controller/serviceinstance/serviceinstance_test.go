@@ -57,21 +57,21 @@ var defaultCatalogResponse = osbclient.CatalogResponse{
 			Bindable:             true,
 			InstancesRetrievable: false,
 			BindingsRetrievable:  false,
-			PlanUpdatable:        ptr.To[bool](true),
+			PlanUpdatable:        ptr.To(true),
 			Plans: []osbclient.Plan{
 				{
 					ID:             "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
 					Name:           "postgresql-single-small",
 					Description:    "a small single instance",
-					Free:           ptr.To[bool](true),
-					PlanUpdateable: ptr.To[bool](true),
+					Free:           ptr.To(true),
+					PlanUpdateable: ptr.To(true),
 				},
 				{
 					ID:             "2754eb09-a4cb-4fe3-bbd8-3ad208608840",
 					Name:           "postgresql-single-big",
 					Description:    "a big single instance",
-					Free:           ptr.To[bool](true),
-					PlanUpdateable: ptr.To[bool](true),
+					Free:           ptr.To(true),
+					PlanUpdateable: ptr.To(true),
 				},
 			},
 		},
@@ -97,11 +97,11 @@ func newServiceInstance(opts ...serviceInstanceOption) *v1.ServiceInstance {
 		},
 		Spec: v1.ServiceInstanceSpec{
 			ForProvider: v1.ServiceInstanceParameters{
-				ServiceName:       ptr.To[string]("a9s-postgresql11"),
-				PlanName:          ptr.To[string]("postgresql-single-small"),
-				AcceptsIncomplete: ptr.To[bool](true),
-				OrganizationGUID:  ptr.To[string]("a1612e60-3042-4bf2-bd7c-fa600a4f66b9"),
-				SpaceGUID:         ptr.To[string]("009dbe05-925d-4f2a-ac0d-8d44dd723a11"),
+				ServiceName:       ptr.To("a9s-postgresql11"),
+				PlanName:          ptr.To("postgresql-single-small"),
+				AcceptsIncomplete: ptr.To(true),
+				OrganizationGUID:  ptr.To("a1612e60-3042-4bf2-bd7c-fa600a4f66b9"),
+				SpaceGUID:         ptr.To("009dbe05-925d-4f2a-ac0d-8d44dd723a11"),
 			},
 		},
 	}
@@ -128,13 +128,15 @@ func withInstanceResponseState(state string) instanceResponseOption {
 	}
 }
 
-func withInstanceResponseIntParameter(key string, value int) instanceResponseOption {
-	return func(gir *osbclient.GetInstanceResponse) {
-		if gir.Metadata.Parameters == nil {
-			gir.Metadata.Parameters = map[string]interface{}{}
+type serviceInstanceResponseOption func(gir *osbclient.GetServiceInstanceResponse)
+
+func withServiceInstanceResponseIntParameter(key string, value int) serviceInstanceResponseOption {
+	return func(gir *osbclient.GetServiceInstanceResponse) {
+		if gir.Parameters == nil {
+			gir.Parameters = map[string]interface{}{}
 		}
 		// to simulate the way the param would be parsed from JSON, convert to float64 here
-		gir.Metadata.Parameters[key] = float64(value)
+		gir.Parameters[key] = float64(value)
 	}
 }
 
@@ -146,11 +148,28 @@ func newInstanceResponse(opts ...instanceResponseOption) *osbclient.GetInstanceR
 		ServiceGUID:  "0f3f9e21-f960-41f4-b787-b2b47b567996",
 		GUIDAtTenant: "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
 		TenantID:     "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
-		Metadata: osbclient.Metadata{
-			InstanceGUIDAtTenant: "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
-			PlanGUID:             "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
-			OrganizationGUID:     "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
-			SpaceGUID:            "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
+		Context: osbclient.Context{
+			OrganizationGUID: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+			SpaceGUID:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
+		},
+	}
+
+	for _, opt := range opts {
+		opt(ir)
+	}
+
+	return ir
+}
+
+func newServiceInstanceResponse(opts ...serviceInstanceResponseOption) *osbclient.GetServiceInstanceResponse {
+	// Set defaults
+	ir := &osbclient.GetServiceInstanceResponse{
+		ID:          "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
+		PlanGUID:    "40a5148f-dba2-41f2-b1b7-0ca90e1501c5",
+		ServiceGUID: "0f3f9e21-f960-41f4-b787-b2b47b567996",
+		Context: osbclient.Context{
+			OrganizationGUID: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+			SpaceGUID:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
 		},
 	}
 
@@ -215,10 +234,11 @@ func TestMain(m *testing.M) {
 
 func TestObserve(t *testing.T) {
 	type args struct {
-		getInstanceReaction  *fakeosb.GetInstanceReaction
-		catalogReaction      *fakeosb.CatalogReaction
-		getOperationReaction *fakeosb.GetOperationReaction
-		mr                   resource.Managed
+		getInstanceReaction        *fakeosb.GetInstanceReaction
+		getServiceInstanceReaction *fakeosb.GetServiceInstanceReaction
+		catalogReaction            *fakeosb.CatalogReaction
+		getOperationReaction       *fakeosb.GetOperationReaction
+		mr                         resource.Managed
 	}
 
 	type want struct {
@@ -245,8 +265,8 @@ func TestObserve(t *testing.T) {
 				getInstanceReaction: &fakeosb.GetInstanceReaction{
 					Error: osbclient.HTTPStatusCodeError{
 						StatusCode:   http.StatusNotFound,
-						ErrorMessage: ptr.To[string]("InstanceNotFound"),
-						Description:  ptr.To[string]("Instance not found"),
+						ErrorMessage: ptr.To("InstanceNotFound"),
+						Description:  ptr.To("Instance not found"),
 					},
 				},
 				mr: newServiceInstance(
@@ -297,6 +317,9 @@ func TestObserve(t *testing.T) {
 				getInstanceReaction: &fakeosb.GetInstanceReaction{
 					Response: newInstanceResponse(withInstanceResponseState("created")),
 				},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{
+					Response: newServiceInstanceResponse(),
+				},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -321,6 +344,9 @@ func TestObserve(t *testing.T) {
 				getInstanceReaction: &fakeosb.GetInstanceReaction{
 					Response: newInstanceResponse(withInstanceResponseState("provisioned")),
 				},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{
+					Response: newServiceInstanceResponse(),
+				},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -342,7 +368,8 @@ func TestObserve(t *testing.T) {
 		},
 		"successCorrectlyObservedInstanceWithStateAvailable": {
 			args: args{
-				getInstanceReaction: &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("available"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("available"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -364,7 +391,8 @@ func TestObserve(t *testing.T) {
 		},
 		"successCorrectlyObservedInstanceWithStateDeleted": {
 			args: args{
-				getInstanceReaction: &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("deleted"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("deleted"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -385,7 +413,8 @@ func TestObserve(t *testing.T) {
 		},
 		"successCorrectlyObservedInstanceWithStateDeleting": {
 			args: args{
-				getInstanceReaction: &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("deleting"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("deleting"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -407,7 +436,8 @@ func TestObserve(t *testing.T) {
 		},
 		"successCorrectlyObservedInstanceWithStateDeploying": {
 			args: args{
-				getInstanceReaction: &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("deploying"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("deploying"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -429,7 +459,8 @@ func TestObserve(t *testing.T) {
 		},
 		"successCorrectlyObservedInstanceWithStateFailed": {
 			args: args{
-				getInstanceReaction: &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("failed"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("failed"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -451,7 +482,8 @@ func TestObserve(t *testing.T) {
 		},
 		"errObservedInstanceWithUnknownState": {
 			args: args{
-				getInstanceReaction: &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("unknown"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("unknown"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 				),
@@ -473,7 +505,8 @@ func TestObserve(t *testing.T) {
 		},
 		"successPlanWasCorrectlyUpdated": {
 			args: args{
-				getInstanceReaction: &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("provisioned"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("provisioned"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
@@ -499,8 +532,9 @@ func TestObserve(t *testing.T) {
 		},
 		"pendingOperationIsPending": {
 			args: args{
-				getInstanceReaction:  &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("unknown"))},
-				getOperationReaction: &fakeosb.GetOperationReaction{Response: newGetOperationResponse(withOperationState("pending"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("unknown"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
+				getOperationReaction:       &fakeosb.GetOperationReaction{Response: newGetOperationResponse(withOperationState("pending"))},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
@@ -529,8 +563,9 @@ func TestObserve(t *testing.T) {
 		},
 		"pendingOperationIsDone": {
 			args: args{
-				getInstanceReaction:  &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("provisioned"))},
-				getOperationReaction: &fakeosb.GetOperationReaction{Response: newGetOperationResponse(withOperationState("done"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("provisioned"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
+				getOperationReaction:       &fakeosb.GetOperationReaction{Response: newGetOperationResponse(withOperationState("succeeded"))},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
@@ -558,8 +593,9 @@ func TestObserve(t *testing.T) {
 		},
 		"pendingOperationHasErrorState": {
 			args: args{
-				getInstanceReaction:  &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("provisioned"))},
-				getOperationReaction: &fakeosb.GetOperationReaction{Response: newGetOperationResponse(withOperationState("error"))},
+				getInstanceReaction:        &fakeosb.GetInstanceReaction{Response: newInstanceResponse(withInstanceResponseState("provisioned"))},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{Response: newServiceInstanceResponse()},
+				getOperationReaction:       &fakeosb.GetOperationReaction{Response: newGetOperationResponse(withOperationState("failed"))},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 					withServiceID("0f3f9e21-f960-41f4-b787-b2b47b567996"),
@@ -585,7 +621,11 @@ func TestObserve(t *testing.T) {
 				getInstanceReaction: &fakeosb.GetInstanceReaction{
 					Response: newInstanceResponse(
 						withInstanceResponseState("provisioned"),
-						withInstanceResponseIntParameter("max_connections", 200),
+					),
+				},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{
+					Response: newServiceInstanceResponse(
+						withServiceInstanceResponseIntParameter("max_connections", 200),
 					),
 				},
 				mr: newServiceInstance(
@@ -618,7 +658,11 @@ func TestObserve(t *testing.T) {
 				getInstanceReaction: &fakeosb.GetInstanceReaction{
 					Response: newInstanceResponse(
 						withInstanceResponseState("provisioned"),
-						withInstanceResponseIntParameter("max_connections", 100),
+					),
+				},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{
+					Response: newServiceInstanceResponse(
+						withServiceInstanceResponseIntParameter("max_connections", 100),
 					),
 				},
 				mr: newServiceInstance(
@@ -651,7 +695,11 @@ func TestObserve(t *testing.T) {
 				getInstanceReaction: &fakeosb.GetInstanceReaction{
 					Response: newInstanceResponse(
 						withInstanceResponseState("provisioned"),
-						withInstanceResponseIntParameter("max_connections", 100),
+					),
+				},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{
+					Response: newServiceInstanceResponse(
+						withServiceInstanceResponseIntParameter("max_connections", 100),
 					),
 				},
 				mr: newServiceInstance(
@@ -683,6 +731,9 @@ func TestObserve(t *testing.T) {
 					Response: newInstanceResponse(
 						withInstanceResponseState("provisioned"),
 					),
+				},
+				getServiceInstanceReaction: &fakeosb.GetServiceInstanceReaction{
+					Response: newServiceInstanceResponse(),
 				},
 				mr: newServiceInstance(
 					withStatusInstanceID("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
@@ -726,9 +777,10 @@ func TestObserve(t *testing.T) {
 
 			// Set up the object under test.
 			fakeOSB := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
-				GetInstanceReaction:  tc.args.getInstanceReaction,
-				CatalogReaction:      tc.args.catalogReaction,
-				GetOperationReaction: tc.args.getOperationReaction,
+				GetInstanceReaction:        tc.args.getInstanceReaction,
+				GetServiceInstanceReaction: tc.args.getServiceInstanceReaction,
+				CatalogReaction:            tc.args.catalogReaction,
+				GetOperationReaction:       tc.args.getOperationReaction,
 			})
 			e := utilerr.Decorator{
 				ExternalClient: &external{
@@ -1001,6 +1053,10 @@ func TestCreate(t *testing.T) {
 							Parameters: map[string]interface{}{
 								"max_connections": float64(100),
 							},
+							Context: map[string]interface{}{
+								osbclient.VarOrganizationKey: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+								osbclient.VarSpaceKey:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
+							},
 						},
 					}},
 			},
@@ -1104,6 +1160,10 @@ func TestUpdate(t *testing.T) {
 							AcceptsIncomplete: true,
 							ServiceID:         "0f3f9e21-f960-41f4-b787-b2b47b567996",
 							PlanID:            ptr.To[string]("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
+							Context: map[string]interface{}{
+								osbclient.VarOrganizationKey: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+								osbclient.VarSpaceKey:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
+							},
 						},
 					},
 				},
@@ -1133,6 +1193,10 @@ func TestUpdate(t *testing.T) {
 							PlanID:            ptr.To[string]("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 							Parameters: map[string]interface{}{
 								"max_connections": float64(250),
+							},
+							Context: map[string]interface{}{
+								osbclient.VarOrganizationKey: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+								osbclient.VarSpaceKey:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
 							},
 						},
 					},
@@ -1164,6 +1228,10 @@ func TestUpdate(t *testing.T) {
 							Parameters: map[string]interface{}{
 								"wal_level_logical": true,
 							},
+							Context: map[string]interface{}{
+								osbclient.VarOrganizationKey: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+								osbclient.VarSpaceKey:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
+							},
 						},
 					},
 				},
@@ -1193,6 +1261,10 @@ func TestUpdate(t *testing.T) {
 							PlanID:            ptr.To[string]("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 							Parameters: map[string]interface{}{
 								"max_connections": nil,
+							},
+							Context: map[string]interface{}{
+								osbclient.VarOrganizationKey: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+								osbclient.VarSpaceKey:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
 							},
 						},
 					},
@@ -1226,6 +1298,10 @@ func TestUpdate(t *testing.T) {
 							Parameters: map[string]interface{}{
 								"synchronous_commit": "local",
 							},
+							Context: map[string]interface{}{
+								osbclient.VarOrganizationKey: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+								osbclient.VarSpaceKey:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
+							},
 						},
 					},
 				},
@@ -1256,6 +1332,10 @@ func TestUpdate(t *testing.T) {
 							PlanID:            ptr.To[string]("40a5148f-dba2-41f2-b1b7-0ca90e1501c5"),
 							Parameters: map[string]interface{}{
 								"max_connections": float64(200),
+							},
+							Context: map[string]interface{}{
+								osbclient.VarOrganizationKey: "a1612e60-3042-4bf2-bd7c-fa600a4f66b9",
+								osbclient.VarSpaceKey:        "009dbe05-925d-4f2a-ac0d-8d44dd723a11",
 							},
 						},
 					},

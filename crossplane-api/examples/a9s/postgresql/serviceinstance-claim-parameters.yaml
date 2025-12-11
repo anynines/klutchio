@@ -10,7 +10,6 @@ spec:
   compositionRef:
     name: a9s-postgresql
   parameters:
-    maxConnections: 200
     tempFileLimit: 4096
     trackIoTiming: "on"
     archiveTimeout: 700
