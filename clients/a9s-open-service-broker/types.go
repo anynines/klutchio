@@ -379,6 +379,15 @@ type GetInstanceResponse struct {
 	VMDetails interface{} `json:"vm_details"`
 }
 
+type GetServiceInstanceResponse struct {
+	ID           string                 `json:"id"`
+	PlanGUID     string                 `json:"plan_id"`
+	ServiceGUID  string                 `json:"service_id"`
+	DashboardURL string                 `json:"dashboard_url"`
+	Parameters   map[string]interface{} `json:"parameters"`
+	Context      Context                `json:"context"`
+}
+
 // GetInstancesResponse is sent as the response to doing a GET on the /instances endpoint
 type GetInstancesResponse struct {
 	TotalResults int                   `json:"total_results"`

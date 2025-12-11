@@ -160,8 +160,14 @@ type Client interface {
 	//
 	// GetInstance returns information about an existing instance.
 	// GetInstance calls GET on the Broker's endpoint for the requested
-	// instance ID (/v2/service_instances/instance-id)
+	// instance ID (/instances/instance-id)
 	GetInstance(r *GetInstanceRequest) (*GetInstanceResponse, error)
+	// GetServiceInstance requires a client API version >= 2.14.
+	//
+	// GetServiceInstance returns information about an existing instance.
+	// GetServiceInstance calls GET on the Broker's endpoint for the requested
+	// instance ID (/v2/service_instances/instance-id)
+	GetServiceInstance(r *GetInstanceRequest) (*GetServiceInstanceResponse, error)
 	// GetInstances requires a client API version >= 2.14.
 	//
 	// GetInstances returns information about all existing instances.

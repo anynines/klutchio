@@ -34,6 +34,7 @@ func NewFakeClient(config FakeClientConfiguration) *FakeClient {
 		UpdateInstanceReaction:           config.UpdateInstanceReaction,
 		DeprovisionReaction:              config.DeprovisionReaction,
 		GetInstanceReaction:              config.GetInstanceReaction,
+		GetServiceInstanceReaction:       config.GetServiceInstanceReaction,
 		GetInstancesReaction:             config.GetInstancesReaction,
 		PollLastOperationReaction:        config.PollLastOperationReaction,
 		PollLastOperationReactions:       config.PollLastOperationReactions,
@@ -53,6 +54,7 @@ type FakeClientConfiguration struct {
 	UpdateInstanceReaction           UpdateInstanceReactionInterface
 	DeprovisionReaction              DeprovisionReactionInterface
 	GetInstanceReaction              GetInstanceReactionInterface
+	GetServiceInstanceReaction       GetServiceInstanceReactionInterface
 	GetInstancesReaction             GetInstancesReactionInterface
 	PollLastOperationReaction        PollLastOperationReactionInterface
 	PollLastOperationReactions       map[v2.OperationKey]*PollLastOperationReaction
@@ -81,6 +83,7 @@ const (
 	UpdateInstance           ActionType = "UpdateInstance"
 	DeprovisionInstance      ActionType = "DeprovisionInstance"
 	GetInstance              ActionType = "GetInstance"
+	GetServiceInstance       ActionType = "GetServiceInstance"
 	GetInstances             ActionType = "GetInstances"
 	PollLastOperation        ActionType = "PollLastOperation"
 	PollBindingLastOperation ActionType = "PollBindingLastOperation"
@@ -101,6 +104,7 @@ type FakeClient struct {
 	UpdateInstanceReaction           UpdateInstanceReactionInterface
 	DeprovisionReaction              DeprovisionReactionInterface
 	GetInstanceReaction              GetInstanceReactionInterface
+	GetServiceInstanceReaction       GetServiceInstanceReactionInterface
 	GetInstancesReaction             GetInstancesReactionInterface
 	PollLastOperationReaction        PollLastOperationReactionInterface
 	PollLastOperationReactions       map[v2.OperationKey]*PollLastOperationReaction
@@ -194,6 +198,20 @@ func (c *FakeClient) GetInstance(*v2.GetInstanceRequest) (*v2.GetInstanceRespons
 
 	if c.GetInstanceReaction != nil {
 		return c.GetInstanceReaction.React()
+	}
+
+	return nil, UnexpectedActionError()
+}
+
+// GetServiceInstance implements the Client.GetServiceInstance method for the FakeClient.
+func (c *FakeClient) GetServiceInstance(*v2.GetInstanceRequest) (*v2.GetServiceInstanceResponse, error) {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	c.actions = append(c.actions, Action{Type: GetServiceInstance})
+
+	if c.GetServiceInstanceReaction != nil {
+		return c.GetServiceInstanceReaction.React()
 	}
 
 	return nil, UnexpectedActionError()
@@ -426,6 +444,11 @@ type GetInstanceReactionInterface interface {
 	React() (*v2.GetInstanceResponse, error)
 }
 
+// GetServiceInstanceReactionInterface defines the reaction to GetServiceInstance requests.
+type GetServiceInstanceReactionInterface interface {
+	React() (*v2.GetServiceInstanceResponse, error)
+}
+
 // GetInstancesReactionInterface defines the reaction to GetInstances requests.
 type GetInstancesReactionInterface interface {
 	React() (*v2.GetInstancesResponse, error)
@@ -446,6 +469,24 @@ func (r *GetInstanceReaction) React() (*v2.GetInstanceResponse, error) {
 type DynamicGetInstanceReaction func() (*v2.GetInstanceResponse, error)
 
 func (r DynamicGetInstanceReaction) React() (*v2.GetInstanceResponse, error) {
+	return r()
+}
+
+type GetServiceInstanceReaction struct {
+	Response *v2.GetServiceInstanceResponse
+	Error    error
+}
+
+func (r *GetServiceInstanceReaction) React() (*v2.GetServiceInstanceResponse, error) {
+	if r == nil {
+		return nil, UnexpectedActionError()
+	}
+	return r.Response, r.Error
+}
+
+type DynamicGetServiceInstanceReaction func() (*v2.GetServiceInstanceResponse, error)
+
+func (r DynamicGetServiceInstanceReaction) React() (*v2.GetServiceInstanceResponse, error) {
 	return r()
 }
 
