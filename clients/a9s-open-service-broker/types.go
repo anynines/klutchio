@@ -364,7 +364,7 @@ type GetInstanceResponse struct {
 	ID             int          `json:"id"`
 	PlanGUID       string       `json:"plan_guid"`
 	ServiceGUID    string       `json:"service_guid"`
-	Metadata       Metadata     `json:"metadata"`
+	Context        Context      `json:"context"`
 	DashboardURL   string       `json:"dashboard_url"`
 	DeploymentName string       `json:"deployment_name"`
 	State          string       `json:"state"`
@@ -389,13 +389,11 @@ type GetInstancesResponse struct {
 	Resources    []GetInstanceResponse `json:"resources"`
 }
 
-type Metadata struct {
-	InstanceGUIDAtTenant string                 `json:"instance_guid_at_tenant"`
-	Parameters           map[string]interface{} `json:"parameters"`
-	PlanGUID             string                 `json:"plan_guid"`
-	TenantID             string                 `json:"tenant_id"`
-	OrganizationGUID     string                 `json:"organization_guid"`
-	SpaceGUID            string                 `json:"space_guid"`
+type Context struct {
+	OrganizationGUID string `json:"organization_guid"`
+	SpaceGUID        string `json:"space_guid"`
+	// TODO remove this after v2 implementation
+	Parameters map[string]interface{} `json:"parameters"`
 }
 
 type Credential struct {

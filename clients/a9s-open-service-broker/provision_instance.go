@@ -141,5 +141,13 @@ func validateProvisionRequest(request *ProvisionRequest) error {
 		return required("spaceGUID")
 	}
 
+	if request.Context["organizationGUID"] != nil {
+		return required("organizationGUID")
+	}
+
+	if request.Context["spaceGUID"] != nil {
+		return required("spaceGUID")
+	}
+
 	return nil
 }

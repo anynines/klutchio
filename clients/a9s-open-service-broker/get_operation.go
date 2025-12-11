@@ -26,7 +26,7 @@ func (c *client) GetOperation(r *GetOperationRequest) (*GetOperationResponse, er
 
 	params := map[string]string{}
 
-	params[VarOperationKey] = string(r.OperationKey)
+	params[VarKeyOperation] = string(r.OperationKey)
 
 	response, err := c.prepareAndDo(http.MethodGet, fullUrl, params, nil /* request body */, nil /* originating identity */)
 	if err != nil {

@@ -25,7 +25,7 @@ import (
 const okInstanceBytes = `{
   "id": 1,
   "plan_guid": "test-plan",
-  "metadata": {
+  "context": {
     "parameters": {
       "max_connections": 140
     }
@@ -42,7 +42,7 @@ func okGetInstanceResponse() *GetInstanceResponse {
 	response := &GetInstanceResponse{
 		ID:       1,
 		PlanGUID: "test-plan",
-		Metadata: Metadata{
+		Context: Context{
 			Parameters: map[string]interface{}{
 				"max_connections": 140.0,
 			},
