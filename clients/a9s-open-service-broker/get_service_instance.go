@@ -21,14 +21,16 @@ import (
 	"net/http"
 )
 
-func (c *client) GetOperation(r *GetOperationRequest) (*GetOperationResponse, error) {
-	fullUrl := fmt.Sprintf(lastOperationURLFmt, c.URL, r.InstanceID)
+func (c *client) GetServiceInstance(r *GetInstanceRequest) (*GetServiceInstanceResponse, error) {
+	if err := c.validateClientVersionIsAtLeast(Version2_14()); err != nil {
+		return nil, GetServiceInstanceNotAllowedError{
+			reason: err.Error(),
+		}
+	}
 
-	params := map[string]string{}
+	fullURL := fmt.Sprintf(serviceInstanceURLFmt, c.URL, r.InstanceID)
 
-	params[VarKeyOperation] = string(r.OperationKey)
-
-	response, err := c.prepareAndDo(http.MethodGet, fullUrl, params, nil /* request body */, nil /* originating identity */)
+	response, err := c.prepareAndDo(http.MethodGet, fullURL, nil /* params */, nil /* request body */, nil /* originating identity */)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +42,7 @@ func (c *client) GetOperation(r *GetOperationRequest) (*GetOperationResponse, er
 
 	switch response.StatusCode {
 	case http.StatusOK:
-		userResponse := &GetOperationResponse{}
+		userResponse := &GetServiceInstanceResponse{}
 		if err := c.unmarshalResponse(response, userResponse); err != nil {
 			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}

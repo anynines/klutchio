@@ -224,6 +224,19 @@ func (e GetInstanceNotAllowedError) Error() string {
 	)
 }
 
+// GetInstanceNotAllowedError is an error type signifying that doing a GET to
+// fetch a service instance is not allowed for this client.
+type GetServiceInstanceNotAllowedError struct {
+	reason string
+}
+
+func (e GetServiceInstanceNotAllowedError) Error() string {
+	return fmt.Sprintf(
+		"GetServiceInstance not allowed: %s",
+		e.reason,
+	)
+}
+
 // GetBindingNotAllowedError is an error type signifying that doing a GET to
 // fetch a binding is not allowed for this client.
 type GetBindingNotAllowedError struct {

@@ -35,6 +35,12 @@ const (
 	// VarKeyPlanID is the name to use for a mux var representing a plan ID.
 	VarKeyPlanID = "plan_id"
 
+	// VarOrganizationKey is the name to use for a mux var representing a organization ID.
+	VarOrganizationKey = "organization_guid"
+
+	// VarSpaceKey is the name to use for a mux var representing a Space ID.
+	VarSpaceKey = "space_guid"
+
 	// VarKeyOperation is the name to use for a mux var representing an
 	// operation.
 	VarKeyOperation = "operation"

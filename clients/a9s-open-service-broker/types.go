@@ -364,7 +364,7 @@ type GetInstanceResponse struct {
 	ID             int          `json:"id"`
 	PlanGUID       string       `json:"plan_guid"`
 	ServiceGUID    string       `json:"service_guid"`
-	Metadata       Metadata     `json:"metadata"`
+	Context        Context      `json:"context"`
 	DashboardURL   string       `json:"dashboard_url"`
 	DeploymentName string       `json:"deployment_name"`
 	State          string       `json:"state"`
@@ -379,6 +379,15 @@ type GetInstanceResponse struct {
 	VMDetails interface{} `json:"vm_details"`
 }
 
+type GetServiceInstanceResponse struct {
+	ID           string                 `json:"id"`
+	PlanGUID     string                 `json:"plan_id"`
+	ServiceGUID  string                 `json:"service_id"`
+	DashboardURL string                 `json:"dashboard_url"`
+	Parameters   map[string]interface{} `json:"parameters"`
+	Context      Context                `json:"context"`
+}
+
 // GetInstancesResponse is sent as the response to doing a GET on the /instances endpoint
 type GetInstancesResponse struct {
 	TotalResults int                   `json:"total_results"`
@@ -389,13 +398,11 @@ type GetInstancesResponse struct {
 	Resources    []GetInstanceResponse `json:"resources"`
 }
 
-type Metadata struct {
-	InstanceGUIDAtTenant string                 `json:"instance_guid_at_tenant"`
-	Parameters           map[string]interface{} `json:"parameters"`
-	PlanGUID             string                 `json:"plan_guid"`
-	TenantID             string                 `json:"tenant_id"`
-	OrganizationGUID     string                 `json:"organization_guid"`
-	SpaceGUID            string                 `json:"space_guid"`
+type Context struct {
+	OrganizationGUID string `json:"organization_guid"`
+	SpaceGUID        string `json:"space_guid"`
+	// TODO remove this after v2 implementation
+	Parameters map[string]interface{} `json:"parameters"`
 }
 
 type Credential struct {
@@ -658,6 +665,8 @@ type GetBindingResponse struct {
 }
 
 type GetOperationRequest struct {
+	// InstanceID is the ID of the instance the OperationKey is for.
+	InstanceID   string
 	OperationKey OperationKey
 }
 
@@ -666,12 +675,12 @@ type GetOperationResponse struct {
 }
 
 func (r *GetOperationResponse) IsDone() bool {
-	return r.State == "done"
+	return r.State == "succeeded"
 }
 
 func (r *GetOperationResponse) IsFailure() (bool, error) {
 	switch r.State {
-	case "error", "cancelled", "timeout":
+	case "failed":
 		return true, OperationStateError{r.State}
 	default:
 		return false, nil

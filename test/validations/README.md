@@ -26,7 +26,7 @@ Copy & paste instructions for the above are:
 
 ```
 helm repo add crossplane-stable https://charts.crossplane.io/stable && helm repo update
-helm install crossplane --namespace crossplane-system --create-namespace crossplane-stable/crossplane --version 1.19.0
+helm install crossplane --namespace crossplane-system --create-namespace crossplane-stable/crossplane --version 1.20.0
 kubectl -n crossplane-system wait --for=condition=available deployment/crossplane deployment/crossplane-rbac-manager
 kubectl apply --recursive -f ./crossplane-api/api/common
 kubectl apply --recursive -f ./crossplane-api/api/a8s

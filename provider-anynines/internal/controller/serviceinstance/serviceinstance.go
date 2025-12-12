@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -146,7 +147,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, err
 	}
 
-	instance, err := c.getInstanceAndUpdateObservation(dsi)
+	instance, parameters, err := c.getInstanceAndUpdateObservation(dsi)
 	if err != nil {
 		return managed.ExternalObservation{}, err
 	} else if instance == nil {
@@ -160,14 +161,13 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	// Set the conditions that indicate whether the instance is ready and synched
 	setCrossplaneConditions(dsi)
-	var resourceUpToDate bool = c.isResourceUpToDate(dsi, instance, desiredPlanID)
 
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
 		// the managed resource reconciler know that it needs to call Create to
 		// (re)create the resource, or that it has successfully been deleted.
 		ResourceExists:   true,
-		ResourceUpToDate: resourceUpToDate,
+		ResourceUpToDate: c.isResourceUpToDate(dsi, instance, desiredPlanID, parameters),
 	}, nil
 }
 
@@ -260,6 +260,10 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		OrganizationGUID:  *dsi.Spec.ForProvider.OrganizationGUID,
 		SpaceGUID:         *dsi.Spec.ForProvider.SpaceGUID,
 		Parameters:        params,
+		Context: map[string]interface{}{
+			osbclient.VarOrganizationKey: *dsi.Spec.ForProvider.OrganizationGUID,
+			osbclient.VarSpaceKey:        *dsi.Spec.ForProvider.SpaceGUID,
+		},
 	})
 	if err != nil {
 		return managed.ExternalCreation{}, fmt.Errorf("cannot create ServiceInstance: %w", utilerr.HandleHttpError(err))
@@ -330,6 +334,10 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		ServiceID:         desiredServiceID,
 		PlanID:            &desiredPlanID,
 		Parameters:        parameterUpdate,
+		Context: map[string]interface{}{
+			osbclient.VarOrganizationKey: *dsi.Spec.ForProvider.OrganizationGUID,
+			osbclient.VarSpaceKey:        *dsi.Spec.ForProvider.SpaceGUID,
+		},
 	})
 	if err != nil {
 		return managed.ExternalUpdate{}, fmt.Errorf(
@@ -430,18 +438,35 @@ func (c *external) getAndVerifyServiceInstance(mg resource.Managed) (*v1.Service
 	return dsi, nil
 }
 
-func (c *external) getInstanceAndUpdateObservation(dsi *v1.ServiceInstance) (*osbclient.GetInstanceResponse, error) {
+func (c *external) getInstanceAndUpdateObservation(dsi *v1.ServiceInstance) (*osbclient.GetInstanceResponse, map[string]apiextv1.JSON, error) {
+	// TODO: Remove this method in favor of c.osb.GetServiceInstance, when the response is compatible with what
+	// we get as a response from c.osb.GetInstance
 	instance, err := c.osb.GetInstance(&osbclient.GetInstanceRequest{InstanceID: dsi.Status.AtProvider.InstanceID})
 	if err != nil && client.IsNotFound(err) {
-		return nil, nil
+		return nil, nil, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("%s: %w", errGetServiceInstance, err)
+		return nil, nil, fmt.Errorf("%s: %w", errGetServiceInstance, err)
+	}
+
+	// TODO: This method is called with combination with c.osb.GetInstance, as GetInstance doesn't return parameters.
+	serviceInstance, err := c.osb.GetServiceInstance(&osbclient.GetInstanceRequest{InstanceID: dsi.Status.AtProvider.InstanceID})
+	if err != nil && client.IsNotFound(err) {
+		return nil, nil, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", errGetServiceInstance, err)
+	}
+
+	// TODO: remove this when we migrate to GetServiceInstance
+	// This is done as GetInstance now doesn't return Metadata, which contains parameters
+	params, err := serviceinstance.ServiceBrokerParamsToKubernetes(serviceInstance.Parameters)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot generate observation: %w", err)
 	}
 
 	// Update the status
-	dsi.Status.AtProvider, err = serviceinstance.GenerateObservation(*instance)
+	dsi.Status.AtProvider = serviceinstance.GenerateObservation(*instance, params)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", errGetServiceInstance, err)
+		return nil, nil, fmt.Errorf("%s: %w", errGetServiceInstance, err)
 	}
 
 	if dsi.Status.AtProvider.State == v1.StateDeleted {
@@ -449,15 +474,16 @@ func (c *external) getInstanceAndUpdateObservation(dsi *v1.ServiceInstance) (*os
 		// is in a deleted state. Returning here with this value tells the provider that the deletion
 		// was successful and that it can remove its finalizers on the Kubernetes object representing
 		// the service instance.
-		return nil, nil
+		return nil, nil, nil
 	}
-	return instance, nil
+	return instance, params, nil
 }
 
 func (c *external) processPendingOperation(dsi *v1.ServiceInstance) error {
 	if dsi.Status.PendingOperation != nil {
 		response, err := c.osb.GetOperation(&osbclient.GetOperationRequest{
 			OperationKey: osbclient.OperationKey(*dsi.Status.PendingOperation),
+			InstanceID:   dsi.Status.AtProvider.InstanceID,
 		})
 		if err != nil {
 			c.logger.Debug("Failed to check pending operation",
@@ -485,9 +511,9 @@ func (c *external) processPendingOperation(dsi *v1.ServiceInstance) error {
 	return nil
 }
 
-func (c *external) isResourceUpToDate(dsi *v1.ServiceInstance, instance *osbclient.GetInstanceResponse, desiredPlanID string) bool {
+func (c *external) isResourceUpToDate(dsi *v1.ServiceInstance, instance *osbclient.GetInstanceResponse, desiredPlanID string, parameters map[string]apiextv1.JSON) bool {
 	if dsi.Status.PendingOperation == nil {
-		specMatchesObserved, diff := serviceinstance.SpecMatchesObservedState(dsi.Spec.ForProvider, *instance)
+		specMatchesObserved, diff := serviceinstance.SpecMatchesObservedState(dsi.Spec.ForProvider, *instance, parameters)
 		if !specMatchesObserved {
 			c.logger.Debug("Observed state differs from expected: " + diff)
 			// Return false when the external resource exists, but it not up to date

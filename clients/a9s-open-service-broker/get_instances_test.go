@@ -33,22 +33,10 @@ const okInstancesBytes = `{
       "id": 18,
       "plan_guid": "4241102f-a04e-41b4-851c-8cee51fa9369",
       "service_guid": "d88b827c-3175-4800-9196-c517370eea99",
-      "metadata": {
-        "service_id": "d88b827c-3175-4800-9196-c517370eea99",
-        "plan_id": "4241102f-a04e-41b4-851c-8cee51fa9369",
+      "context": {
         "organization_guid": "a1d46b5c-b639-4f43-85c7-e9a0e5f01f75",
         "space_guid": "1bf71cf3-9017-4846-bffc-b9b31872bfaf",
-        "tracing_id": null,
-        "correlation_id": null,
-        "log_tracing_id": null,
-        "parameters": {
-          "client_min_messages": "DEBUG1"
-        },
-        "tenant_id": "anynines",
-        "instance_guid_at_tenant": "261a5e05-7312-4d61-bab8-30be9ff45a13-1706777923",
-        "service_guid": "d88b827c-3175-4800-9196-c517370eea99",
-        "plan_guid": "4241102f-a04e-41b4-851c-8cee51fa9369",
-        "user_params": {
+		 "parameters": {
           "client_min_messages": "DEBUG1"
         }
       },
@@ -72,20 +60,10 @@ const okInstancesBytes = `{
       "id": 1,
       "plan_guid": "9b4a988a-134d-4563-bd2e-ce7cd0f850ad",
       "service_guid": "0b87d5f0-c1f3-482b-9050-742dd8280208",
-      "metadata": {
-        "service_id": "0b87d5f0-c1f3-482b-9050-742dd8280208",
-        "plan_id": "9b4a988a-134d-4563-bd2e-ce7cd0f850ad",
+      "context": {
         "organization_guid": "a1d46b5c-b639-4f43-85c7-e9a0e5f01f75",
         "space_guid": "1bf71cf3-9017-4846-bffc-b9b31872bfaf",
-        "tracing_id": null,
-        "correlation_id": null,
-        "log_tracing_id": null,
-        "parameters": {},
-        "tenant_id": "anynines",
-        "instance_guid_at_tenant": "76c63662-5b66-4d8f-b079-423ce962bc43-1706599907",
-        "service_guid": "0b87d5f0-c1f3-482b-9050-742dd8280208",
-        "plan_guid": "9b4a988a-134d-4563-bd2e-ce7cd0f850ad",
-        "user_params": {}
+        "parameters": {}
       },
       "dashboard_url": "https://postgresql-ms-1706599150.system.aws-s1.a9s-ops.de/service-instances/76c63662-5b66-4d8f-b079-423ce962bc43-1706599907",
       "state": "provisioned",
@@ -107,34 +85,6 @@ const okInstancesBytes = `{
 }`
 
 func okGetInstancesResponse() *GetInstancesResponse {
-	/*
-					   type GetInstanceResponse struct {
-					ID             int          `json:"id"`
-					PlanGUID       string       `json:"plan_guid"`
-					ServiceGUID    string       `json:"service_guid"`
-					Metadata       Metadata     `json:"metadata"`
-					DashboardURL   string       `json:"dashboard_url"`
-					DeploymentName string       `json:"deployment_name"`
-					State          string       `json:"state"`
-					GUIDAtTenant   string       `json:"guid_at_tenant"`
-					TenantID       string       `json:"tenant_id"`
-					ProvisionedAt  string       `json:"provisioned_at"`
-					DeletedAt      string       `json:"deleted_at"`
-					CreatedAt      string       `json:"created_at"`
-					UpdatedAt      string       `json:"updated_at"`
-					Credentials    []Credential `json:"credentials"`
-					// TODO: Use explicit structure rather than interface{}
-					VMDetails interface{} `json:"vm_details"`
-				}
-		type Metadata struct {
-			InstanceGUIDAtTenant string                 `json:"instance_guid_at_tenant"`
-			Parameters           map[string]interface{} `json:"parameters"`
-			PlanGUID             string                 `json:"plan_guid"`
-			TenantID             string                 `json:"tenant_id"`
-			OrganizationGUID     string                 `json:"organization_guid"`
-			SpaceGUID            string                 `json:"space_guid"`
-		}
-	*/
 	response := &GetInstancesResponse{
 		TotalResults: 2,
 		TotalPages:   1,
@@ -146,13 +96,10 @@ func okGetInstancesResponse() *GetInstancesResponse {
 				ID:          18,
 				PlanGUID:    "4241102f-a04e-41b4-851c-8cee51fa9369",
 				ServiceGUID: "d88b827c-3175-4800-9196-c517370eea99",
-				Metadata: Metadata{
-					InstanceGUIDAtTenant: "261a5e05-7312-4d61-bab8-30be9ff45a13-1706777923",
+				Context: Context{
 					Parameters: map[string]interface{}{
 						"client_min_messages": "DEBUG1",
 					},
-					PlanGUID:         "4241102f-a04e-41b4-851c-8cee51fa9369",
-					TenantID:         "anynines",
 					OrganizationGUID: "a1d46b5c-b639-4f43-85c7-e9a0e5f01f75",
 					SpaceGUID:        "1bf71cf3-9017-4846-bffc-b9b31872bfaf",
 				},
@@ -171,13 +118,10 @@ func okGetInstancesResponse() *GetInstancesResponse {
 				ID:          1,
 				PlanGUID:    "9b4a988a-134d-4563-bd2e-ce7cd0f850ad",
 				ServiceGUID: "0b87d5f0-c1f3-482b-9050-742dd8280208",
-				Metadata: Metadata{
-					InstanceGUIDAtTenant: "76c63662-5b66-4d8f-b079-423ce962bc43-1706599907",
-					Parameters:           map[string]interface{}{},
-					PlanGUID:             "9b4a988a-134d-4563-bd2e-ce7cd0f850ad",
-					TenantID:             "anynines",
-					OrganizationGUID:     "a1d46b5c-b639-4f43-85c7-e9a0e5f01f75",
-					SpaceGUID:            "1bf71cf3-9017-4846-bffc-b9b31872bfaf",
+				Context: Context{
+					Parameters:       map[string]interface{}{},
+					OrganizationGUID: "a1d46b5c-b639-4f43-85c7-e9a0e5f01f75",
+					SpaceGUID:        "1bf71cf3-9017-4846-bffc-b9b31872bfaf",
 				},
 				DashboardURL:   "https://postgresql-ms-1706599150.system.aws-s1.a9s-ops.de/service-instances/76c63662-5b66-4d8f-b079-423ce962bc43-1706599907",
 				DeploymentName: "ncd98aba",

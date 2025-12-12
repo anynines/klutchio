@@ -22,43 +22,40 @@ import (
 	"testing"
 )
 
-const okInstanceBytes = `{
-  "id": 1,
-  "plan_guid": "test-plan",
-  "context": {
-    "parameters": {
-      "max_connections": 140
-    }
-  }
+const okServiceInstanceBytes = `{
+	"id": "123",
+	"plan_id": "test-plan",
+	"parameters": {
+    	"max_connections": 140
+	}
 }`
 
-func defaultGetInstanceRequest() *GetInstanceRequest {
+func defaultGetServiceInstanceRequest() *GetInstanceRequest {
 	return &GetInstanceRequest{
 		InstanceID: testInstanceID,
 	}
 }
 
-func okGetInstanceResponse() *GetInstanceResponse {
-	response := &GetInstanceResponse{
-		ID:       1,
+func okGetServiceInstanceResponse() *GetServiceInstanceResponse {
+	response := &GetServiceInstanceResponse{
+		ID:       "123",
 		PlanGUID: "test-plan",
-		Context: Context{
-			Parameters: map[string]interface{}{
-				"max_connections": 140.0,
-			},
+
+		Parameters: map[string]interface{}{
+			"max_connections": 140.0,
 		},
 	}
 	return response
 }
 
-func TestGetInstance(t *testing.T) {
+func TestGetServiceInstance(t *testing.T) {
 	cases := []struct {
 		name               string
 		enableAlpha        bool
 		request            *GetInstanceRequest
 		APIVersion         APIVersion
 		httpReaction       httpReaction
-		expectedResponse   *GetInstanceResponse
+		expectedResponse   *GetServiceInstanceResponse
 		expectedErrMessage string
 		expectedErr        error
 	}{
@@ -66,9 +63,9 @@ func TestGetInstance(t *testing.T) {
 			name: "success",
 			httpReaction: httpReaction{
 				status: http.StatusOK,
-				body:   okInstanceBytes,
+				body:   okServiceInstanceBytes,
 			},
-			expectedResponse: okGetInstanceResponse(),
+			expectedResponse: okGetServiceInstanceResponse(),
 		},
 		{
 			name: "http error",
@@ -104,17 +101,17 @@ func TestGetInstance(t *testing.T) {
 		{
 			name:               "unsupported API version",
 			APIVersion:         Version2_13(),
-			expectedErrMessage: "GetInstance not allowed: operation not allowed: must have API version >= 2.14. Current: 2.13",
+			expectedErrMessage: "GetServiceInstance not allowed: operation not allowed: must have API version >= 2.14. Current: 2.13",
 		},
 	}
 
 	for _, tc := range cases {
 		if tc.request == nil {
-			tc.request = defaultGetInstanceRequest()
+			tc.request = defaultGetServiceInstanceRequest()
 		}
 
 		httpChecks := httpChecks{
-			URL: "/instances/test-instance-id",
+			URL: "/v2/service_instances/test-instance-id",
 		}
 
 		if tc.APIVersion.label == "" {
@@ -123,7 +120,7 @@ func TestGetInstance(t *testing.T) {
 
 		klient := newTestClient(t, tc.name, tc.APIVersion, tc.enableAlpha, httpChecks, tc.httpReaction)
 
-		response, err := klient.GetInstance(tc.request)
+		response, err := klient.GetServiceInstance(tc.request)
 
 		doResponseChecks(t, tc.name, response, err, tc.expectedResponse, tc.expectedErrMessage, tc.expectedErr)
 	}

@@ -37,20 +37,14 @@ import (
 
 // LateInitialize fills the empty fields of ServiceInstanceParameters if the corresponding
 // fields are given in GetInstanceResponse.
-func LateInitialize(spec *v1.ServiceInstanceParameters, meta osbclient.Metadata) error {
+func LateInitialize(spec *v1.ServiceInstanceParameters, meta osbclient.Context, params map[string]apiextv1.JSON) {
 	// AcceptsIncomplete must always be set since we always require asynchronous service operations.
 	spec.AcceptsIncomplete = ptr.To(true)
 	spec.OrganizationGUID = LateInitializeString(spec.OrganizationGUID, meta.OrganizationGUID)
 	spec.SpaceGUID = LateInitializeString(spec.SpaceGUID, meta.SpaceGUID)
 
-	params, err := ServiceBrokerParamsToKubernetes(meta.Parameters)
-	if err != nil {
-		return err
-	}
-
 	spec.Parameters = LateInitializeJsonMap(spec.Parameters, params)
 
-	return nil
 }
 
 // LateInitializeString implements late initialization for string type.
@@ -79,11 +73,7 @@ func LateInitializeJsonMap(s map[string]apiextv1.JSON, from map[string]apiextv1.
 
 // GenerateObservation is used to produce an observation object from a Service Broker
 // GetInstanceResponse
-func GenerateObservation(in osbclient.GetInstanceResponse) (v1.ServiceInstanceObservation, error) {
-	params, err := ServiceBrokerParamsToKubernetes(in.Metadata.Parameters)
-	if err != nil {
-		return v1.ServiceInstanceObservation{}, fmt.Errorf("cannot generate observation: %w", err)
-	}
+func GenerateObservation(in osbclient.GetInstanceResponse, params map[string]apiextv1.JSON) v1.ServiceInstanceObservation {
 
 	return v1.ServiceInstanceObservation{
 		State:         in.State,
@@ -95,11 +85,11 @@ func GenerateObservation(in osbclient.GetInstanceResponse) (v1.ServiceInstanceOb
 		ServiceID:     in.ServiceGUID,
 		InstanceID:    in.GUIDAtTenant,
 		Parameters:    params,
-	}, nil
+	}
 }
 
 // SpecMatchesObservedState checks whether current state is up-to-date compared to the given set of parameters.
-func SpecMatchesObservedState(spec v1.ServiceInstanceParameters, in osbclient.GetInstanceResponse) (bool, string) {
+func SpecMatchesObservedState(spec v1.ServiceInstanceParameters, in osbclient.GetInstanceResponse, parameters map[string]apiextv1.JSON) (bool, string) {
 	// We pre-fill these values for the ServiceName and the PlanName into the struct because they
 	// are not part of the observation response we get from the Service broker and therefore these
 	// field would be nil in the variable "observed". This would in turn lead the provider to assume
@@ -110,7 +100,7 @@ func SpecMatchesObservedState(spec v1.ServiceInstanceParameters, in osbclient.Ge
 		PlanName:    spec.PlanName,
 	}
 
-	LateInitialize(observed, in.Metadata)
+	LateInitialize(observed, in.Context, parameters)
 
 	if spec.Parameters != nil && observed.Parameters == nil {
 		observed.Parameters = map[string]apiextv1.JSON{}
