@@ -93,6 +93,8 @@ type ServiceBindingObservation struct {
 	// +kubebuilder:default:=Pending
 	// +required
 	State string `json:"state"`
+
+	// serviceBindingID is deprecated; use serviceID instead
 	// +optional
 	ServiceBindingID int `json:"serviceBindingID,omitempty"`
 

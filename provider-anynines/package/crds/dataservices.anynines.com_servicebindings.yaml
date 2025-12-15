@@ -351,6 +351,7 @@ spec:
                     description: PlanID is the Plan ID of the data service instance.
                     type: string
                   serviceBindingID:
+                    description: serviceBindingID is deprecated; use serviceID instead
                     type: integer
                   serviceID:
                     description: ServiceID is the Service ID of the data service instance.

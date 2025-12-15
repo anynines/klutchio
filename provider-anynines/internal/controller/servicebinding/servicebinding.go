@@ -163,29 +163,36 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	if sb.Annotations == nil || sb.Annotations[AnnotationKeyServiceBindingCreated] == "" {
+		// Initiate creation of SB
 		return managed.ExternalObservation{}, nil
 	}
 
-	resp, err := c.service.GetInstances()
-	if err != nil {
-		return managed.ExternalObservation{}, fmt.Errorf("failed to get service instances: %w", err)
+	// set deletion condition if MR is marked for deletion
+	sb.SetDeletionStatusIfNotDeleted(serviceBindingStatusDeleting)
+	isDeleting := sb.DeletionTimestamp != nil
+
+	// Get binding
+	bindResponse, err := c.service.GetBinding(&osbclient.GetBindingRequest{
+		InstanceID: sb.Status.AtProvider.InstanceID,
+		BindingID:  string(sb.UID),
+	})
+	if err != nil && isDeleting {
+		// Resource does not exist and is marked for deletion
+		return managed.ExternalObservation{}, nil
+	} else if err != nil {
+		return managed.ExternalObservation{}, fmt.Errorf("failed to get service binding: %w", err)
 	}
 
 	exists := false
-	for _, instance := range resp.Resources {
-		if creds := getInstanceCredentials(instance, sb); creds != nil {
-			exists = true
+	if bindResponse != nil && bindResponse.Credentials != nil {
+		exists = true
 
+		// do not set Available if servicebinding is being deleted
+		if !isDeleting {
 			sb.Status.SetConditions(xpv1.Available())
-			sb.Status.AtProvider.ServiceBindingID = creds.ID
-			sb.Status.AtProvider.PlanID = instance.PlanGUID
 			sb.Status.AtProvider.State = serviceBindingStatusCreated
-
-			break
 		}
 	}
-
-	sb.SetDeletionStatusIfNotDeleted(serviceBindingStatusDeleting)
 
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
@@ -356,19 +363,6 @@ func generateConnectionDetails(res *osbclient.BindResponse) (managed.ConnectionD
 	connDetails := utils.FlattenMap(res.Credentials, "")
 	utils.ReplaceRootKeyWithNestedKey(connDetails)
 	return connDetails, nil
-}
-
-func getInstanceCredentials(instance osbclient.GetInstanceResponse, sb *v1.ServiceBinding) *osbclient.Credential {
-	if instance.GUIDAtTenant != sb.Status.AtProvider.InstanceID {
-		return nil
-	}
-
-	for _, credential := range instance.Credentials {
-		if credential.GUIDAtTenant == string(sb.UID) {
-			return &credential
-		}
-	}
-	return nil
 }
 
 // parseHostAndPort parses an input string in the format "host:port".
