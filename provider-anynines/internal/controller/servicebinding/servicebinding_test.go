@@ -81,7 +81,8 @@ func TestObserve(t *testing.T) {
 		sb                          resource.Managed
 		expectedExternalObservation managed.ExternalObservation
 		expectedServiceBinding      resource.Managed
-		getInstancesReaction        *GetInstancesReaction
+		getBindingReaction          *GetBindReaction
+		reconcileError              error
 		serviceInstance             dsv1.ServiceInstance
 		otherResources              []client.Object
 		kube                        client.Client
@@ -89,7 +90,7 @@ func TestObserve(t *testing.T) {
 		"sb_not_initialized_yet": {
 			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
-				withAtProvider("Pending", 0),
+				withAtProvider("Pending"),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
@@ -111,7 +112,7 @@ func TestObserve(t *testing.T) {
 			expectedExternalObservation: managed.ExternalObservation{},
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
-				withAtProvider("Pending", 0),
+				withAtProvider("Pending"),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
@@ -124,7 +125,7 @@ func TestObserve(t *testing.T) {
 			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
-				withAtProvider("Pending", 0),
+				withAtProvider("Pending"),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
 					"63d05ec8-254e-11ee-be56-0242ac120002",
@@ -142,7 +143,7 @@ func TestObserve(t *testing.T) {
 			},
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
-				withAtProvider("Pending", 0),
+				withAtProvider("Pending"),
 				afterBindingCreation(),
 				initializeSBStatus(
 					"6e2c036c-254f-11ee-be56-0242ac120002",
@@ -165,69 +166,9 @@ func TestObserve(t *testing.T) {
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
 
-			getInstancesReaction: &GetInstancesReaction{
-				Response: &osbclient.GetInstancesResponse{},
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{},
 				Error:    nil,
-			},
-		},
-		"sb_does_not_exist_but_unrelated_sb_exists": {
-			sb: serviceBinding("postgresql",
-				withServiceBindingParameters(defaultBindingParameters),
-				afterBindingCreation(),
-				withAtProvider("Pending", 0),
-				initializeSBStatus(
-					"6e2c036c-254f-11ee-be56-0242ac120002",
-					"63d05ec8-254e-11ee-be56-0242ac120002",
-					"76c0089e-254e-11ee-be56-0242ac120002",
-					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
-					},
-				),
-			),
-			expectedExternalObservation: managed.ExternalObservation{
-				ResourceExists:          false,
-				ResourceUpToDate:        true,
-				ResourceLateInitialized: false,
-				ConnectionDetails:       managed.ConnectionDetails{},
-			},
-			serviceInstance: *serviceInstance(
-				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
-				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
-				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
-				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
-			),
-			expectedServiceBinding: serviceBinding("postgresql",
-				withServiceBindingParameters(defaultBindingParameters),
-				afterBindingCreation(),
-				initializeSBStatus(
-					"6e2c036c-254f-11ee-be56-0242ac120002",
-					"63d05ec8-254e-11ee-be56-0242ac120002",
-					"76c0089e-254e-11ee-be56-0242ac120002",
-					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
-					},
-				),
-				withAtProvider("Pending", 0),
-			),
-			getInstancesReaction: &GetInstancesReaction{
-				Response: &osbclient.GetInstancesResponse{
-					Resources: []osbclient.GetInstanceResponse{
-						{
-							GUIDAtTenant: "6e2c036c-254f-11ee-be56-0242ac120002",
-							Credentials: []osbclient.Credential{
-								{
-									GUIDAtTenant: "unrelated-sb-id",
-								},
-							},
-						},
-					},
-				},
-				Error: nil,
 			},
 		},
 		"sb_exists_and_available_condition_is_not_set": {
@@ -242,7 +183,7 @@ func TestObserve(t *testing.T) {
 						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
-				withAtProvider("Pending", 0),
+				withAtProvider("Pending"),
 			),
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
@@ -276,88 +217,15 @@ func TestObserve(t *testing.T) {
 					},
 				),
 				withConditions(xpv1.Available()),
-				withAtProvider("Created", 0),
+				withAtProvider("Created"),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Response: &osbclient.GetInstancesResponse{
-					Resources: []osbclient.GetInstanceResponse{
-						{
-							PlanGUID:     "63d05ec8-254e-11ee-be56-0242ac120002",
-							GUIDAtTenant: "6e2c036c-254f-11ee-be56-0242ac120002",
-							Credentials: []osbclient.Credential{
-								{
-									GUIDAtTenant: "1a6a6b3e-254e-11ee-be56-0242ac120002",
-								},
-							},
-						},
-					},
-				},
-				Error: nil,
-			},
-		},
-		"sb_exists_and_unrelated_sb_exists": {
-			sb: serviceBinding("postgresql",
-				withServiceBindingParameters(defaultBindingParameters),
-				afterBindingCreation(),
-				withAtProvider("Pending", 0),
-				initializeSBStatus(
-					"6e2c036c-254f-11ee-be56-0242ac120002",
-					"63d05ec8-254e-11ee-be56-0242ac120002",
-					"76c0089e-254e-11ee-be56-0242ac120002",
-					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
-					},
-				),
-			),
-			serviceInstance: *serviceInstance(
-				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
-				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
-				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
-				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
-			),
-			expectedExternalObservation: managed.ExternalObservation{
-				ResourceExists:          true,
-				ResourceUpToDate:        true,
-				ResourceLateInitialized: false,
-				ConnectionDetails:       managed.ConnectionDetails{},
-			},
-			expectedServiceBinding: serviceBinding("postgresql",
-				withServiceBindingParameters(&v1.ServiceBindingParameters{
-					InstanceName:      "postgres-1",
-					AcceptsIncomplete: false,
-				}),
-				afterBindingCreation(),
-				initializeSBStatus(
-					"6e2c036c-254f-11ee-be56-0242ac120002",
-					"63d05ec8-254e-11ee-be56-0242ac120002",
-					"76c0089e-254e-11ee-be56-0242ac120002",
-					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
-					},
-				),
-				withConditions(xpv1.Available()),
-				withAtProvider("Created", 0),
-			),
-			getInstancesReaction: &GetInstancesReaction{
-				Response: &osbclient.GetInstancesResponse{
-					Resources: []osbclient.GetInstanceResponse{
-						{
-							PlanGUID:     "63d05ec8-254e-11ee-be56-0242ac120002",
-							GUIDAtTenant: "6e2c036c-254f-11ee-be56-0242ac120002",
-							Credentials: []osbclient.Credential{
-								{
-									GUIDAtTenant: "1a6a6b3e-254e-11ee-be56-0242ac120002",
-								},
-								{
-									GUIDAtTenant: "unrelated-sb-id",
-								},
-							},
-						},
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
 					},
 				},
 				Error: nil,
@@ -375,7 +243,7 @@ func TestObserve(t *testing.T) {
 						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
 					},
 				),
-				withAtProvider("Created", 0),
+				withAtProvider("Created"),
 				deletionTimestamp(),
 			),
 			serviceInstance: *serviceInstance(
@@ -411,23 +279,62 @@ func TestObserve(t *testing.T) {
 				),
 				deletionTimestamp(),
 				withConditions(xpv1.Deleting()),
-				withAtProvider("Deleting", 0),
+				withAtProvider("Deleting"),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Response: &osbclient.GetInstancesResponse{
-					Resources: []osbclient.GetInstanceResponse{
-						{
-							PlanGUID:     "63d05ec8-254e-11ee-be56-0242ac120002",
-							GUIDAtTenant: "6e2c036c-254f-11ee-be56-0242ac120002",
-							Credentials: []osbclient.Credential{
-								{
-									GUIDAtTenant: "1a6a6b3e-254e-11ee-be56-0242ac120002",
-								},
-							},
-						},
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
 					},
 				},
 				Error: nil,
+			},
+		},
+		"sb_is_being_deleted_instance_doesn't_exist": {
+			sb: serviceBinding("postgresql",
+				withServiceBindingParameters(defaultBindingParameters),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
+					},
+				),
+				withAtProvider("Created"),
+				deletionTimestamp(),
+			),
+			expectedExternalObservation: managed.ExternalObservation{
+				ResourceExists:          false,
+				ResourceUpToDate:        false,
+				ResourceLateInitialized: false,
+				ConnectionDetails:       nil,
+			},
+			expectedServiceBinding: serviceBinding("postgresql",
+				withServiceBindingParameters(&v1.ServiceBindingParameters{
+					InstanceName:      "postgres-1",
+					AcceptsIncomplete: false,
+				}),
+				afterBindingCreation(),
+				initializeSBStatus(
+					"6e2c036c-254f-11ee-be56-0242ac120002",
+					"63d05ec8-254e-11ee-be56-0242ac120002",
+					"76c0089e-254e-11ee-be56-0242ac120002",
+					[]connectionDetails{
+						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
+					},
+				),
+				deletionTimestamp(),
+				withConditions(xpv1.Deleting()),
+				withAtProvider("Deleting"),
+			),
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{},
+				Error:    fmt.Errorf("instance not found"),
 			},
 		},
 		"sb_exists_and_available_condition_is_set": {
@@ -443,7 +350,7 @@ func TestObserve(t *testing.T) {
 					},
 				),
 				withConditions(xpv1.Available()),
-				withAtProvider("Created", 0),
+				withAtProvider("Created"),
 			),
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
@@ -477,20 +384,15 @@ func TestObserve(t *testing.T) {
 					},
 				),
 				withConditions(xpv1.Available()),
-				withAtProvider("Created", 0),
+				withAtProvider("Created"),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Response: &osbclient.GetInstancesResponse{
-					Resources: []osbclient.GetInstanceResponse{
-						{
-							PlanGUID:     "63d05ec8-254e-11ee-be56-0242ac120002",
-							GUIDAtTenant: "6e2c036c-254f-11ee-be56-0242ac120002",
-							Credentials: []osbclient.Credential{
-								{
-									GUIDAtTenant: "1a6a6b3e-254e-11ee-be56-0242ac120002",
-								},
-							},
-						},
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
 					},
 				},
 				Error: nil,
@@ -499,9 +401,10 @@ func TestObserve(t *testing.T) {
 		"fails_not_a_service_binding": {
 			sb:                     &dsv1.ServiceInstance{},
 			expectedServiceBinding: &dsv1.ServiceInstance{},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: utilerr.ErrInternal,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{},
 			},
+			reconcileError: utilerr.ErrInternal,
 		},
 		"fails_data_service_not_available": {
 			sb: serviceBinding("log",
@@ -524,9 +427,18 @@ func TestObserve(t *testing.T) {
 					a9stest.WithKey("username", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errNoSuchDataservice,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: errNoSuchDataservice,
 			expectedServiceBinding: serviceBinding("log",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -553,14 +465,14 @@ func TestObserve(t *testing.T) {
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceInstanceNotFound,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{},
 			},
+			reconcileError: errServiceInstanceNotFound,
 			expectedServiceBinding: serviceBinding("postgresql",
 				withInstanceName("dummy"),
 			),
 		},
-
 		"moreThanOneMatchingInstancesExist": {
 			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
@@ -596,9 +508,18 @@ func TestObserve(t *testing.T) {
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Error: utilerr.ErrInternal,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: utilerr.ErrInternal,
 		},
 		"crossNamespace": {
 			sb: serviceBinding("postgresql",
@@ -616,9 +537,18 @@ func TestObserve(t *testing.T) {
 					},
 				)),
 
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceInstanceNotFound,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: errServiceInstanceNotFound,
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
@@ -627,9 +557,18 @@ func TestObserve(t *testing.T) {
 			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceInstanceNotFound,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: errServiceInstanceNotFound,
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
@@ -648,9 +587,18 @@ func TestObserve(t *testing.T) {
 					}),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errInstanceNotReady,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: errInstanceNotReady,
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				initializeSBStatus(
@@ -694,9 +642,18 @@ func TestObserve(t *testing.T) {
 					a9stest.WithKey("port", "5432"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -736,9 +693,18 @@ func TestObserve(t *testing.T) {
 					},
 				),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Error: fmt.Errorf("Internal error in provider"),
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: fmt.Errorf("Internal error in provider"),
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -764,9 +730,18 @@ func TestObserve(t *testing.T) {
 					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 			),
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errInstanceNotReady,
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
+					},
+				},
+				Error: nil,
 			},
+			reconcileError: errInstanceNotReady,
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				initializeSBStatus(
@@ -783,78 +758,21 @@ func TestObserve(t *testing.T) {
 			),
 			kube: fake.NewClientBuilder().Build(),
 
-			getInstancesReaction: &GetInstancesReaction{
-				Error: utilerr.ErrInternal,
-			},
-			expectedServiceBinding: serviceBinding("postgresql",
-				withServiceBindingParameters(defaultBindingParameters),
-			),
-		},
-		"sb_exists_but_plainID_is_out_of_sync": {
-			sb: serviceBinding("postgresql",
-				withServiceBindingParameters(defaultBindingParameters),
-				afterBindingCreation(),
-				initializeSBStatus(
-					"6e2c036c-254f-11ee-be56-0242ac120002",
-					"63d05ec8-254e-11ee-be56-0242ac120002",
-					"76c0089e-254e-11ee-be56-0242ac120002",
-					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
-					},
-				),
-				withConditions(xpv1.Available()),
-				withAtProvider("Created", 0),
-			),
-			serviceInstance: *serviceInstance(
-				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
-				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
-				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
-				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120003"),
-			),
-			expectedExternalObservation: managed.ExternalObservation{
-				ResourceExists:          true,
-				ResourceUpToDate:        true,
-				ResourceLateInitialized: false,
-				ConnectionDetails:       managed.ConnectionDetails{},
-			},
-			expectedServiceBinding: serviceBinding("postgresql",
-				withServiceBindingParameters(&v1.ServiceBindingParameters{
-					InstanceName:      "postgres-1",
-					AcceptsIncomplete: false,
-				}),
-				afterBindingCreation(),
-				initializeSBStatus(
-					"6e2c036c-254f-11ee-be56-0242ac120002",
-					"63d05ec8-254e-11ee-be56-0242ac120003",
-					"76c0089e-254e-11ee-be56-0242ac120002",
-					[]connectionDetails{
-						{hostURL: "test.URL.com", port: "5432", label: "SQL"},
-					},
-				),
-				withConditions(xpv1.Available()),
-				withAtProvider("Created", 0),
-			),
-			getInstancesReaction: &GetInstancesReaction{
-				Response: &osbclient.GetInstancesResponse{
-					Resources: []osbclient.GetInstanceResponse{
-						{
-							PlanGUID:     "63d05ec8-254e-11ee-be56-0242ac120003",
-							GUIDAtTenant: "6e2c036c-254f-11ee-be56-0242ac120002",
-							Credentials: []osbclient.Credential{
-								{
-									GUIDAtTenant: "1a6a6b3e-254e-11ee-be56-0242ac120002",
-								},
-							},
-						},
+			getBindingReaction: &GetBindReaction{
+				Response: &osbclient.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"username": "admin",
+						"password": "else",
+						"port":     "5432",
+						"URL":      "test.URL.com",
 					},
 				},
 				Error: nil,
 			},
+			reconcileError: utilerr.ErrInternal,
+			expectedServiceBinding: serviceBinding("postgresql",
+				withServiceBindingParameters(defaultBindingParameters),
+			),
 		},
 	}
 
@@ -867,7 +785,7 @@ func TestObserve(t *testing.T) {
 			t.Parallel()
 
 			fakeOSB := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
-				GetInstancesReaction: testCase.getInstancesReaction,
+				GetBindingReaction: testCase.getBindingReaction,
 			})
 
 			if testCase.kube == nil {
@@ -885,12 +803,12 @@ func TestObserve(t *testing.T) {
 
 			got, err := e.Observe(context.TODO(), testCase.sb)
 
-			if testCase.getInstancesReaction == nil {
+			if testCase.reconcileError == nil {
 				if err != nil {
 					t.Errorf("Unexpected error occurred when trying to observe ServiceBinding %+v : %s", testCase.sb, err)
 				}
 			} else {
-				if diff := cmp.Diff(testCase.getInstancesReaction.Error, err, test.EquateErrors()); diff != "" {
+				if diff := cmp.Diff(testCase.reconcileError, err, test.EquateErrors()); diff != "" {
 					t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
 				}
 			}
@@ -915,7 +833,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 		sb                          resource.Managed
 		expectedExternalObservation managed.ExternalObservation
 		expectedServiceBinding      resource.Managed
-		getInstancesReaction        *GetInstancesReaction
+		reconcileError              error
 		serviceInstance             dsv1.ServiceInstance
 		otherResources              []client.Object
 		kube                        client.Client
@@ -958,9 +876,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("valkey.username", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("keyvalue",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1010,9 +926,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("username", "a9s94bd153ddf5978f1eae7c88b57a27721430600d2"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("logme2",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1063,9 +977,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("username", "a9s-brk-usr"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("mariadb",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1143,9 +1055,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					}`),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("messaging",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1197,9 +1107,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("uri", "mongodb://a9s-brk-usr-test:test@test-mongodb-0.node.dc1.dsf2.a9ssvc:27017/test?ssl=true"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("mongodb",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1251,9 +1159,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("username", "EXAMPLE-USERNAME"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1305,9 +1211,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("graphite_exporters", "[hsdxxxxxx-prometheus-0.node.dc1.dsf2.a9ssvc]"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("prometheus",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1361,9 +1265,7 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 					a9stest.WithKey("port", "9200"),
 				),
 			},
-			getInstancesReaction: &GetInstancesReaction{
-				Error: errServiceBindingIsUnset,
-			},
+			reconcileError: errServiceBindingIsUnset,
 			expectedServiceBinding: serviceBinding("search",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1384,10 +1286,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			fakeOSB := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
-				GetInstancesReaction: testCase.getInstancesReaction,
-			})
-
 			if testCase.kube == nil {
 				testCase.kube = newKubeMock(testCase.serviceInstance.DeepCopyObject(),
 					testCase.otherResources)
@@ -1396,21 +1294,14 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			e := utilerr.Decorator{
 				Logger: a9stest.TestLogger(t),
 				ExternalClient: &external{
-					kube:    testCase.kube,
-					service: fakeOSB,
+					kube: testCase.kube,
 				},
 			}
 
 			got, err := e.Observe(context.TODO(), testCase.sb)
 
-			if testCase.getInstancesReaction == nil {
-				if err != nil {
-					t.Errorf("Unexpected error occurred when trying to observe ServiceBinding %+v : %s", testCase.sb, err)
-				}
-			} else {
-				if diff := cmp.Diff(testCase.getInstancesReaction.Error, err, test.EquateErrors()); diff != "" {
-					t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
-				}
+			if diff := cmp.Diff(testCase.reconcileError, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Observe(...): -want error, +got error:\n%s", diff)
 			}
 
 			if dif := cmp.Diff(testCase.expectedExternalObservation, got); dif != "" {
@@ -1441,10 +1332,11 @@ func TestObserveReturnsError(t *testing.T) {
 			},
 		),
 	)
-	getInstancesReaction := &GetInstancesReaction{
-		Response: &osbclient.GetInstancesResponse{},
+	getBindingReaction := &GetBindReaction{
+		Response: &osbclient.GetBindingResponse{},
 		Error:    errors.New("error in observe"),
 	}
+
 	serviceInstance := *serviceInstance(
 		withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 		afterInstanceCreation(),
@@ -1477,7 +1369,7 @@ func TestObserveReturnsError(t *testing.T) {
 	)
 
 	fakeOSB := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
-		GetInstancesReaction: getInstancesReaction,
+		GetBindingReaction: getBindingReaction,
 	})
 
 	e := utilerr.Decorator{
@@ -2445,10 +2337,9 @@ func withConditions(c ...xpv1.Condition) func(*v1.ServiceBinding) {
 	return func(sb *v1.ServiceBinding) { sb.Status.SetConditions(c...) }
 }
 
-func withAtProvider(state string, id int) func(*v1.ServiceBinding) {
+func withAtProvider(state string) func(*v1.ServiceBinding) {
 	return func(sb *v1.ServiceBinding) {
 		sb.Status.AtProvider.State = state
-		sb.Status.AtProvider.ServiceBindingID = id
 	}
 }
 
@@ -2527,19 +2418,19 @@ func withProviderRef(name string) func(*v1.ServiceBinding) {
 	}
 }
 
+type GetBindReaction struct {
+	Response *osbclient.GetBindingResponse
+	Error    error
+}
+
+func (s *GetBindReaction) React() (*osbclient.GetBindingResponse, error) {
+	return s.Response, s.Error
+}
+
 type BindReaction struct {
 	Request  *osbclient.BindRequest
 	Response *osbclient.BindResponse
 	Error    error
-}
-
-type GetInstancesReaction struct {
-	Response *osbclient.GetInstancesResponse
-	Error    error
-}
-
-func (s *GetInstancesReaction) React() (*osbclient.GetInstancesResponse, error) {
-	return s.Response, s.Error
 }
 
 func (s *BindReaction) React(r *osbclient.BindRequest) (*osbclient.BindResponse, error) {

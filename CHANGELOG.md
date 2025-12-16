@@ -4,17 +4,24 @@
 
 ### Changed
 
+- **deprecated** `status.forProvider.serviceBindingID` on the `ServiceBinding` resource. Use `status.forProvider.serviceID` instead.
 - **breaking**: ServiceBinding resources now use semantic connection labels (e.g., "SQL", "Logme2", "Search") for improved clarity in status and connection secrets.
+- Updated `ServiceInstance` reconciliation logic to use the latest endpoints of the `ServiceBroker`.
 - All connection details in ServiceBinding status and secrets are now consistently labeled for easier integration and troubleshooting.
 - Provider-anynines: Make health check endpoint configurable in the ProviderConfig spec.
 - Provider-anynines: Increase default request timeout.
 
+### Compatibility
+
+- This version is compatible **only with a9s Data Services [v68.0.0](https://docs.anynines.com/changelog) and later**.
+- Older versions of the provider remain compatible with a9s Data Services v68.x.
+
 ### Chores
 
 - Update the supported plans and services for a9s Data Services.
-- Upgraded Crossplane to version [v1.19.0](https://docs.crossplane.io/v1.19).
+- Upgraded Crossplane to version [v1.20.0](https://docs.crossplane.io/v1.20).
 - Updated crossplane functions
-  - `function-patch-and-transform` upgraded to v0.8.2
+  - `function-patch-and-transform` upgraded to v0.9.2
 - Fixed security vulnerabilities identified by Dependabot.
 
 ### Added
