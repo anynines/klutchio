@@ -254,7 +254,7 @@ spec:
       serviceAccountName: konnector
       containers:
         - name: konnector
-          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.2
+          image: public.ecr.aws/w5n9a2g2/klutch/konnector:v1.4.0
           env:
             - name: POD_NAME
               valueFrom:
