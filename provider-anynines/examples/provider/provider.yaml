@@ -3,4 +3,4 @@ kind: Provider
 metadata:
   name: provider-anynines
 spec:
-  package: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.2"
+  package: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines:1.4.0"
