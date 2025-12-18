@@ -167,7 +167,7 @@ Binding to Klutch's APIs allows the App Cluster to provision and manage data ser
 Execute the following command, replacing `<backend-host>` with the hostname of the Klutch Control Plane:
 
 ```bash
-kubectl bind https://<backend-host>:443/export --konnector-image=public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.2
+kubectl bind https://<backend-host>:443/export --konnector-image=public.ecr.aws/w5n9a2g2/klutch/konnector:v1.4.0
 ```
 
 The following actions will be performed as a result of this command:
