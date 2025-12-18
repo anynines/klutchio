@@ -1,0 +1,34 @@
+name: provider-anynines-tests
+
+on:
+    pull_request:
+        paths:
+            - "provider-anynines/**" # only run if push modifies files in provider-anynines
+    push:
+        branches:
+            - main # run on direct pushes to main
+        paths:
+            - "provider-anynines/**" # only run if push modifies files in provider-anynines
+
+jobs:
+    test:
+        name: Run on Ubuntu
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: provider-anynines
+        steps:
+            - name: Clone the code
+              uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version-file: provider-anynines/go.mod
+
+            - name: Running Tests
+              run: |
+                  go mod tidy
+                  make test
