@@ -286,7 +286,7 @@ To install the configuration package (containing definitions and compositions), 
 crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.4.0
 ```
 
-1. Install files directly:
+2. Install files directly:
 
 ```bash
 kubectl create --kustomize crossplane-api
