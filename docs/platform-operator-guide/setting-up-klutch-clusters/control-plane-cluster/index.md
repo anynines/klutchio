@@ -108,13 +108,14 @@ Data Service you want to deploy:
 
 | Data Service | Data-service Value |
 | ------------ | ------------------ |
-| a9s Messaging | messaging |
+| a9s KeyValue | keyvalue |
 | a9s Logme2 | logme2 |
+| a9s MariaDB | mariadb |
+| a9s Messaging | messaging |
+| a9s MongoDB | mongodb |
+| a9s PostgreSQL | postgresql |
 | a9s Prometheus | prometheus |
 | a9s Search | search |
-| a9s MongoDB | mongodb |
-| a9s MariaDB | mariadb |
-| a9s PostgreSQL | postgresql |
 
 The following YAML configuration sets up credentials and provider settings for the selected a9s Data Service. Ensure
 base64-encoded values are used where required.
@@ -292,7 +293,7 @@ spec:
       serviceAccountName: anynines-backend
       containers:
         - name: anynines-backend
-          image: public.ecr.aws/w5n9a2g2/klutch/example-backend:v1.3.2
+          image: public.ecr.aws/w5n9a2g2/klutch/example-backend:v1.4.0
           args:
             - --namespace-prefix=cluster
             - --pretty-name=anynines

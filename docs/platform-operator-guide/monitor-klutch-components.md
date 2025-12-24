@@ -31,7 +31,7 @@ Example output:
 
 ```bash
 NAME                                     INSTALLED   HEALTHY   PACKAGE                                                         AGE
-provider-anynines                        True        True      public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.3.2         10m
+provider-anynines                        True        True      public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.4.0         10m
 ```
 
 A `True` value under the HEALTHY column indicates a properly functioning provider. If a provider's pod encounters an

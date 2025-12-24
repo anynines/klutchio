@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [1.4.0] - 2025-12-18
 
 ### Changed
 
@@ -13,7 +13,7 @@
 
 ### Compatibility
 
-- This version is compatible **only with a9s Data Services [v68.0.0](https://docs.anynines.com/changelog) and later**.
+- This version is compatible **only with a9s Data Services [v68.0.0](https://docs.anynines.com/changelog) and later** (only valid for a9s DataServices integration).
 - Older versions of the provider remain compatible with a9s Data Services v68.x.
 
 ### Chores
@@ -29,6 +29,9 @@
 - Added TLS support for communication with backup-manager in provider-anynines. Changing the URL in
   the ProviderConfig from http:// to https:// switches to encrypted communication. A new optional
   configuration field `tls` has been added to configure custom certificates.
+- Added `KeyValue` integration to a9s DataServices, enabling seamless key-value data management.
+- Added `Custom Parameters` to `LogMe2`, `Search`, `Prometheus`, `MariaDB`, `Messaging`, and `MongoDB`,
+ allowing users to tailor integration settings.
 
 ## [1.3.2] - 2025-01-23
 
