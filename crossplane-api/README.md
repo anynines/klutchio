@@ -343,7 +343,7 @@ For example, you can create and apply providerConfig for PostgreSQL
 instances using the following command:
 
 ```bash
-make -C crossplane-api/ providerconfig postgresInstanceName=<postgres_instance_name> searchInstanceName=<search_instance_name> mongodbInstanceName=<mongodb_instance_name> logme2InstanceName=<logme2_instance_name> messagingInstanceName=<messaging_instance_name> mariadbInstanceName=<mariadb_instance_name> prometheusInstanceName=<prometheus_instance_name>
+make -C crossplane-api/ providerconfig postgresInstanceName=<postgres_instance_name> searchInstanceName=<search_instance_name> mongodbInstanceName=<mongodb_instance_name> logme2InstanceName=<logme2_instance_name> messagingInstanceName=<messaging_instance_name> mariadbInstanceName=<mariadb_instance_name> prometheusInstanceName=<prometheus_instance_name> keyvalueInstanceName=<keyvalue_instance_name>
 ```
 
 The providerConfigs applied this way assume that you are running the provider-anynines in a local
