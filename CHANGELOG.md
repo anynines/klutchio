@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [1.4.0] - 2025-12-18
 
 ### Changed
