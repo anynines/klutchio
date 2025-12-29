@@ -26,6 +26,12 @@ go run ./cmd/example-backend \
 
 ```
 
+To build the image of example-backend use the following cmd
+
+```sh
+KO_DOCKER_REPO=<your container registry> ko build ./cmd/example-backend --bare -t <some new tag here> --platform=linux/amd64,linux/arm64
+```
+
 ### Konnector
 
 Most of the Konnector code is located in `./pkg/konnector`. To test out your own changes to the

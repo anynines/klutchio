@@ -112,6 +112,7 @@ a9s klutch bind
 ```
 
 The binding process performs the following steps:
+
 1. Verifies prerequisites
 2. Executes kubectl bind
 
@@ -126,7 +127,7 @@ Checking Prerequisites...
 
 The following command will be executed for you:
 /opt/homebrew/bin/kubectl bind http://192.168.0.91:8080/export \
---konnector-image public.ecr.aws/w5n9a2g2/klutch/konnector:v1.3.2 \
+--konnector-image public.ecr.aws/w5n9a2g2/klutch/konnector:v1.4.0 \
 --context kind-klutch-app
 ```
 
@@ -203,6 +204,7 @@ spec:
   compositionRef:
     name: a8s-postgresql
 ```
+
 Deploy the PostgreSQL instance to your App Cluster by running:
 
 ```bash
@@ -217,7 +219,7 @@ information to connect to the database.
 
 Here's how you can create the ServiceBinding. Create a file named `service-binding.yaml` with the following content:
 
-```yaml 
+```yaml
 apiVersion: anynines.com/v1
 kind: ServiceBinding
 metadata:
@@ -293,16 +295,18 @@ kubectl apply -f external-pg-service.yaml
 
 1. Open a new terminal window.
 2. Switch the kubectl context to the Klutch Control Plane Cluster:
-    
+
     ```bash
     kubectl config use-context kind-klutch-control-plane
     ```
+
 3. Forward the PostgreSQL service port (replace placeholders with actual values):
 
     ```bash
     kubectl -n <pg namespace> port-forward svc/example-a8s-postgresql-master 5432:5432 --address <your-local-network-ip>
     ```
-4.  Keep this terminal window open to maintain the port forwarding session.
+
+4. Keep this terminal window open to maintain the port forwarding session.
 
 #### 3.4 Deploy a Blog Application
 

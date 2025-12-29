@@ -283,10 +283,10 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.3.2
+crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.4.0
 ```
 
-2. Install files directly:
+1. Install files directly:
 
 ```bash
 kubectl create --kustomize crossplane-api
@@ -343,7 +343,7 @@ For example, you can create and apply providerConfig for PostgreSQL
 instances using the following command:
 
 ```bash
-make -C crossplane-api/ providerconfig postgresInstanceName=<postgres_instance_name> searchInstanceName=<search_instance_name> mongodbInstanceName=<mongodb_instance_name> logme2InstanceName=<logme2_instance_name> messagingInstanceName=<messaging_instance_name> mariadbInstanceName=<mariadb_instance_name> prometheusInstanceName=<prometheus_instance_name>
+make -C crossplane-api/ providerconfig postgresInstanceName=<postgres_instance_name> searchInstanceName=<search_instance_name> mongodbInstanceName=<mongodb_instance_name> logme2InstanceName=<logme2_instance_name> messagingInstanceName=<messaging_instance_name> mariadbInstanceName=<mariadb_instance_name> prometheusInstanceName=<prometheus_instance_name> keyvalueInstanceName=<keyvalue_instance_name>
 ```
 
 The providerConfigs applied this way assume that you are running the provider-anynines in a local
