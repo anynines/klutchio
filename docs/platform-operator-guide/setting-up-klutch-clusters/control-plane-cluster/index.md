@@ -140,6 +140,7 @@ metadata:
   name: <data-service>-service-broker
 spec:
   url: <service-broker-url> # e.g. http://example.com:3000
+  healthCheckEndpoint: "/osb_ext/v1/healthy"
   providerCredentials:
     source: Secret
     username:
@@ -180,6 +181,7 @@ spec:
       key: cert
       name: <data-service>-backup-manager-creds
       namespace: crossplane-system
+  healthCheckEndpoint: "/v2/healthy" # Use "/instances" for a9s Backup Managers below v68
   providerCredentials:
     source: Secret
     username:
@@ -195,6 +197,17 @@ spec:
 ```
 
 </details>
+
+:::note
+
+  The `healthCheckEndpoint` fields in the above `ProviderConfigs` default to `/instances` when not set. This endpoint can be inefficient and can cause service degradation when used. The alternative endpoints depend on whether the `ProviderConfig` is for a service broker or a backup manager. See the following table for information on which one to use.
+
+  |Provider type|Recommended endpoint|Default endpoint|
+  |-|-|-|
+  |service broker|`/osb_ext/v1/healthy`|`/instances`|
+  |backup manager|`/v2/healthy` in versions v68 and above|`/instances`|
+
+:::
 
 Repeat this process for each additional a9s Data Service you want to enable.
 
