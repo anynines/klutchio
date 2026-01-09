@@ -82,7 +82,7 @@ APIServiceExportTemplate like this:
     ```
 
     :::info
-    The servicebindings API used in this example is specific to Klutch and is not related to the [Service Binding Specification for Kubernetes](https://servicebinding.io/). 
+    The servicebindings API used in this example is specific to Klutch and is not related to the [Service Binding Specification for Kubernetes](https://servicebinding.io/).
     While both aim to streamline application connectivity to services, their approaches vary.
     :::
 
@@ -104,6 +104,22 @@ your branding.
 OCI-compliant image registry. Then, deploy the updated configuration package to the Control Plane Cluster. Detailed
 steps are available in the [Klutch crossplane-api repository](https://github.com/anynines/klutchio/tree/main/crossplane-api).
 
+## Integrating with the network connector
+
+If you follow the Klutch conventions of having ServiceInstance, ServiceBinding, Backup, and Restore
+objects you can either integrate with the ServiceInstance or ServiceBinding compositions of your
+integration. Integrating with the ServiceInstance allows you to create fewer connections, where the
+same connection implementation is shared between all app clusters. Integrating with the
+ServiceBinding composition allows you more fine grained control, but might consume more resources
+because each service binding will invoke the network connector independently.
+
+To use the Network Connector from your selected composition create a `XTCPConnection` object and
+fill it with the `host` and `port` of your provisioned instance. The network connector will choose
+the appropriate implementation and invoke it. Once connectivity has been provisioned the network
+connector will populate the `XTCPConnection` `status` field with the values that you should pass to
+your users. Please pass these values to the user, and remove any internal connection details to
+avoid confusion.
+
 ## Understanding the API Lifecycle in Klutch
 
 Understanding the journey of an API through Klutch stack is crucial for effective management and integration.
@@ -120,8 +136,10 @@ assigns the necessary permissions to the App Cluster's Kubernetes service accoun
 and its associated objects. Subsequently, the Klutch-bind backend creates an APIServiceExport object containing a snapshot
 of the bound Custom Resource Definition (CRD) at the time of binding.
 
-4. **API Binding Process**: The application developer applies an APIServiceBinding object to their cluster, typically
-executed via the kubectl-bind command. The konnector, installed in the App Cluster, detects this event, reads the
-APIServiceBinding object, and searches for a corresponding APIServiceExport on the Control Plane Cluster. If a match
-is found, the konnector retrieves the API schema from the APIServiceExport and creates a CRD with a matching schema
-on the App Cluster. This continuous process accommodates changes and additions of new APIs as they occur.
+4. **API Binding Process**: The application developer applies an APIServiceBinding object to their
+cluster, typically executed via the kubectl-bind command. The konnector, installed in the App
+Cluster, detects this event, reads the APIServiceBinding object, and searches for a corresponding
+APIServiceExport on the Control Plane Cluster. If a match is found, the konnector retrieves the API
+schema from the APIServiceExport and creates a CRD with a matching schema on the App Cluster. This
+continuous process accommodates changes and additions of new APIs as they occur.
+
