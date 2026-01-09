@@ -140,6 +140,7 @@ metadata:
   name: <data-service>-service-broker
 spec:
   url: <service-broker-url> # e.g. http://example.com:3000
+  healthCheckEndpoint: "/osb_ext/v1/healthy"
   providerCredentials:
     source: Secret
     username:
@@ -169,17 +170,17 @@ metadata:
   name: <data-service>-backup-manager
 spec:
   url: <backup-manager-url> # e.g. http://example.com:3000 or https://example.com:3001
-  tls: #optional if tweaking is required
-    # required if the name used to connect to the backup manager does not match the hostname
-    # in the certificate. Set to the name in the certificate.
+  tls: # Optional custom TLS settings.
+    # The name in the Backup Manager's certificate. Required if it differs from the Backup Manager hostname.
     overrideServerName: <cert-host-name> # e.g. example.com
-    insecureSkipVerify: false # can be set to true to skip certificate validation
-    # Can be used to manually configure certificate to be used. Skip if the
-    # certificate is already valid within your org or globally.
-    caBundleSecretRef: # ref to certificate chain in pem format.
+    # Set to true to disable certificate chain and hostname validation (insecure).
+    insecureSkipVerify: false
+    # Secret containing a custom CA bundle (PEM). Omit if using a trusted CA.
+    caBundleSecretRef:
       key: cert
       name: <data-service>-backup-manager-creds
       namespace: crossplane-system
+  healthCheckEndpoint: "/v2/healthy" # Use "/instances" for a9s Backup Managers below v68
   providerCredentials:
     source: Secret
     username:
@@ -195,6 +196,17 @@ spec:
 ```
 
 </details>
+
+:::note
+
+  The `healthCheckEndpoint` fields in the above `ProviderConfigs` default to `/instances` when not set. This endpoint is common to both service brokers and backup managers. For improved performance and scalability, dedicated health check endpoints are available and recommended. The appropriate endpoint depends on whether the `ProviderConfig` is for a service broker or backup manager. See the following table for information on which one to use.
+
+  |Provider type|Recommended endpoint|Default endpoint|
+  |-|-|-|
+  |service broker|`/osb_ext/v1/healthy`|`/instances`|
+  |backup manager|`/v2/healthy` in versions v68 and above|`/instances`|
+
+:::
 
 Repeat this process for each additional a9s Data Service you want to enable.
 
