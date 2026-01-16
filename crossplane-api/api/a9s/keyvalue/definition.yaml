@@ -31,8 +31,34 @@ spec:
                   "keyvalue-single-big-ssl",
                 ]
             - services: &keyvalueServices ["a9s-keyvalue8"]
+            - keyvalueBoolean: &keyvalueBoolean ["yes", "no"]
           properties:
             spec:
+              x-kubernetes-validations:
+              - rule:
+                    "!(has(self.parameters) && has(self.parameters.hostnameResolution)) ||
+                    self.plan.contains('-replica-')"
+                message: "parameters.hostnameResolution is only supported for clustered plans"
+              - rule:
+                    "!(has(self.parameters) && has(self.parameters.downAfterMilliseconds)) ||
+                    self.plan.contains('-replica-')"
+                message: "parameters.downAfterMilliseconds is only supported for clustered plans"
+              - rule:
+                    "!(has(self.parameters) && has(self.parameters.failoverTimeout)) ||
+                    self.plan.contains('-replica-')"
+                message: "parameters.failoverTimeout is only supported for clustered plans"
+              - rule:
+                    "!(has(self.parameters) && has(self.parameters.minReplicasMaxLag)) ||
+                    self.plan.contains('-replica-')"
+                message: "parameters.minReplicasMaxLag is only supported for clustered plans"
+              - rule:
+                    "!(has(self.parameters) && has(self.parameters.minReplicasToWrite)) ||
+                    self.plan.contains('-replica-')"
+                message: "parameters.minReplicasToWrite is only supported for clustered plans"
+              - rule:
+                    "!(has(self.parameters) && has(self.parameters.replBacklogSize)) ||
+                    self.plan.contains('-replica-')"
+                message: "parameters.replBacklogSize is only supported for clustered plans"
               properties:
                 acceptsIncomplete:
                   type: boolean
@@ -81,6 +107,144 @@ spec:
                       message:
                         "Plan migrations not possible from Non-SSL to SSL and
                         SSL to Non-SSL"
+
+                # KeyValue configuration parameters
+                parameters:
+                  type: object
+                  description: |
+                    Fields which set the custom parameters available for a9s KeyValue.
+                    The full documentation for these custom parameters can be found at https://docs.anynines.com/docs/application-developer/a9s-keyvalue/a9s-ad-keyvalue-custom-parameters/
+                    The parameter names are transformed from kebab case to camel case in order to comply with YAML conventions.
+                  properties:
+                    snapshot:
+                      type: string
+                      description: |
+                        A list of snapshot rules following the pattern `['save <snapshot interval in seconds> <write actions necessary to trigger snapshots>',...]`.
+                        Replaces the existing rule list.
+                        Setting this field to `[]` will disable Snapshots and make a9s KeyValue function as a cache only dataservice.
+                      x-kubernetes-validations:
+                        - rule: |
+                            self.matches("^\\[('save [1-9][0-9]* [1-9][0-9]*'(,'save [1-9][0-9]* [1-9][0-9]*')*)?\\]$")
+                          message: "Must either be `[]`, `['save <number> <number>']` or `['save <number> <number>','save <number> <number>'...]`"
+                    replBacklogSize:
+                      type: string
+                      description: |
+                        DISABLED BY DEFAULT! This parameter needs to be explicitly enabled by an admin for each a9s KeyValue Broker
+
+                        Set the replication backlog size for the cluster.
+                      x-kubernetes-validations:
+                        - rule: self.matches("^[1-9][0-9]*((k|m|g)b?)?$")
+                          message: "Must be a number, can be followed by k(b), m(b) or g(b)"
+                    minReplicasToWrite:
+                      type: integer
+                      description: |
+                        DISABLED BY DEFAULT! This parameter needs to be explicitly enabled by an admin for each a9s KeyValue Broker
+
+                        The amount of connected replicas that are required for the primary to accept write operations. Can be set to 0 to disable this functionality.
+                      x-kubernetes-validations:
+                        - rule: self >= 0
+                          message: "Must not be a negative number."
+                    minReplicasMaxLag:
+                      type: integer
+                      description: |
+                        DISABLED BY DEFAULT! This parameter needs to be explicitly enabled by an admin for each a9s KeyValue Broker
+
+                        The max lag in seconds that replicas can have without being recognized as disconnected. Needs to be higher then 0.
+                      x-kubernetes-validations:
+                        - rule: self > 0
+                          message: "Must be higher than 0."
+                    lazyfreeLazyEviction:
+                      type: string
+                      enum: *keyvalueBoolean
+                      description: Whether objects are deleted on eviction, because of maxmemory and its policy configurations.
+                    lazyfreeLazyExpire:
+                      type: string
+                      enum: *keyvalueBoolean
+                      description: Whether objects are deleted when a key has reached its associated time to live.
+                    maxmemory:
+                      type: string
+                      description: |
+                        DISABLED BY DEFAULT! This parameter needs to be explicitly enabled by an admin for each a9s KeyValue Broker
+
+                        Limits the memory usage for each node in the a9s KeyValue cluster.
+                        If set to `dynamic` then a9s KeyValue determines the optimal limit.
+                        If set to `0` then memory usage is not limited.
+                        Otherwise the value of this field will be used as the limit.
+                      x-kubernetes-validations:
+                        - rule: self.matches("^dynamic$|^0$|^[1-9][0-9]*((k|m|g)b?)?$")
+                          message: "Must be `dynamic`, `0` or number greater than 0. If it is a number greater than 0 it can be followed by k(b), m(b) or g(b)"
+                    maxmemoryPolicy:
+                      type: string
+                      enum:
+                        ["volatile-lru", "volatile-lfu", "volatile-random", "volatile-ttl", "allkeys-lru", "allkeys-lfu", "allkeys-random", "noeviction"]
+                      description: |
+                        Configures the behavior when a node's maxmemory limit is reached.
+                        If set to `noeviction` then no further write operations will be permitted.
+                        Any other option reprents an algorithm to decide which data will be evicted in the case of new write operations.
+                    maxmemorySamples:
+                      type: integer
+                      description: Amount of samples to check before an eviction. The value must be an integer >= 0.
+                      x-kubernetes-validations:
+                        - rule: self >= 0
+                          message: "Must not be a negative number."
+                    maxclients:
+                      type: integer
+                      description: Maximum amount of clients that can be simultaneously connected.
+                      x-kubernetes-validations:
+                        - rule: self >= 0
+                          message: "Must not be a negative number."
+                    downAfterMilliseconds:
+                      type: integer
+                      description: The amount of milliseconds a node must be unreacheable for it to be considered subjectively down.
+                      x-kubernetes-validations:
+                        - rule: self >= 0
+                          message: "Must not be a negative number."
+                    failoverTimeout:
+                      type: integer
+                      description: Specifies the failover timeout in milliseconds.
+                      x-kubernetes-validations:
+                        - rule: self >= 0
+                          message: "Must not be a negative number."
+                    hostnameResolution:
+                      type: string
+                      enum:
+                        ["disabled", "resolve-only", "enabled"]
+                      description: |
+                        Enable and disable DNS/hostname support in Valkey and Sentinel.
+                        When enabled, it will utilize the hostname for internal cluster communication and announce Valkey and Sentinel node information using the hostname instead of the typical IP address.
+                        If set to `resolve-only` then the announcement will still use the IP address.
+                        When transitioning an existing instance from `enable` to `disabled` or vice versa it is necessary to set it to `resolve-only` first and only then to the desired target value, as changing directly between `enabled` and `disabled` is not possible.
+                    tlsProtocols:
+                      type: string
+                      enum:
+                        ["TLSv1.2", "TLSv1.3", "TLSv1.2 TLSv1.3", "TLSv1.3 TLSv1.2"]
+                      description: |
+                        Specifies the supported TLS versions. Allowed values are "TLSv1.2" and "TLSv1.3" or any combination.
+                        When using TLSv1.3 only, Valkey specific metrics will not be provided.
+                    tlsCiphers:
+                      type: string
+                      description: |
+                        Configure allowed ciphers. See the ciphers(1ssl) manpage for more information about the syntax of this string.
+
+                        Caution: There is no validation enabled for the user provided values and therefore existing instances can break when applying this parameter.
+                    tlsCiphersuites:
+                      type: string
+                      description: |
+                        Configure allowed ciphersuites. See the ciphers(1ssl) manpage for more information about the syntax of this string, and specifically for TLSv1.3 ciphersuites.
+
+                        Caution: There is no validation enabled for the user provided values and therefore existing instances can break when applying this parameter.
+                    luaTimeLimit:
+                      type: integer
+                      description: Maximum amount of time (in ms) that a script is allowed to run.
+                      x-kubernetes-validations:
+                        - rule: self >= 0
+                          message: "Must not be a negative number."
+                    notifyKeyspaceEvents:
+                      type: string
+                      description: Sets the Valkey Keyspace Notifications.
+                      x-kubernetes-validations:
+                        - rule: self.matches("^$|^[KEg\\$lshzxeA]*[KE][KEg\\$lshzxeA]*$")
+                          message: "Must only contain legal characters and at least one K or E"
               required:
                 - service
                 - plan
