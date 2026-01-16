@@ -1,8 +1,13 @@
 IMAGE_NAME := dataservices
 ECR_REPO := public.ecr.aws/w5n9a2g2/klutch
 
+.PHONY: providerconfig
 providerconfig:
-# Populate Secrets and create PostgreSQL ProviderConfig using the instance name
+	@if [ -z "$(postgresInstanceName)$(keyvalueInstanceName)$(mongodbInstanceName)$(searchInstanceName)$(mariadbInstanceName)$(messagingInstanceName)$(logme2InstanceName)$(prometheusInstanceName)" ]; then \
+		echo "ERROR: Please provide at least one instance name variable (e.g., postgresInstanceName, mongodbInstanceName, etc.)"; \
+		exit 1; \
+	fi
+# Populate Secrets and create PostgreSQL ProvideConfig using the instance name
 ifdef postgresInstanceName
 	@export PG_SERVICE_INSTANCE_NAME=$$postgresInstanceName; \
 	if [[ $$GET_BROKER_IP == "true" ]]; then \
@@ -47,7 +52,36 @@ ifdef postgresInstanceName
 endif
 # Populate Secrets and create KeyValue ProviderConfig using the instance name
 ifdef keyvalueInstanceName
-	@export KEYVALUE_SERVICEBROKER_USERNAME=admin; \
+	@export KEY_VALUE_SERVICE_INSTANCE_NAME=$$keyvalueInstanceName; \
+	if [[ $$GET_BROKER_IP == "true" ]]; then \
+		if [[ $$KEY_VALUE_SERVICE_INSTANCE_NAME == "" ]]; then \
+			echo "ERROR: keyvalueInstanceName must not be empty!"; \
+			exit 1; \
+		fi; \
+		export KV_SERVICEBROKER_IP=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$KEY_VALUE_SERVICE_INSTANCE_NAME instances" --json | yq -p=json '.Tables.0.Rows.[] | select ( .instance == "broker/*") | .ips'); \
+		export KV_SERVICEBROKER_HOST="http://$$KV_SERVICEBROKER_IP:3000"; \
+		export KV_BACKUP_MANAGER_IP=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$KEY_VALUE_SERVICE_INSTANCE_NAME instances" --json | yq -p=json '.Tables.0.Rows.[] | select ( .instance == "backup-manager/*") | .ips'); \
+		export KV_BACKUP_MANAGER_HOST="http://$$KV_BACKUP_MANAGER_IP:3000"; \
+		echo "Backup Manager IP: $$KV_BACKUP_MANAGER_IP"; \
+		echo "Service Broker IP: $$KV_SERVICEBROKER_IP"; \
+		echo "Backup Manager Host: $$KV_BACKUP_MANAGER_HOST"; \
+		echo "Service Broker Host: $$KV_SERVICEBROKER_HOST"; \
+		if [ -z $$KV_BACKUP_MANAGER_IP ]; then \
+			COMPONENT_IP_NOT_RETRIEVABLE="true"; \
+			echo "ERROR: IP adress could not be retrieved for KeyValue Backup Manager"; \
+		fi; \
+		if [ -z $$KV_SERVICEBROKER_IP ]; then \
+			COMPONENT_IP_NOT_RETRIEVABLE="true"; \
+			echo "ERROR: IP adress could not be retrieved for KeyValue Service Broker"; \
+		fi; \
+		if [ ! -z $$COMPONENT_IP_NOT_RETRIEVABLE ]; then \
+			exit 1; \
+		fi; \
+	else \
+		export KV_BACKUP_MANAGER_HOST="http://dockerhost:8988"; \
+		export KV_SERVICEBROKER_HOST="http://dockerhost:8989"; \
+	fi; \
+	export KEYVALUE_SERVICEBROKER_USERNAME=admin; \
 	export KEYVALUE_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /keyvalue_service_broker_password | grep value:" | awk '{print $2}'); \
 	export KEYVALUE_SERVICE_INSTANCE_NAME=$$keyvalueInstanceName; \
 	export KEYVALUE_BACKUP_MANAGER_USERNAME=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $$KEYVALUE_SERVICE_INSTANCE_NAME ssh backup-manager -c 'cat /var/vcap/jobs/anynines-backup-manager/config/export_env.sh'" | grep HTTP_USERNAME= | cut -d '=' -f2 | tr -d '\r'); \

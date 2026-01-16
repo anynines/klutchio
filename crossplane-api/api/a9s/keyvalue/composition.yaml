@@ -46,6 +46,44 @@ spec:
                 toFieldPath: spec.forProvider.planName
               - fromFieldPath: spec.acceptsIncomplete
                 toFieldPath: spec.forProvider.acceptsIncomplete
+
+              - fromFieldPath: spec.parameters.snapshot
+                toFieldPath: spec.forProvider.parameters.snapshot
+              - fromFieldPath: spec.parameters.replBacklogSize
+                toFieldPath: spec.forProvider.parameters.repl-backlog-size
+              - fromFieldPath: spec.parameters.minReplicasToWrite
+                toFieldPath: spec.forProvider.parameters.min-replicas-to-write
+              - fromFieldPath: spec.parameters.minReplicasMaxLag
+                toFieldPath: spec.forProvider.parameters.min-replicas-max-lag
+              - fromFieldPath: spec.parameters.lazyfreeLazyEviction
+                toFieldPath: spec.forProvider.parameters.lazyfree-lazy-eviction
+              - fromFieldPath: spec.parameters.lazyfreeLazyExpire
+                toFieldPath: spec.forProvider.parameters.lazyfree-lazy-expire
+              - fromFieldPath: spec.parameters.maxmemory
+                toFieldPath: spec.forProvider.parameters.maxmemory
+              - fromFieldPath: spec.parameters.maxmemoryPolicy
+                toFieldPath: spec.forProvider.parameters.maxmemory-policy
+              - fromFieldPath: spec.parameters.maxmemorySamples
+                toFieldPath: spec.forProvider.parameters.maxmemory-samples
+              - fromFieldPath: spec.parameters.maxclients
+                toFieldPath: spec.forProvider.parameters.maxclients
+              - fromFieldPath: spec.parameters.downAfterMilliseconds
+                toFieldPath: spec.forProvider.parameters.down-after-milliseconds
+              - fromFieldPath: spec.parameters.failoverTimeout
+                toFieldPath: spec.forProvider.parameters.failover-timeout
+              - fromFieldPath: spec.parameters.hostnameResolution
+                toFieldPath: spec.forProvider.parameters.hostname-resolution
+              - fromFieldPath: spec.parameters.tlsProtocols
+                toFieldPath: spec.forProvider.parameters.tls-protocols
+              - fromFieldPath: spec.parameters.tlsCiphers
+                toFieldPath: spec.forProvider.parameters.tls-ciphers
+              - fromFieldPath: spec.parameters.tlsCiphersuites
+                toFieldPath: spec.forProvider.parameters.tls-ciphersuites
+              - fromFieldPath: spec.parameters.luaTimeLimit
+                toFieldPath: spec.forProvider.parameters.lua-time-limit
+              - fromFieldPath: spec.parameters.notifyKeyspaceEvents
+                toFieldPath: spec.forProvider.parameters.notify-keyspace-events
+
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.createdAt
                 toFieldPath: status.managed.createdAt

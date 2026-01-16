@@ -1,0 +1,30 @@
+apiVersion: anynines.com/v1
+kind: KeyvalueInstance
+metadata:
+  name: example-a9s-keyvalue-with-parameters
+  namespace: default
+spec:
+  # Use a supported keyvalue serviceName and planName
+  service: a9s-keyvalue8
+  plan: keyvalue-single-small-ssl
+  compositionRef:
+    name: a9s-keyvalue
+  parameters:
+    snapshot: "['save 900 1','save 300 10','save 60 10000']"
+    replBacklogSize: "10mb"
+    minReplicasToWrite: 2
+    minReplicasMaxLag: 1001
+    lazyfreeLazyEviction: "no"
+    lazyfreeLazyExpire: "yes"
+    maxmemory: "dynamic"
+    maxmemoryPolicy: "allkeys-lfu"
+    maxmemorySamples: 5
+    maxclients: 1001
+    downAfterMilliseconds: 30000
+    failoverTimeout: 1500
+    hostnameResolution: "resolve-only"
+    tlsProtocols: "TLSv1.2 TLSv1.3"
+    tlsCiphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
+    tlsCiphersuites: "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384"
+    luaTimeLimit: 5000
+    notifyKeyspaceEvents: "KEA"
