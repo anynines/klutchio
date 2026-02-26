@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Bumped a9s Data Service integration to 1.4.1: update supported services.
+- Bumped a9s Data Service integration to 1.4.1: update supported services: add a9s-messaging 4
 
 ## [1.4.0] - 2025-12-18
 
