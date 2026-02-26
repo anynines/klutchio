@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   # Use a supported messaging service and plan
-  service: a9s-messaging310
+  service: a9s-messaging4
   plan: messaging-single-small-ssl
   compositionRef:
     name: a9s-messaging

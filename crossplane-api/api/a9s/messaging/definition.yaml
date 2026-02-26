@@ -39,6 +39,7 @@ spec:
                   "a9s-messaging310",
                   "a9s-messaging312",
                   "a9s-messaging313",
+                  "a9s-messaging4",                  
                 ]
           properties:
             spec:
