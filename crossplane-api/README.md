@@ -283,7 +283,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.4.0
+crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.4.1
 ```
 
 1. Install files directly:

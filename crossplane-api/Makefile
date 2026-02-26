@@ -182,7 +182,7 @@ dataservices-config-push:
 ifdef dataservicesConfigVersion
 		# Build and push configuration package
 		crossplane xpkg build -f ./api
-		crossplane xpkg push -f ./api/anynines-dataservices-*.xpkg $(REPO)/$(IMAGE_NAME):$(dataservicesConfigVersion)
+		crossplane xpkg push -f ./api/anynines-dataservices-*.xpkg $(ECR_REPO)/$(IMAGE_NAME):$(dataservicesConfigVersion)
 		rm ./api/anynines-dataservices-*
 endif
 
