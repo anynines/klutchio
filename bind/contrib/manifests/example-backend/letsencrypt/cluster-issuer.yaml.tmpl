@@ -11,5 +11,6 @@ spec:
       name: letsencrypt-prod-private-key
     solvers:
     - http01:
-        ingress:
-          class: nginx
+        gatewayHTTPRoute:
+          parentRefs:
+          - name: example-backend-gateway

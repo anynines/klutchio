@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
 - ../../bases/configure/kubernetes-providerconfig.yaml
 - ../../bases/configure/kube-bind-configuration.yaml
-- ../../bases/configure/kube-bind-ingress-letsencrypt.yaml
+- ../../bases/configure/kube-bind-gateway-letsencrypt.yaml
 - ../../bases/configure/common-export-templates.yaml
 - ../../bases/configure/anynines-providerconfig-postgresql.yaml
 - ../../bases/configure/anynines-providerconfig-messaging.yaml
