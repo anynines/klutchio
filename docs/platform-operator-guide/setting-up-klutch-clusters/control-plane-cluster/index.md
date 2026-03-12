@@ -32,8 +32,7 @@ Before setting up the Klutch Control Plane, ensure that the required infrastruct
 - [Helm](https://helm.sh/docs/helm/helm_install/): Version 3.2.0 or later is required for package management.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): The Kubernetes command-line tool must be installed and properly
 configured to interact with your cluster, and include Kustomize support (built-in from v1.14+)
-- [Crossplane®](https://docs.crossplane.io/latest/software/install/): Version 1.17.0 or newer must be installed on the
-cluster.
+- [Crossplane®](https://docs.crossplane.io/latest/get-started/install/): **Klutch supports Crossplane® Version 1.17. through 1.20. (v2.x is not yet supported).**
   - Additionally, ensure the Server-Side Apply (SSA) flag is enabled for claims by setting:
 
       ```bash
