@@ -96,7 +96,8 @@ spec:
       protocol: TCP
 ```
 
-This service can be exposed externally using standard Kubernetes methods, such as LoadBalancer or Ingress.
+This service can be exposed externally using standard Kubernetes methods, such
+as LoadBalancer, Ingress or the GatewayAPI.
 
 *Example: Accessing Health Endpoint via HTTP*
 
