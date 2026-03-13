@@ -36,7 +36,7 @@ func TestGetOperationResponseIsDone(t *testing.T) {
 			expected: false,
 		},
 		{
-			state:    "done",
+			state:    "succeeded",
 			expected: true,
 		},
 		{
@@ -87,19 +87,9 @@ func TestGetOperationResponseIsFailure(t *testing.T) {
 			expected: false,
 		},
 		{
-			state:       "error",
+			state:       "failed",
 			expected:    true,
-			expectedErr: OperationStateError{"error"},
-		},
-		{
-			state:       "cancelled",
-			expected:    true,
-			expectedErr: OperationStateError{"cancelled"},
-		},
-		{
-			state:       "timeout",
-			expected:    true,
-			expectedErr: OperationStateError{"timeout"},
+			expectedErr: OperationStateError{"failed"},
 		},
 	}
 

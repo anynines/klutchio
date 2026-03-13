@@ -18,11 +18,18 @@ package v2
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
@@ -300,9 +307,14 @@ func TestHandleFailureResponse(t *testing.T) {
 func TestCreateClient(t *testing.T) {
 
 	type want struct {
-		Client Client
-		Error  error
+		Error              error
+		serverName         string
+		insecureSkipVerify bool
+		hasRootCAs         bool
 	}
+
+	testCACert := generateTestCACert(t)
+
 	cases := map[string]struct {
 		args *ClientConfiguration
 		want want
@@ -324,17 +336,98 @@ func TestCreateClient(t *testing.T) {
 				Error: fmt.Errorf("the value of CacheFreshnessSeconds must not be a negative number"),
 			},
 		},
+		"setOverrideServerName": {
+			args: &ClientConfiguration{
+				APIVersion:         LatestAPIVersion(),
+				OverrideServerName: "custom.example.com",
+			},
+			want: want{
+				serverName: "custom.example.com",
+			},
+		},
+		"setInsecure": {
+			args: &ClientConfiguration{
+				APIVersion: LatestAPIVersion(),
+				Insecure:   true,
+			},
+			want: want{
+				insecureSkipVerify: true,
+			},
+		},
+		"setCAData": {
+			args: &ClientConfiguration{
+				APIVersion: LatestAPIVersion(),
+				CAData:     testCACert,
+			},
+			want: want{
+				hasRootCAs: true,
+			},
+		},
+		"errorInsecureAndCAData": {
+			args: &ClientConfiguration{
+				APIVersion: LatestAPIVersion(),
+				Insecure:   true,
+				CAData:     testCACert,
+			},
+			want: want{
+				Error: fmt.Errorf("cannot specify root CAs and to skip TLS verification"),
+			},
+		},
 	}
 
 	for name, tc := range cases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, err := NewClient(tc.args)
+			gotClient, err := NewClient(tc.args)
 			if diff := cmp.Diff(tc.want.Error, err, test.EquateErrors()); diff != "" {
 				t.Errorf("NewClient(...): -want error, +got error:\n%s", diff)
 			}
+			if err != nil {
+				return
+			}
+			c, ok := gotClient.(*client)
+			if !ok {
+				t.Fatal("unexpected client type")
+			}
+			transport, ok := c.httpClient.Transport.(*http.Transport)
+			if !ok {
+				t.Fatal("unexpected transport type")
+			}
+			tlsConfig := transport.TLSClientConfig
+			if tc.want.serverName != "" {
+				if diff := cmp.Diff(tc.want.serverName, tlsConfig.ServerName); diff != "" {
+					t.Errorf("TLSConfig.ServerName: -want, +got:\n%s", diff)
+				}
+			}
+			if tc.want.insecureSkipVerify != tlsConfig.InsecureSkipVerify {
+				t.Errorf("TLSConfig.InsecureSkipVerify: want %v, got %v", tc.want.insecureSkipVerify, tlsConfig.InsecureSkipVerify)
+			}
+			if tc.want.hasRootCAs && tlsConfig.RootCAs == nil {
+				t.Error("TLSConfig.RootCAs: want non-nil pool, got nil")
+			}
 		})
-
 	}
+}
+
+// generateTestCACert creates a minimal self-signed CA certificate in PEM format for use in tests.
+func generateTestCACert(t *testing.T) []byte {
+	t.Helper()
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate RSA key: %v", err)
+	}
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{Organization: []string{"Test"}},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(time.Hour),
+		IsCA:         true,
+		KeyUsage:     x509.KeyUsageCertSign,
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		t.Fatalf("failed to create certificate: %v", err)
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 }

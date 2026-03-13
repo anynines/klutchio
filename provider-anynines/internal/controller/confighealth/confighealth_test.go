@@ -33,6 +33,8 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
+	bmclient "github.com/anynines/klutchio/clients/a9s-backup-manager"
+	fakebm "github.com/anynines/klutchio/clients/a9s-backup-manager/fake"
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	fakeosb "github.com/anynines/klutchio/clients/a9s-open-service-broker/fake"
 	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
@@ -68,11 +70,13 @@ func TestReconcile(t *testing.T) {
 		checkAvailabilityReaction *fakeosb.CheckAvailabilityReaction
 		expectedCreds             []string
 		expectedEvents            []string
+		expectedClientUsed        string
 	}{
 		"new config performs check initially": {
 			now: t0,
 			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
 					a9stest.SecretRef("test-secret", "test", "username"),
 					a9stest.SecretRef("test-secret", "test", "password"),
 					xpv1.CredentialsSourceSecret),
@@ -90,12 +94,14 @@ func TestReconcile(t *testing.T) {
 			checkAvailabilityReaction: successReaction(),
 			expectedCreds:             []string{"test", "secure-test-password"},
 			expectedEvents:            []string{"Normal CheckSuccess ProviderConfig is now healthy"},
+			expectedClientUsed:        "osb",
 		},
 
 		"successful check is not retried after half the successCheckInterval": {
 			now: t0.Add(successCheckInterval / 2),
 			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
 					a9stest.SecretRef("test-secret", "test", "username"),
 					a9stest.SecretRef("test-secret", "test", "password"),
 					xpv1.CredentialsSourceSecret),
@@ -124,6 +130,7 @@ func TestReconcile(t *testing.T) {
 			now: t0.Add(3 * successCheckInterval / 2),
 			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
 					a9stest.SecretRef("test-secret", "test", "username"),
 					a9stest.SecretRef("test-secret", "test", "password"),
 					xpv1.CredentialsSourceSecret),
@@ -154,6 +161,7 @@ func TestReconcile(t *testing.T) {
 			now: t0.Add(3 * successCheckInterval / 2),
 			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
 					a9stest.SecretRef("test-secret", "test", "username"),
 					a9stest.SecretRef("test-secret", "test", "password"),
 					xpv1.CredentialsSourceSecret),
@@ -184,6 +192,7 @@ func TestReconcile(t *testing.T) {
 			now: t0.Add(failureCheckInterval / 2),
 			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
 					a9stest.SecretRef("test-secret", "test", "username"),
 					a9stest.SecretRef("test-secret", "test", "password"),
 					xpv1.CredentialsSourceSecret),
@@ -211,6 +220,7 @@ func TestReconcile(t *testing.T) {
 			now: t0.Add(3 * failureCheckInterval / 2),
 			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
 					a9stest.SecretRef("test-secret", "test", "username"),
 					a9stest.SecretRef("test-secret", "test", "password"),
 					xpv1.CredentialsSourceSecret),
@@ -241,6 +251,7 @@ func TestReconcile(t *testing.T) {
 			now: t0,
 			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
 					a9stest.SecretRef("wrong-secret", "test", "username"),
 					a9stest.SecretRef("wrong-secret", "test", "password"),
 					xpv1.CredentialsSourceSecret),
@@ -255,7 +266,57 @@ func TestReconcile(t *testing.T) {
 				a9stest.HealthLastStatus(false),
 				a9stest.HealthLastMessage(`Extracting credentials: cannot get credentials secret: secrets "wrong-secret" not found`),
 			),
-			expectedEvents: []string{`Warning CheckFailure Health check failed: Extracting credentials: cannot get credentials secret: secrets "wrong-secret" not found`},
+			checkAvailabilityReaction: successReaction(),
+			expectedEvents:            []string{`Warning CheckFailure Health check failed: Extracting credentials: cannot get credentials secret: secrets "wrong-secret" not found`},
+		},
+
+		"backupmanager service type routes to backup manager client": {
+			now: t0,
+			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
+				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeBackupManager,
+					a9stest.SecretRef("test-secret", "test", "username"),
+					a9stest.SecretRef("test-secret", "test", "password"),
+					xpv1.CredentialsSourceSecret),
+			),
+			secret: a9stest.Secret(a9stest.Name[corev1.Secret]("test-secret"),
+				a9stest.Namespace[corev1.Secret]("test"),
+				a9stest.WithKey("username", "test"),
+				a9stest.WithKey("password", "secure-test-password"),
+			),
+			expectedHealth: a9stest.NewProviderConfigHealth(
+				a9stest.HealthLastCheckTime(t0),
+				a9stest.HealthLastStatus(true),
+				a9stest.HealthLastMessage("Available"),
+			),
+			expectedCreds:      []string{"test", "secure-test-password"},
+			expectedEvents:     []string{"Normal CheckSuccess ProviderConfig is now healthy"},
+			expectedClientUsed: "backupmanager",
+		},
+
+		"servicebroker type routes to osb client": {
+			now: t0,
+			pc: a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
+				a9stest.WithProviderConfigSpec("test.com",
+					apisv1.ServiceTypeServiceBroker,
+					a9stest.SecretRef("test-secret", "test", "username"),
+					a9stest.SecretRef("test-secret", "test", "password"),
+					xpv1.CredentialsSourceSecret),
+			),
+			secret: a9stest.Secret(a9stest.Name[corev1.Secret]("test-secret"),
+				a9stest.Namespace[corev1.Secret]("test"),
+				a9stest.WithKey("username", "test"),
+				a9stest.WithKey("password", "secure-test-password"),
+			),
+			expectedHealth: a9stest.NewProviderConfigHealth(
+				a9stest.HealthLastCheckTime(t0),
+				a9stest.HealthLastStatus(true),
+				a9stest.HealthLastMessage("Available"),
+			),
+			checkAvailabilityReaction: successReaction(),
+			expectedCreds:             []string{"test", "secure-test-password"},
+			expectedEvents:            []string{"Normal CheckSuccess ProviderConfig is now healthy"},
+			expectedClientUsed:        "osb",
 		},
 	}
 
@@ -267,11 +328,14 @@ func TestReconcile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
+			fakeBM := fakebm.NewFakeClient(nil)
+
 			fakeOSB := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
 				CheckAvailabilityReaction: tc.checkAvailabilityReaction,
 			})
 
 			creds := []string{}
+			clientUsed := ""
 
 			eventRecorder := record.NewFakeRecorder(10)
 
@@ -286,9 +350,16 @@ func TestReconcile(t *testing.T) {
 
 				nowFn: func() time.Time { return tc.now },
 
-				newOsbServiceFn: func(username, password []byte, url string) (osbclient.Client, error) {
+				newOsbServiceFn: func(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (osbclient.Client, error) {
+					clientUsed = "osb"
 					creds = append(creds, string(username), string(password))
 					return fakeOSB, nil
+				},
+
+				newBackupManagerFn: func(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (bmclient.Client, error) {
+					clientUsed = "backupmanager"
+					creds = append(creds, string(username), string(password))
+					return fakeBM, nil
 				},
 
 				recorder: eventRecorder,
@@ -313,6 +384,10 @@ func TestReconcile(t *testing.T) {
 
 			if tc.expectedCreds != nil && !reflect.DeepEqual(creds, tc.expectedCreds) {
 				t.Fatalf("Expected credentials to be %+v, but got %+v", tc.expectedCreds, creds)
+			}
+
+			if tc.expectedClientUsed != "" && clientUsed != tc.expectedClientUsed {
+				t.Fatalf("Expected client %q to be used, but %q was used", tc.expectedClientUsed, clientUsed)
 			}
 
 			capturedEvents := []string{}

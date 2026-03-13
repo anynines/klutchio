@@ -102,6 +102,9 @@ func NewClient(config *ClientConfiguration) (Client, error) {
 	if config.Insecure {
 		transport.TLSClientConfig.InsecureSkipVerify = true
 	}
+	if config.OverrideServerName != "" {
+		transport.TLSClientConfig.ServerName = config.OverrideServerName
+	}
 	if len(config.CAData) != 0 {
 		if transport.TLSClientConfig.RootCAs == nil {
 			transport.TLSClientConfig.RootCAs = x509.NewCertPool()
