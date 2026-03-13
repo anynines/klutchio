@@ -22,24 +22,26 @@ instance_type=$(echo "$instance_name" | cut -d '-' -f 1)
 
 ports=$(
     cat <<EOF | grep "^${instance_type}" || ( echo "Unknown instance type: ${instance_type}" ; false )
-postgresql	8989	8988    8987
-keyvalue	9089	9088    9087
-search		9189	9188    9187
-mongodb		9389	9388    9387
-logme2		9489	9488    9487
-mariadb		9589	9588    9587
-rabbitmq	9689	9688    9687 # aka messaging
-prometheus	9789	9788    9787
+postgresql	8989	8988    8987    8986
+keyvalue	9089	9088    9087    9086
+search		9189	9188    9187    9186
+mongodb		9389	9388    9387    9386
+logme2		9489	9488    9487    9486
+mariadb		9589	9588    9587    9586
+rabbitmq	9689	9688    9687    9686 # aka messaging
+prometheus	9789	9788    9787    9786
 EOF
 )
 
 broker_port=$(echo "$ports" | awk '{print $2}')
 backup_port=$(echo "$ports" | awk '{print $3}')
-backup_port_https=$(echo "$ports" | awk '{print $4}')
+broker_port_https=$(echo "$ports" | awk '{print $4}')
+backup_port_https=$(echo "$ports" | awk '{print $5}')
+
 
 echo "Retrieving IPs..."
 
-instances=$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d ${instance_name} instances")
+instances=$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;bosh -d $instance_name instances")
 
 broker_service_ip=$(echo "$instances" | grep broker/ | awk '{print $4}')
 echo "Got broker IP: ${broker_service_ip}"
@@ -48,13 +50,14 @@ echo "Got backup IP: ${backup_service_ip}"
 
 echo ""
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo "  Exposing ${instance_name} on local ports ${broker_port} and ${backup_port} http and ${backup_port_https} https"
+echo "  Exposing ${instance_name} on local ports ${broker_port} (http) ${broker_port_https} (https) and ${backup_port} (http) ${backup_port_https} (https)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo ""
 ssh -N \
-    -L "${broker_port}:${broker_service_ip}:3000" \
-    -L "${backup_port}:${backup_service_ip}:3000" \
-    -L "${backup_port_https}:${backup_service_ip}:3001" \
+    -L "$broker_port:$broker_service_ip:3000" \
+    -L "$backup_port:$backup_service_ip:3000" \
+    -L "$broker_port_https:$broker_service_ip:3001" \
+    -L "$backup_port_https:$backup_service_ip:3001" \
     -o "ServerAliveInterval 30" \
     -o "ServerAliveCountMax 3" \
     aws-s1-inception

@@ -5,6 +5,8 @@
 ### Changed
 
 - Bumped a9s Data Service integration to 1.4.1: update supported services: add a9s-messaging 4
+- **breaking**: `providerconfigs.dataservices.anynines.com` now expects a field `spec.serviceType`, which can be either `servicebroker` or `backupmanager`.
+- Added TLS support for communication with service-broker in provider-anynines. Service-broker URL can now use https.
 
 ## [1.4.0] - 2025-12-18
 
