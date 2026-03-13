@@ -14,6 +14,7 @@ metadata:
   name: postgresql-service-broker
 spec:
   url: $PG_SERVICEBROKER_HOST # Connect to k8s service
+  serviceType: servicebroker
   providerCredentials:
     source: Secret
     username:
@@ -43,6 +44,7 @@ metadata:
   name: postgresql-backup-manager
 spec:
   url: $PG_BACKUP_MANAGER_HOST # Connect to k8s service
+  serviceType: backupmanager
   providerCredentials:
     source: Secret
     username:
