@@ -28,7 +28,15 @@ Before setting up the Klutch Control Plane, ensure that the required infrastruct
 - **Kubernetes Cluster:** A running Kubernetes cluster is required to deploy the Control Plane components.
   - **Node Requirements:** If you plan to host highly available, container-based data services using the a8s framework
     within the Control Plane Cluster, ensure the cluster consists of at least three nodes. Each node should have
-    specifications equivalent to or exceeding an AWS t3a.xlarge instance (4 vCPUs and 16 GiB memory).
+    specifications equivalent to or exceeding an AWS t3a.xlarge instance (4
+    vCPUs and 16 GiB memory).
+  - **Inbound Network Access:** [App Clusters](../../../glossary.md#app-cluster)
+  must reach the Control Plane API. This guide assumes a **Gateway API**
+  implementation (e.g., [Envoy Gateway](https://gateway.envoyproxy.io/)) and
+  [Cert-Manager](https://cert-manager.io/docs/installation/) are installed.
+  Although this guide relies on these specific components, Klutch supports
+  alternative exposure mechanisms such as other Gateway controllers and
+  Ingresses, as well as alternative certificate strategies.
 - [Helm](https://helm.sh/docs/helm/helm_install/): Version 3.2.0 or later is required for package management.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): The Kubernetes command-line tool must be installed and properly
 configured to interact with your cluster, and include Kustomize support (built-in from v1.14+)
@@ -220,7 +228,46 @@ kubectl get providerconfigs.kubernetes.crossplane.io
 The klutch-bind backend is a crucial component within the Klutch Control Plane Cluster, facilitating secure
 communication between the Control Plane and App Clusters. For more information, please refer to the [architecture page](../../../architecture/index.md).
 
-#### 3.1 Install a Certificate Manager (Prerequisite)
+:::info Deployment Considerations: Gateway Controller**
+
+This guide assumes the use of [Gateway
+API](https://gateway-api.sigs.k8s.io/) together with the [Envoy
+Gateway](https://gateway.envoyproxy.io/docs/tasks/quickstart/) controller.
+
+You can, however, also
+expose the backend via any other method, such as a Gateway managed by a different controller, or an
+Ingress managed by any Ingress controller.
+
+If you use a different Gateway controller,
+update `spec.controllerName` in `gateway.networking.k8s.io/v1/GatewayClass`
+accordingly.
+
+If you use an Ingress controller,
+you will need to provide an `Ingress` manifest with routing rules equivalent to
+the ones defined in the `Gateway` and `HTTPRoute` manifests included in this
+guide.
+:::
+
+:::info Deployment Considerations: Certificate Authority
+
+This setup assumes Let's Encrypt CA with the ACME protocol.
+
+If using a different CA,
+update `cert-manager.io/v1/Issuer` and `gateway.networking.k8s.io/v1/Gateway`.
+
+:::
+
+#### 3.1 Deploy Backend Exposure Mechanism
+
+Before deploying klutch-bind, ensure that a mechanism for exposing the backend
+to your App Cluster(s) is installed.
+The recommended path is to use [Gateway API](https://gateway-api.sigs.k8s.io/)
+resources managed by the [Envoy
+Gateway](https://gateway.envoyproxy.io/docs/tasks/quickstart/) controller. When
+installing the Envoy Gateway controller using the linked instructions, the necessary Gateway
+API CRDs will be installed alongside its other dependencies.
+
+#### 3.2 Install a Certificate Manager (Prerequisite)
 
 Before deploying klutch-bind, ensure that a certificate manager (such as cert-manager) is installed to handle TLS
 certificates. If it is not installed, deploy it using:
@@ -229,7 +276,62 @@ certificates. If it is not installed, deploy it using:
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
 ```
 
-#### 3.2 Modify APIServiceExportTemplates
+:::info cert-manager and Gateway API
+
+When using cert-manager together with [Gateway API](https://gateway-api.sigs.k8s.io/)
+resources, an additional step must be
+taken to enable the Gateway API compatibility mode within cert-manager
+
+* for versions prior to v1.15, this requires enabling the
+`ExperimentalGatewayAPISupport` feature gate
+
+  <details>
+    <summary><strong>When deploying cert-manager using the Helm chart</strong></summary>
+
+    ```bash
+    helm upgrade --install cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --set "extraArgs={--feature-gates=ExperimentalGatewayAPISupport=true}"
+    ```
+  </details>
+
+  <details>
+    <summary><strong>When deploying cert-manager using static manifests</strong></summary>
+
+    ```bash
+    kubectl patch deployment cert-manager -n cert-manager --type='json' \
+    -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--feature-gates=ExperimentalGatewayAPISupport=true"}]'
+    ```
+  </details>
+
+* starting with version v1.15, the feature gate is enabled by default, but an
+additional flag must be set to enable this feature
+
+  <details>
+    <summary><strong>When deploying cert-manager using the Helm chart</strong></summary>
+
+    ```bash
+    helm upgrade --install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+      --namespace cert-manager \
+      --set config.apiVersion="controller.config.cert-manager.io/v1alpha1" \
+      --set config.kind="ControllerConfiguration" \
+      --set config.enableGatewayAPI=true
+    ```
+  </details>
+
+  <details>
+    <summary><strong>When deploying cert-manager using static manifests</strong></summary>
+
+    ```bash
+    kubectl patch deployment cert-manager -n cert-manager --type='json' \
+      -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-",
+      "value":"--enable-gateway-api"}]'
+    ```
+  </details>
+
+:::
+
+#### 3.3 Modify APIServiceExportTemplates
 
 Navigate to the klutch-bind deployment directory:
 
@@ -267,13 +369,6 @@ Before applying the following YAML configuration, replace the placeholder values
 | \<oidc-issuer-client-secret> | OIDC client secret, available in your OIDC provider's settings. |
 | \<backend-host> | External address of the Klutch backend. Retrieve it from the LoadBalancer service using `kubectl get services -n bind` (value of `EXTERNAL-IP`). |
 | \<add-your-email-here> | Email for Certificate Authority registration (e.g., Let's Encrypt via ACME). Update the Issuer in the YAML if using a different CA. |
-
-**Deployment Considerations**
-
-- **Ingress Controller:** The instructions assume the use of Nginx Ingress Controller. If using a different controller,
-update `ingressClassName` in `networking.k8s.io/v1/Ingress` accordingly.
-- **Certificate Authority:** This setup assumes Let's Encrypt CA with the ACME protocol. If using a different CA,
-update `cert-manager.io/v1/Issuer` and `networking.k8s.io/v1/Ingress`.
 
 Now, create a file named `backend.yaml` using the template below. Replace the placeholders with the appropriate values.
 
@@ -425,30 +520,75 @@ subjects:
     name: anynines-backend
     namespace: bind
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: anynines-backend-envoy-gateway
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: anynines-backend-gateway
+  namespace: bind
+  annotations:
+    cert-manager.io/issuer: letsencrypt
+spec:
+  gatewayClassName: anynines-backend-envoy-gateway
+  listeners:
+  - name: http
+    hostname: "<backend-host>"
+    protocol: HTTP
+    port: 80
+  - name: https
+    hostname: "<backend-host>"
+    protocol: HTTPS
+    port: 443
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: anynines-backend-tls   # cert-manager will create/update this Secret
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: anynines-backend
   namespace: bind
-  annotations:
-    cert-manager.io/issuer: letsencrypt-prod # Adjust if not Let's Encrypt
 spec:
-  ingressClassName: nginx # Adjust if not Nginx Ingress Controller
-  tls:
-    - secretName: anynines-backend-tls
-      hosts:
-        - "<backend-host>"
+  hostnames:
+  - "<backend-host>"
+  parentRefs:
+  - name: anynines-backend-gateway
+    sectionName: https
   rules:
-    - host: "<backend-host>"
-      http:
-        paths:
-          - pathType: Prefix
-            path: "/"
-            backend:
-              service:
-                name: anynines-backend
-                port:
-                  number: 443
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: anynines-backend
+      port: 443
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: anynines-backend-redirect
+  namespace: bind
+spec:
+  hostnames:
+  - "<backend-host>"
+  parentRefs:
+  - name: anynines-backend-gateway
+    sectionName: http
+  rules:
+  - filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 308
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
@@ -459,15 +599,16 @@ spec:
   acme:
     # The ACME server URL
     server: https://acme-v02.api.letsencrypt.org/directory # Adjust if not Let's Encrypt
-    email: <add-your-email-here>
+    email: <Add-your-email-here>
     # Name of a secret used to store the ACME account private key
     privateKeySecretRef:
       name: letsencrypt # Adjust if not  Let's Encrypt
     # Enable the HTTP-01 challenge provider
     solvers:
       - http01:
-          ingress:
-            class: nginx # Adjust if not Nginx Ingress Controller
+          gatewayHTTPRoute:
+            parentRefs:
+            - name: anynines-backend-gateway
 ```
 
 </details>
