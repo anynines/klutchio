@@ -28,7 +28,15 @@ Before setting up the Klutch Control Plane, ensure that the required infrastruct
 - **Kubernetes Cluster:** A running Kubernetes cluster is required to deploy the Control Plane components.
   - **Node Requirements:** If you plan to host highly available, container-based data services using the a8s framework
     within the Control Plane Cluster, ensure the cluster consists of at least three nodes. Each node should have
-    specifications equivalent to or exceeding an AWS t3a.xlarge instance (4 vCPUs and 16 GiB memory).
+    specifications equivalent to or exceeding an AWS t3a.xlarge instance (4
+    vCPUs and 16 GiB memory).
+  - **Inbound Network Access:** [App Clusters](../../../glossary.md#app-cluster)
+  must reach the Control Plane API. This guide assumes a **Gateway API**
+  implementation (e.g., [Envoy Gateway](https://gateway.envoyproxy.io/)) and
+  [Cert-Manager](https://cert-manager.io/docs/installation/) are installed.
+  Although this guide relies on these specific components, Klutch supports
+  alternative exposure mechanisms such as other Gateway controllers and
+  Ingresses, as well as alternative certificate strategies.
 - [Helm](https://helm.sh/docs/helm/helm_install/): Version 3.2.0 or later is required for package management.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): The Kubernetes command-line tool must be installed and properly
 configured to interact with your cluster, and include Kustomize support (built-in from v1.14+)
