@@ -221,7 +221,46 @@ kubectl get providerconfigs.kubernetes.crossplane.io
 The klutch-bind backend is a crucial component within the Klutch Control Plane Cluster, facilitating secure
 communication between the Control Plane and App Clusters. For more information, please refer to the [architecture page](../../../architecture/index.md).
 
-#### 3.1 Install a Certificate Manager (Prerequisite)
+:::info Deployment Considerations: Gateway Controller**
+
+This guide assumes the use of [Gateway
+API](https://gateway-api.sigs.k8s.io/) together with the [Envoy
+Gateway](https://gateway.envoyproxy.io/docs/tasks/quickstart/) controller.
+
+You can, however, also
+expose the backend via any other method, such as a Gateway managed by a different controller, or an
+Ingress managed by any Ingress controller.
+
+If you use a different Gateway controller,
+update `spec.controllerName` in `gateway.networking.k8s.io/v1/GatewayClass`
+accordingly.
+
+If you use an Ingress controller,
+you will need to provide an `Ingress` manifest with routing rules equivalent to
+the ones defined in the `Gateway` and `HTTPRoute` manifests included in this
+guide.
+:::
+
+:::info Deployment Considerations: Certificate Authority
+
+This setup assumes Let's Encrypt CA with the ACME protocol.
+
+If using a different CA,
+update `cert-manager.io/v1/Issuer` and `gateway.networking.k8s.io/v1/Gateway`.
+
+:::
+
+#### 3.1 Deploy Backend Exposure Mechanism
+
+Before deploying klutch-bind, ensure that a mechanism for exposing the backend
+to your App Cluster(s) is installed.
+The recommended path is to use [Gateway API](https://gateway-api.sigs.k8s.io/)
+resources managed by the [Envoy
+Gateway](https://gateway.envoyproxy.io/docs/tasks/quickstart/) controller. When
+installing the Envoy Gateway controller using the linked instructions, the necessary Gateway
+API CRDs will be installed alongside its other dependencies.
+
+#### 3.2 Install a Certificate Manager (Prerequisite)
 
 Before deploying klutch-bind, ensure that a certificate manager (such as cert-manager) is installed to handle TLS
 certificates. If it is not installed, deploy it using:
@@ -230,10 +269,11 @@ certificates. If it is not installed, deploy it using:
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
 ```
 
-:::info cert-manager and GatewayAPI
+:::info cert-manager and Gateway API
 
-When using cert-manager together with GatewayAPI, an additional step must be
-taken to enable the GatewayAPI-compatibility mode within cert-manager
+When using cert-manager together with [Gateway API](https://gateway-api.sigs.k8s.io/)
+resources, an additional step must be
+taken to enable the Gateway API compatibility mode within cert-manager
 
 * for versions prior to v1.15, this requires enabling the
 `ExperimentalGatewayAPISupport` feature gate
@@ -284,7 +324,7 @@ additional flag must be set to enable this feature
 
 :::
 
-#### 3.2 Modify APIServiceExportTemplates
+#### 3.3 Modify APIServiceExportTemplates
 
 Navigate to the klutch-bind deployment directory:
 
@@ -322,13 +362,6 @@ Before applying the following YAML configuration, replace the placeholder values
 | \<oidc-issuer-client-secret> | OIDC client secret, available in your OIDC provider's settings. |
 | \<backend-host> | External address of the Klutch backend. Retrieve it from the LoadBalancer service using `kubectl get services -n bind` (value of `EXTERNAL-IP`). |
 | \<add-your-email-here> | Email for Certificate Authority registration (e.g., Let's Encrypt via ACME). Update the Issuer in the YAML if using a different CA. |
-
-**Deployment Considerations**
-
-- **Gateway Controller:** The instructions assume the use of Envoy Gateway Controller. If using a different controller,
-update `spec.controllerName` in `gateway.networking.k8s.io/v1/GatewayClass` accordingly.
-- **Certificate Authority:** This setup assumes Let's Encrypt CA with the ACME protocol. If using a different CA,
-update `cert-manager.io/v1/Issuer` and `gateway.networking.k8s.io/v1/Gateway`.
 
 Now, create a file named `backend.yaml` using the template below. Replace the placeholders with the appropriate values.
 

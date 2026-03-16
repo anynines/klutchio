@@ -97,7 +97,7 @@ spec:
 ```
 
 This service can be exposed externally using standard Kubernetes methods, such
-as LoadBalancer, Ingress or the GatewayAPI.
+as LoadBalancer, Ingress or the Gateway API.
 
 *Example: Accessing Health Endpoint via HTTP*
 
