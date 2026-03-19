@@ -53,6 +53,9 @@ const (
 // New returns a konnector controller.
 func New(
 	consumerConfig *rest.Config,
+	bindingConfig *rest.Config,
+	bindingRootNamespace string,
+	controlPlaneMode bool,
 	serviceBindingInformer bindinformers.APIServiceBindingInformer,
 	secretInformer coreinformers.SecretInformer,
 	namespaceInformer coreinformers.NamespaceInformer,
@@ -65,12 +68,15 @@ func New(
 	consumerConfig = rest.CopyConfig(consumerConfig)
 	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
 
-	bindClient, err := bindclient.NewForConfig(consumerConfig)
+	bindingConfig = rest.CopyConfig(bindingConfig)
+	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
+
+	bindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	servicebindingCtrl, err := servicebinding.NewController(consumerConfig, serviceBindingInformer, secretInformer)
+	servicebindingCtrl, err := servicebinding.NewController(bindingConfig, serviceBindingInformer, secretInformer)
 	if err != nil {
 		return nil, err
 	}
@@ -93,18 +99,25 @@ func New(
 		ServiceBindingCtrl: servicebindingCtrl,
 
 		reconciler: reconciler{
-			controllers: map[string]*controllerContext{},
+			controllers:          map[string]*controllerContext{},
+			controlPlaneMode:     controlPlaneMode,
+			bindingRootNamespace: bindingRootNamespace,
+			bindingConfig:        bindingConfig,
 			getSecret: func(ns, name string) (*corev1.Secret, error) {
 				return secretInformer.Lister().Secrets(ns).Get(name)
 			},
-			newClusterController: func(consumerSecretRefKey, providerNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
+			newClusterController: func(consumerSecretRefKey, bindingRootNamespace, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
 				providerConfig = rest.CopyConfig(providerConfig)
 				providerConfig = rest.AddUserAgent(providerConfig, controllerName)
 
 				return cluster.NewController(
 					consumerSecretRefKey,
+					bindingRootNamespace,
 					providerNamespace,
+					providerSecretNamespace,
+					controlPlaneMode,
 					reconcileServiceBinding,
+					bindingConfig,
 					consumerConfig,
 					providerConfig,
 					namespaceDynamicInformer,

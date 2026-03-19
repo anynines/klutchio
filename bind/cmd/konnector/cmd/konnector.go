@@ -81,7 +81,7 @@ func New(ctx context.Context) *cobra.Command {
 			prepared.OptionallyStartInformers(ctx)
 
 			logger.Info("trying to acquire the lock")
-			lock := NewLock(config.KubeClient, options.LeaseLockNamespace, options.LeaseLockName, options.LeaseLockIdentity)
+			lock := NewLock(config.BindingClusterKubeClient, options.LeaseLockNamespace, options.LeaseLockName, options.LeaseLockIdentity)
 
 			le := makeLeaderElectorOrDie(ctx, lock, options.LeaseLockIdentity, func(ctx context.Context) {
 				logger.Info("starting konnector controller")

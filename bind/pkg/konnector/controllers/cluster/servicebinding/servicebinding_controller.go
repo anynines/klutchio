@@ -51,7 +51,7 @@ const (
 func NewController(
 	consumerSecretRefKey, providerNamespace string,
 	reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool,
-	consumerConfig, providerConfig *rest.Config,
+	bindingConfig, consumerConfig, providerConfig *rest.Config,
 	serviceBindingInformer dynamic.Informer[bindlisters.APIServiceBindingLister],
 	serviceExportInformer bindinformers.APIServiceExportInformer,
 	crdInformer dynamic.Informer[apiextensionslisters.CustomResourceDefinitionLister],
@@ -63,10 +63,13 @@ func NewController(
 	providerConfig = rest.CopyConfig(providerConfig)
 	providerConfig = rest.AddUserAgent(providerConfig, controllerName)
 
+	bindingConfig = rest.CopyConfig(bindingConfig)
+	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
+
 	consumerConfig = rest.CopyConfig(consumerConfig)
 	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
 
-	consumerBindClient, err := bindclient.NewForConfig(consumerConfig)
+	bindingBindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +122,7 @@ func NewController(
 
 		commit: committer.NewCommitter[*bindv1alpha1.APIServiceBinding, *bindv1alpha1.APIServiceBindingSpec, *bindv1alpha1.APIServiceBindingStatus](
 			func(ns string) committer.Patcher[*bindv1alpha1.APIServiceBinding] {
-				return consumerBindClient.KlutchBindV1alpha1().APIServiceBindings()
+				return bindingBindClient.KlutchBindV1alpha1().APIServiceBindings()
 			},
 		),
 	}
