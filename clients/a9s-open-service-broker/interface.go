@@ -85,6 +85,9 @@ type ClientConfiguration struct {
 	// CAData holds PEM-encoded bytes (typically read from a root certificates bundle).
 	// This CA certificate will be added to any specified in TLSConfig.RootCAs.
 	CAData []byte
+	// OverrideServerName overrides the server name used for certificate verification.
+	// This is useful when the certificate is issued for a different name than the URL hostname.
+	OverrideServerName string
 	// Verbose is whether the client will log to klog.
 	Verbose bool
 }

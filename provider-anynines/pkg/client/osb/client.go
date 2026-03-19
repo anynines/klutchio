@@ -27,13 +27,30 @@ const (
 	InstanceNotFound = "InstanceNotFound"
 )
 
-// NewSbService is meant to return a "client" to connext to the external resource
-// API.
-// TODO: Finish implementation of this function
+// NewOsbService is the default OSB service factory that creates a client
+// with the provided credentials. It maintains backward compatibility with the existing API.
+// username: username for basic auth
+// password: password for basic auth
+// url: URL of the OSB broker
+// For advanced TLS configuration, use NewOsbServiceWithTLS.
 func NewOsbService(username, password []byte, url string) (osbclient.Client, error) {
+	return NewOsbServiceWithTLS(username, password, url, false, nil, "")
+}
+
+// NewOsbServiceWithTLS creates an OSB client with custom TLS configuration.
+// username: username for basic auth
+// password: password for basic auth
+// url: URL of the OSB broker
+// insecureSkipVerify: if true, skips TLS certificate verification (useful for self-signed certs in development)
+// caBundle: PEM-encoded CA certificate(s) for TLS verification
+// overrideServerName: if set, overrides the server name used for certificate verification
+func NewOsbServiceWithTLS(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (osbclient.Client, error) {
 	cfg := osbclient.DefaultClientConfiguration()
 	cfg.Name = "OSBClient"
 	cfg.URL = url
+	cfg.Insecure = insecureSkipVerify
+	cfg.OverrideServerName = overrideServerName
+	cfg.CAData = caBundle
 	cfg.AuthConfig = &osbclient.AuthConfig{
 		BasicAuthConfig: &osbclient.BasicAuthConfig{
 			Username: strings.TrimSpace(string(username)),

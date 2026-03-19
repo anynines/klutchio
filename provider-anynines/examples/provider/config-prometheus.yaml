@@ -14,6 +14,8 @@ metadata:
   name: prometheus-service-broker
 spec:
   url: "http://dockerhost:9789" # Connect to k8s service
+  serviceType: servicebroker
+  healthCheckEndpoint: "/osb_ext/v1/healthy"
   providerCredentials:
     source: Secret
     username:
@@ -43,6 +45,8 @@ metadata:
   name: prometheus-backup-manager
 spec:
   url: "http://dockerhost:9788" # Connect to k8s service
+  serviceType: backupmanager
+  healthCheckEndpoint: "/v2/healthy" # Use "/instances" for a9s Backup Managers below v68
   providerCredentials:
     source: Secret
     username:

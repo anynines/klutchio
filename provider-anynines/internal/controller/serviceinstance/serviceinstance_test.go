@@ -1606,6 +1606,7 @@ func TestDelete(t *testing.T) {
 func TestConnect(t *testing.T) {
 	pc := a9stest.ProviderConfig(a9stest.Name[apisv1.ProviderConfig]("test-provider"),
 		a9stest.WithProviderConfigSpec("test.com",
+			apisv1.ServiceTypeServiceBroker,
 			a9stest.SecretRef("test-secret",
 				"test",
 				"username"),
@@ -1633,7 +1634,7 @@ func TestConnect(t *testing.T) {
 			kube: fakeK8s,
 			usage: resource.NewProviderConfigUsageTracker(fakeK8s,
 				&apisv1.ProviderConfigUsage{}),
-			newServiceFn: func(username, password []byte, url string) (osbclient.Client, error) {
+			newServiceFn: func(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (osbclient.Client, error) {
 				gotPassword = password
 				gotUsername = username
 				gotURL = url

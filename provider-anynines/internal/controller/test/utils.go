@@ -46,12 +46,14 @@ func ProviderConfig(opts ...func(*apisv1.ProviderConfig)) *apisv1.ProviderConfig
 }
 
 func WithProviderConfigSpec(url string,
+	serviceType apisv1.ServiceType,
 	username xpv1.CommonCredentialSelectors,
 	password xpv1.CommonCredentialSelectors,
 	source xpv1.CredentialsSource,
 ) func(*apisv1.ProviderConfig) {
 	pcs := apisv1.ProviderConfigSpec{
-		Url: url,
+		Url:         url,
+		ServiceType: serviceType,
 		ProviderCredentials: apisv1.ProviderCredentials{
 			Source:   source,
 			Username: username,

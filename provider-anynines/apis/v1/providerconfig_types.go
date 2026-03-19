@@ -25,9 +25,22 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
+// ServiceType identifies the type of backend service a ProviderConfig connects to.
+type ServiceType string
+
+const (
+	// ServiceTypeServiceBroker indicates an Open Service Broker API backend.
+	ServiceTypeServiceBroker ServiceType = "servicebroker"
+	// ServiceTypeBackupManager indicates a backup manager backend.
+	ServiceTypeBackupManager ServiceType = "backupmanager"
+)
+
 // A ProviderConfigSpec defines the desired state of a ProviderConfig.
 type ProviderConfigSpec struct {
 	Url string `json:"url"`
+	// ServiceType identifies the type of backend service.
+	// +kubebuilder:validation:Enum=servicebroker;backupmanager
+	ServiceType ServiceType `json:"serviceType"`
 	// Endpoint to use for broker health checks. If not set, the endpoint /instances is used.
 	// +kubebuilder:validation:Optional
 	HealthCheckEndpoint string `json:"healthCheckEndpoint,omitempty"`
