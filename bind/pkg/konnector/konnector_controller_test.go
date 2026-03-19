@@ -85,6 +85,8 @@ func newController(t *testing.T, consumerConfig, bindingConfig *rest.Config) *Co
 	c, err := New(
 		consumerConfig,
 		bindingConfig,
+		"",
+		false,
 		bindInformers.KlutchBind().V1alpha1().APIServiceBindings(),
 		bindingKubeInformers.Core().V1().Secrets(),
 		appKubeInformers.Core().V1().Namespaces(),

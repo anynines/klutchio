@@ -1,0 +1,137 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.10.0
+  creationTimestamp: null
+  name: appclusterbindings.klutch.anynines.com
+spec:
+  group: klutch.anynines.com
+  names:
+    categories:
+    - kube-bindings
+    kind: AppClusterBinding
+    listKind: AppClusterBindingList
+    plural: appclusterbindings
+    singular: appclusterbinding
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AppClusterBinding represents a binding for an app cluster on the control plane.
+        properties:
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: string
+          kind:
+            description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: spec represents the desired state of the AppClusterBinding.
+            properties:
+              apiExports:
+                description: apiExports is a list of APIServiceExport resource names to bind.
+                items:
+                  minLength: 1
+                  type: string
+                type: array
+              kubeconfigSecretRef:
+                description: kubeconfigSecretRef points to the app cluster kubeconfig.
+                properties:
+                  key:
+                    description: The key of the secret to select from.  Must be "kubeconfig".
+                    enum:
+                    - kubeconfig
+                    type: string
+                  name:
+                    description: Name of the referent.
+                    minLength: 1
+                    type: string
+                  namespace:
+                    description: Namespace of the referent.
+                    minLength: 1
+                    type: string
+                required:
+                - key
+                - name
+                - namespace
+                type: object
+                x-kubernetes-validations:
+                - message: kubeconfigSecretRef is immutable
+                  rule: self == oldSelf
+              konnector:
+                description: konnector contains deployment settings for the konnector.
+                properties:
+                  deploy:
+                    description: deploy enables konnector deployment for this binding.
+                    type: boolean
+                  overrides:
+                    description: overrides allow changing the konnector deployment settings.
+                    properties:
+                      containerSettings:
+                        description: containerSettings allow modifying the container spec for the konnector.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      image:
+                        description: image overrides the container image for the konnector.
+                        type: string
+                    type: object
+                type: object
+            required:
+            - kubeconfigSecretRef
+            type: object
+          status:
+            description: status contains reconciliation information.
+            properties:
+              conditions:
+                description: conditions is a list of conditions that apply to the AppClusterBinding.
+                items:
+                  description: Condition defines an observation of a object operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status to another. This should be when the underlying condition changed. If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about the transition. This field may be empty.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition in CamelCase. The specific API may choose whether or not this field is considered a guaranteed API. This field may not be empty.
+                      type: string
+                    severity:
+                      description: Severity provides an explicit classification of Reason code, so the users or machines can immediately understand the current situation and act accordingly. The Severity field MUST be set only when Status=False.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase. Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+        x-kubernetes-validations:
+        - message: name is immutable
+          rule: self.metadata.name == oldSelf.metadata.name
+    served: true
+    storage: true
+    subresources:
+      status: {}

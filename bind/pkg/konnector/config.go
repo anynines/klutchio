@@ -35,7 +35,8 @@ import (
 )
 
 type Config struct {
-	ControlPlaneMode bool
+	ControlPlaneMode      bool
+	BindingRootNamespace  string
 
 	// App Cluster: where resources are synced to (the "consumer")
 	AppClusterConfig                 *rest.Config
@@ -104,7 +105,8 @@ func (c *Config) initBindingCluster(cfg *rest.Config) error {
 
 func NewConfig(options *options.CompletedOptions) (*Config, error) {
 	config := &Config{
-		ControlPlaneMode: options.ControlPlaneMode,
+		ControlPlaneMode:     options.ControlPlaneMode,
+		BindingRootNamespace: options.BindingRootNamespace,
 	}
 
 	if options.ControlPlaneMode {

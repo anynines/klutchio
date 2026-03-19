@@ -58,6 +58,127 @@ However, it can also be advantageous to run the konnector on the control plane i
 2. The konnector must have RBAC permissions to read this secret
 3. APIServiceBinding objects should be created in the control plane cluster
 
+### App Cluster Requirements
+
+The app cluster must allow the konnector identity to:
+
+- Create/update CRDs used by bindings (bootstrap step)
+- List/watch namespaces
+- Create/update/list/watch resources for bound services in target namespaces
+
+At minimum, the app cluster role needs:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konnector-app-cluster
+rules:
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get","list","watch","create","update","patch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get","list","watch"]
+```
+
+You may need to extend this role based on the APIs you bind (for example, to
+create/read/update bound service CRs).
+
+In default mode, the konnector typically runs with cluster-admin in the app cluster.
+Control plane mode aims to scope the app cluster permissions to the minimum required.
+
+### Control Plane Requirements
+
+The control plane service account that runs the konnector must be able to:
+
+- Read the app cluster kubeconfig secret
+- List/watch APIServiceBindings and provider kubeconfig secrets
+
+Example minimal RBAC (control plane cluster):
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: konnector-control-plane
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get","list","watch"]
+  - apiGroups: ["klutch.anynines.com"]
+    resources: ["apiservicebindings"]
+    verbs: ["get","list","watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: konnector-control-plane
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konnector-control-plane
+subjects:
+  - kind: ServiceAccount
+    name: konnector
+    namespace: default
+```
+
+### Creating a Kubeconfig for Control Plane Mode
+
+Kubeconfigs that rely on cloud auth exec plugins (for example, `aws eks get-token`)
+do not work inside the control plane cluster. Use a service account token instead.
+
+Example (app cluster):
+
+```bash
+# Create a dedicated service account
+kubectl --kubeconfig=/tmp/app-cluster-kubeconfig create ns konnector-system
+kubectl --kubeconfig=/tmp/app-cluster-kubeconfig create sa konnector -n konnector-system
+
+# Bind the ClusterRole from the previous section
+kubectl --kubeconfig=/tmp/app-cluster-kubeconfig apply -f - <<'EOF'
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: konnector-app-cluster
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: konnector-app-cluster
+subjects:
+  - kind: ServiceAccount
+    name: konnector
+    namespace: konnector-system
+EOF
+
+# Create a kubeconfig that embeds the SA token
+TOKEN=$(kubectl --kubeconfig=/tmp/app-cluster-kubeconfig create token konnector -n konnector-system)
+SERVER=$(kubectl --kubeconfig=/tmp/app-cluster-kubeconfig config view --raw -o jsonpath='{.clusters[0].cluster.server}')
+CA=$(kubectl --kubeconfig=/tmp/app-cluster-kubeconfig config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+
+cat <<EOF >/tmp/app-cluster-kubeconfig-sa
+apiVersion: v1
+kind: Config
+clusters:
+- name: app
+  cluster:
+    server: ${SERVER}
+    certificate-authority-data: ${CA}
+contexts:
+- name: app
+  context:
+    cluster: app
+    user: konnector
+    namespace: default
+current-context: app
+users:
+- name: konnector
+  user:
+    token: ${TOKEN}
+EOF
+```
+
 ### Command Line Flags
 
 Enable control plane mode with the following flags:
@@ -195,6 +316,13 @@ When control plane mode is enabled:
 - Network policies should restrict access to the control plane appropriately
 
 ## Troubleshooting
+
+### Quick Checklist
+
+- The app cluster kubeconfig secret exists and uses a service account token (no exec plugins)
+- The konnector service account can `get` the kubeconfig secret in the control plane
+- The app cluster service account can `get/list/watch` CRDs and namespaces
+- The konnector deployment args reference the correct secret name/namespace/key
 
 ### Konnector fails to start with "failed to fetch app cluster kubeconfig secret"
 

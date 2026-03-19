@@ -43,6 +43,8 @@ func NewServer(config *Config) (*Server, error) {
 	k, err := New(
 		consumerConfig,
 		config.BindingClusterConfig,
+		config.BindingRootNamespace,
+		config.ControlPlaneMode,
 		config.BindingClusterBindInformers.KlutchBind().V1alpha1().APIServiceBindings(),
 		config.BindingClusterKubeInformers.Core().V1().Secrets(),
 		namespaceInformer,
@@ -82,6 +84,15 @@ type Prepared struct {
 }
 
 func (s *Server) PrepareRun(ctx context.Context) (Prepared, error) {
+	// If app and binding clusters differ, CRD bootstrap happens in the app cluster.
+	if s.Config.ControlPlaneMode || (s.Config.AppClusterConfig != nil && s.Config.BindingClusterConfig != nil && s.Config.AppClusterConfig.Host != s.Config.BindingClusterConfig.Host) {
+		return Prepared{
+			prepared: &prepared{
+				Server: *s,
+			},
+		}, nil
+	}
+
 	// Install/upgrade the APIServiceBinding CRD in the binding cluster
 	// (where APIServiceBinding CRs are stored)
 	if err := crd.Create(ctx,
@@ -102,15 +113,15 @@ func (s *Prepared) OptionallyStartInformers(ctx context.Context) {
 
 	// Start informers
 	logger.Info("starting informers")
-	
+
 	// App cluster informers (always present)
 	s.Config.AppClusterKubeInformers.Start(ctx.Done())
 	s.Config.AppClusterApiextensionsInformers.Start(ctx.Done())
-	
+
 	// Binding cluster informers (APIServiceBindings and secrets)
 	s.Config.BindingClusterBindInformers.Start(ctx.Done())
 	s.Config.BindingClusterKubeInformers.Start(ctx.Done())
-	
+
 	// Wait for sync
 	appClusterKubeSynced := s.Config.AppClusterKubeInformers.WaitForCacheSync(ctx.Done())
 	appClusterApiextensionsSynced := s.Config.AppClusterApiextensionsInformers.WaitForCacheSync(ctx.Done())

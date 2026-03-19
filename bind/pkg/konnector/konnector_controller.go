@@ -54,6 +54,8 @@ const (
 func New(
 	consumerConfig *rest.Config,
 	bindingConfig *rest.Config,
+	bindingRootNamespace string,
+	controlPlaneMode bool,
 	serviceBindingInformer bindinformers.APIServiceBindingInformer,
 	secretInformer coreinformers.SecretInformer,
 	namespaceInformer coreinformers.NamespaceInformer,
@@ -97,18 +99,24 @@ func New(
 		ServiceBindingCtrl: servicebindingCtrl,
 
 		reconciler: reconciler{
-			controllers: map[string]*controllerContext{},
+			controllers:          map[string]*controllerContext{},
+			controlPlaneMode:     controlPlaneMode,
+			bindingRootNamespace: bindingRootNamespace,
+			bindingConfig:        bindingConfig,
 			getSecret: func(ns, name string) (*corev1.Secret, error) {
 				return secretInformer.Lister().Secrets(ns).Get(name)
 			},
-			newClusterController: func(consumerSecretRefKey, providerNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
+			newClusterController: func(consumerSecretRefKey, bindingRootNamespace, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
 				providerConfig = rest.CopyConfig(providerConfig)
 				providerConfig = rest.AddUserAgent(providerConfig, controllerName)
 
 				return cluster.NewController(
 					consumerSecretRefKey,
+					bindingRootNamespace,
 					providerNamespace,
+					providerSecretNamespace,
 					reconcileServiceBinding,
+					bindingConfig,
 					consumerConfig,
 					providerConfig,
 					namespaceDynamicInformer,

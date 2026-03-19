@@ -2,7 +2,8 @@ kind: APIServiceExportTemplate
 apiVersion: example-backend.klutch.anynines.com/v1alpha1
 metadata:
   name: postgresqlinstances
-  namespace: crossplane-system
+  # namespace: crossplane-system
+  namespace: default
 spec:
   APIServiceSelector:
     resource: postgresqlinstances
