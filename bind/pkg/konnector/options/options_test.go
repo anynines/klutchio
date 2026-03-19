@@ -49,6 +49,7 @@ func TestValidate(t *testing.T) {
 						AppClusterKubeconfigSecretName:      "my-app-cluster",
 						AppClusterKubeconfigSecretNamespace: "klutch-system",
 						AppClusterKubeconfigSecretKey:       "kubeconfig",
+						BindingRootNamespace:                "klutch-system",
 					},
 				},
 			},
@@ -81,6 +82,21 @@ func TestValidate(t *testing.T) {
 			},
 			expectError: true,
 			errorMsg:    "--app-cluster-kubeconfig-secret-namespace is required when --control-plane-mode is enabled",
+		},
+		{
+			name: "control-plane-mode-missing-binding-root-namespace",
+			options: &CompletedOptions{
+				completedOptions: &completedOptions{
+					ExtraOptions: ExtraOptions{
+						ControlPlaneMode:                    true,
+						AppClusterKubeconfigSecretName:      "my-app-cluster",
+						AppClusterKubeconfigSecretNamespace: "klutch-system",
+						AppClusterKubeconfigSecretKey:       "kubeconfig",
+					},
+				},
+			},
+			expectError: true,
+			errorMsg:    "--binding-root-namespace is required when --control-plane-mode is enabled",
 		},
 		{
 			name: "control-plane-mode-empty-key",
@@ -148,6 +164,7 @@ func TestComplete(t *testing.T) {
 					AppClusterKubeconfigSecretName:      "test-secret",
 					AppClusterKubeconfigSecretNamespace: "test-ns",
 					AppClusterKubeconfigSecretKey:       "test-key",
+					BindingRootNamespace:                "test-root-ns",
 				},
 			},
 			validate: func(t *testing.T, completed *CompletedOptions) {
@@ -155,6 +172,7 @@ func TestComplete(t *testing.T) {
 				require.Equal(t, "test-secret", completed.AppClusterKubeconfigSecretName)
 				require.Equal(t, "test-ns", completed.AppClusterKubeconfigSecretNamespace)
 				require.Equal(t, "test-key", completed.AppClusterKubeconfigSecretKey)
+				require.Equal(t, "test-root-ns", completed.BindingRootNamespace)
 			},
 		},
 	}
