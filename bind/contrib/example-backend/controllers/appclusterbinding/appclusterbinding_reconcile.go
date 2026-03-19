@@ -1055,7 +1055,7 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBinding) *appsv1.Deployment {
 	replicas := int32(1)
 	//TODO: change source of the image to a stable location - for now we hardcode a specific digest to ensure immutability
-	image := "ghcr.io/lhaendler/konnector-1c3773bcc98f06a77d017340f46f82e4@sha256:854199289848019e1bac5d44a61002964b7ba3056166339d663085135f66196a"
+	image := "ghcr.io/lhaendler/konnector-1c3773bcc98f06a77d017340f46f82e4@sha256:7fa40d94dcc58fdee883ada75db6ae53844edc92ec0d90d5b515430b45c884f8"
 
 	if binding.Spec.Konnector.Overrides != nil && binding.Spec.Konnector.Overrides.Image != "" {
 		image = binding.Spec.Konnector.Overrides.Image
