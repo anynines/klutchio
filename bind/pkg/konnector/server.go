@@ -36,13 +36,17 @@ type Server struct {
 }
 
 func NewServer(config *Config) (*Server, error) {
-	// construct controllers
+	consumerConfig := config.AppClusterConfig
+	namespaceInformer := config.AppClusterKubeInformers.Core().V1().Namespaces()
+	crdInformer := config.AppClusterApiextensionsInformers.Apiextensions().V1().CustomResourceDefinitions()
+
 	k, err := New(
-		config.ClientConfig,
-		config.BindInformers.KlutchBind().V1alpha1().APIServiceBindings(),
-		config.KubeInformers.Core().V1().Secrets(), // TODO(sttts): watch individual secrets for security and memory consumption
-		config.KubeInformers.Core().V1().Namespaces(),
-		config.ApiextensionsInformers.Apiextensions().V1().CustomResourceDefinitions(),
+		consumerConfig,
+		config.BindingClusterConfig,
+		config.BindingClusterBindInformers.KlutchBind().V1alpha1().APIServiceBindings(),
+		config.BindingClusterKubeInformers.Core().V1().Secrets(),
+		namespaceInformer,
+		crdInformer,
 	)
 	if err != nil {
 		return nil, err
@@ -78,9 +82,10 @@ type Prepared struct {
 }
 
 func (s *Server) PrepareRun(ctx context.Context) (Prepared, error) {
-	// install/upgrade CRDs
+	// Install/upgrade the APIServiceBinding CRD in the binding cluster
+	// (where APIServiceBinding CRs are stored)
 	if err := crd.Create(ctx,
-		s.Config.ApiextensionsClient.ApiextensionsV1().CustomResourceDefinitions(),
+		s.Config.BindingClusterApiextensionsClient.ApiextensionsV1().CustomResourceDefinitions(),
 		metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "apiservicebindings"},
 	); err != nil {
 		return Prepared{}, err
@@ -95,19 +100,28 @@ func (s *Server) PrepareRun(ctx context.Context) (Prepared, error) {
 func (s *Prepared) OptionallyStartInformers(ctx context.Context) {
 	logger := klog.FromContext(ctx)
 
-	// start informer factories
+	// Start informers
 	logger.Info("starting informers")
-	s.Config.KubeInformers.Start(ctx.Done())
-	s.Config.BindInformers.Start(ctx.Done())
-	s.Config.ApiextensionsInformers.Start(ctx.Done())
-	kubeSynced := s.Config.KubeInformers.WaitForCacheSync(ctx.Done())
-	kubeBindSynced := s.Config.BindInformers.WaitForCacheSync(ctx.Done())
-	apiextensionsSynced := s.Config.ApiextensionsInformers.WaitForCacheSync(ctx.Done())
+	
+	// App cluster informers (always present)
+	s.Config.AppClusterKubeInformers.Start(ctx.Done())
+	s.Config.AppClusterApiextensionsInformers.Start(ctx.Done())
+	
+	// Binding cluster informers (APIServiceBindings and secrets)
+	s.Config.BindingClusterBindInformers.Start(ctx.Done())
+	s.Config.BindingClusterKubeInformers.Start(ctx.Done())
+	
+	// Wait for sync
+	appClusterKubeSynced := s.Config.AppClusterKubeInformers.WaitForCacheSync(ctx.Done())
+	appClusterApiextensionsSynced := s.Config.AppClusterApiextensionsInformers.WaitForCacheSync(ctx.Done())
+	bindingClusterBindSynced := s.Config.BindingClusterBindInformers.WaitForCacheSync(ctx.Done())
+	bindingClusterKubeSynced := s.Config.BindingClusterKubeInformers.WaitForCacheSync(ctx.Done())
 
-	logger.Info("local informers are synced",
-		"kubeSynced", fmt.Sprintf("%v", kubeSynced),
-		"kubeBindSynced", fmt.Sprintf("%v", kubeBindSynced),
-		"apiextensionsSynced", fmt.Sprintf("%v", apiextensionsSynced),
+	logger.Info("informers are synced",
+		"appClusterKubeSynced", fmt.Sprintf("%v", appClusterKubeSynced),
+		"appClusterApiextensionsSynced", fmt.Sprintf("%v", appClusterApiextensionsSynced),
+		"bindingClusterBindSynced", fmt.Sprintf("%v", bindingClusterBindSynced),
+		"bindingClusterKubeSynced", fmt.Sprintf("%v", bindingClusterKubeSynced),
 	)
 }
 

@@ -53,6 +53,7 @@ const (
 // New returns a konnector controller.
 func New(
 	consumerConfig *rest.Config,
+	bindingConfig *rest.Config,
 	serviceBindingInformer bindinformers.APIServiceBindingInformer,
 	secretInformer coreinformers.SecretInformer,
 	namespaceInformer coreinformers.NamespaceInformer,
@@ -65,12 +66,15 @@ func New(
 	consumerConfig = rest.CopyConfig(consumerConfig)
 	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
 
-	bindClient, err := bindclient.NewForConfig(consumerConfig)
+	bindingConfig = rest.CopyConfig(bindingConfig)
+	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
+
+	bindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	servicebindingCtrl, err := servicebinding.NewController(consumerConfig, serviceBindingInformer, secretInformer)
+	servicebindingCtrl, err := servicebinding.NewController(bindingConfig, serviceBindingInformer, secretInformer)
 	if err != nil {
 		return nil, err
 	}
