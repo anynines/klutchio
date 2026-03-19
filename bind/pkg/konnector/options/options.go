@@ -36,6 +36,11 @@ type Options struct {
 type ExtraOptions struct {
 	KubeConfigPath string
 
+	ControlPlaneMode                    bool
+	AppClusterKubeconfigSecretName      string
+	AppClusterKubeconfigSecretNamespace string
+	AppClusterKubeconfigSecretKey       string
+
 	LeaseLockName      string
 	LeaseLockNamespace string
 	LeaseLockIdentity  string
@@ -77,6 +82,10 @@ func (options *Options) AddFlags(fs *pflag.FlagSet) {
 	logsv1.AddFlags(options.Logs, fs)
 
 	fs.StringVar(&options.KubeConfigPath, "kubeconfig", options.KubeConfigPath, "Kubeconfig file for the local cluster.")
+	fs.BoolVar(&options.ControlPlaneMode, "control-plane-mode", options.ControlPlaneMode, "Run konnector on control plane instead of app cluster. When enabled, the konnector uses the control plane service account and fetches the app cluster kubeconfig from a secret.")
+	fs.StringVar(&options.AppClusterKubeconfigSecretName, "app-cluster-kubeconfig-secret-name", options.AppClusterKubeconfigSecretName, "Name of secret containing app cluster kubeconfig (required when --control-plane-mode is enabled)")
+	fs.StringVar(&options.AppClusterKubeconfigSecretNamespace, "app-cluster-kubeconfig-secret-namespace", options.AppClusterKubeconfigSecretNamespace, "Namespace of secret containing app cluster kubeconfig (required when --control-plane-mode is enabled)")
+	fs.StringVar(&options.AppClusterKubeconfigSecretKey, "app-cluster-kubeconfig-secret-key", "kubeconfig", "Key in secret containing app cluster kubeconfig (default: kubeconfig)")
 	fs.StringVar(&options.LeaseLockName, "lease-name", options.LeaseLockName, "Name of lease lock")
 	fs.StringVar(&options.LeaseLockNamespace, "lease-namespace", options.LeaseLockNamespace, "Name of lease lock namespace")
 }
@@ -95,5 +104,16 @@ func (options *Options) Complete() (*CompletedOptions, error) {
 }
 
 func (options *CompletedOptions) Validate() error {
+	if options.ControlPlaneMode {
+		if options.AppClusterKubeconfigSecretName == "" {
+			return fmt.Errorf("--app-cluster-kubeconfig-secret-name is required when --control-plane-mode is enabled")
+		}
+		if options.AppClusterKubeconfigSecretNamespace == "" {
+			return fmt.Errorf("--app-cluster-kubeconfig-secret-namespace is required when --control-plane-mode is enabled")
+		}
+		if options.AppClusterKubeconfigSecretKey == "" {
+			return fmt.Errorf("--app-cluster-kubeconfig-secret-key cannot be empty")
+		}
+	}
 	return nil
 }
