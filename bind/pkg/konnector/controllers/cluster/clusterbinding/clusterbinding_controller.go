@@ -54,9 +54,11 @@ const (
 // NewController returns a new controller for ClusterBindings.
 func NewController(
 	consumerSecretRefKey string,
+	bindingRootNamespace string,
 	providerNamespace string,
+	providerSecretNamespace string,
 	heartbeatInterval time.Duration,
-	consumerConfig, providerConfig *rest.Config,
+	bindingConfig, consumerConfig, providerConfig *rest.Config,
 	clusterBindingInformer bindinformers.ClusterBindingInformer,
 	serviceBindingInformer dynamic.Informer[bindlisters.APIServiceBindingLister],
 	serviceExportInformer bindinformers.APIServiceExportInformer,
@@ -69,6 +71,9 @@ func NewController(
 	providerConfig = rest.CopyConfig(providerConfig)
 	providerConfig = rest.AddUserAgent(providerConfig, controllerName)
 
+	bindingConfig = rest.CopyConfig(bindingConfig)
+	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
+
 	consumerConfig = rest.CopyConfig(consumerConfig)
 	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
 
@@ -80,7 +85,7 @@ func NewController(
 	if err != nil {
 		return nil, err
 	}
-	consumerBindClient, err := bindclient.NewForConfig(consumerConfig)
+	bindingBindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +99,7 @@ func NewController(
 
 		providerBindClient: providerBindClient,
 		providerKubeClient: providerKubeClient,
-		consumerBindClient: consumerBindClient,
+		bindingBindClient:  bindingBindClient,
 		consumerKubeClient: consumerKubeClient,
 
 		clusterBindingLister:  clusterBindingInformer.Lister(),
@@ -110,16 +115,16 @@ func NewController(
 
 		reconciler: reconciler{
 			consumerSecretRefKey: consumerSecretRefKey,
-			providerNamespace:    providerNamespace,
+			providerNamespace:    bindingRootNamespace,
 			heartbeatInterval:    heartbeatInterval,
 
 			getProviderSecret: func() (*corev1.Secret, error) {
-				cb, err := clusterBindingInformer.Lister().ClusterBindings(providerNamespace).Get("cluster")
+				cb, err := clusterBindingInformer.Lister().ClusterBindings(bindingRootNamespace).Get("cluster")
 				if err != nil {
 					return nil, err
 				}
 				ref := &cb.Spec.KubeconfigSecretRef
-				return providerSecretInformer.Lister().Secrets(providerNamespace).Get(ref.Name)
+				return providerSecretInformer.Lister().Secrets(providerSecretNamespace).Get(ref.Name)
 			},
 			getConsumerSecret: func() (*corev1.Secret, error) {
 				ns, name, err := cache.SplitMetaNamespaceKey(consumerSecretRefKey)
@@ -214,7 +219,7 @@ type controller struct {
 
 	providerBindClient bindclient.Interface
 	providerKubeClient kubernetesclient.Interface
-	consumerBindClient bindclient.Interface
+	bindingBindClient  bindclient.Interface
 	consumerKubeClient kubernetesclient.Interface
 
 	clusterBindingLister  bindlisters.ClusterBindingLister
@@ -435,7 +440,7 @@ func (c *controller) updateServiceBindings(ctx context.Context, update func(*bin
 		update(binding)
 		if !reflect.DeepEqual(binding.Status.Conditions, orig.Status.Conditions) {
 			logger.V(2).Info("updating service binding", "binding", binding.Name)
-			if _, err := c.consumerBindClient.KlutchBindV1alpha1().APIServiceBindings().UpdateStatus(ctx, binding, metav1.UpdateOptions{}); err != nil {
+			if _, err := c.bindingBindClient.KlutchBindV1alpha1().APIServiceBindings().UpdateStatus(ctx, binding, metav1.UpdateOptions{}); err != nil {
 				logger.Error(err, "failed to update service binding", "binding", binding.Name)
 				continue
 			}

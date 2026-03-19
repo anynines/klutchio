@@ -29,10 +29,13 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/utils/pointer"
 
-	kuberesources "github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes/resources"
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/util/conditions"
+)
+
+const (
+	serviceAccountName = "klutch-binder"
 )
 
 type reconciler struct {
@@ -216,7 +219,7 @@ func (r *reconciler) ensureRBACClusterRoleBinding(ctx context.Context, clusterBi
 			{
 				Kind:      "ServiceAccount",
 				Namespace: clusterBinding.Namespace,
-				Name:      kuberesources.ServiceAccountName,
+				Name:      serviceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -250,12 +253,12 @@ func (r *reconciler) ensureRBACRoleBinding(ctx context.Context, clusterBinding *
 
 	expected := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: kuberesources.ServiceAccountName,
+			Name: serviceAccountName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      kuberesources.ServiceAccountName,
+				Name:      serviceAccountName,
 				Namespace: clusterBinding.Namespace,
 			},
 		},

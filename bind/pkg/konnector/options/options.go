@@ -40,6 +40,7 @@ type ExtraOptions struct {
 	AppClusterKubeconfigSecretName      string
 	AppClusterKubeconfigSecretNamespace string
 	AppClusterKubeconfigSecretKey       string
+	BindingRootNamespace                string
 
 	LeaseLockName      string
 	LeaseLockNamespace string
@@ -86,6 +87,7 @@ func (options *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&options.AppClusterKubeconfigSecretName, "app-cluster-kubeconfig-secret-name", options.AppClusterKubeconfigSecretName, "Name of secret containing app cluster kubeconfig (required when --control-plane-mode is enabled)")
 	fs.StringVar(&options.AppClusterKubeconfigSecretNamespace, "app-cluster-kubeconfig-secret-namespace", options.AppClusterKubeconfigSecretNamespace, "Namespace of secret containing app cluster kubeconfig (required when --control-plane-mode is enabled)")
 	fs.StringVar(&options.AppClusterKubeconfigSecretKey, "app-cluster-kubeconfig-secret-key", "kubeconfig", "Key in secret containing app cluster kubeconfig (default: kubeconfig)")
+	fs.StringVar(&options.BindingRootNamespace, "binding-root-namespace", options.BindingRootNamespace, "Namespace containing the binding root resources (ClusterBinding, kubeconfig secret)")
 	fs.StringVar(&options.LeaseLockName, "lease-name", options.LeaseLockName, "Name of lease lock")
 	fs.StringVar(&options.LeaseLockNamespace, "lease-namespace", options.LeaseLockNamespace, "Name of lease lock namespace")
 }
@@ -113,6 +115,9 @@ func (options *CompletedOptions) Validate() error {
 		}
 		if options.AppClusterKubeconfigSecretKey == "" {
 			return fmt.Errorf("--app-cluster-kubeconfig-secret-key cannot be empty")
+		}
+		if options.BindingRootNamespace == "" {
+			return fmt.Errorf("--binding-root-namespace is required when --control-plane-mode is enabled")
 		}
 	}
 	return nil
