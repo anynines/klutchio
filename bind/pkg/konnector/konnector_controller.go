@@ -115,6 +115,7 @@ func New(
 					bindingRootNamespace,
 					providerNamespace,
 					providerSecretNamespace,
+					controlPlaneMode,
 					reconcileServiceBinding,
 					bindingConfig,
 					consumerConfig,

@@ -84,8 +84,7 @@ type Prepared struct {
 }
 
 func (s *Server) PrepareRun(ctx context.Context) (Prepared, error) {
-	// If app and binding clusters differ, CRD bootstrap happens in the app cluster.
-	if s.Config.ControlPlaneMode || (s.Config.AppClusterConfig != nil && s.Config.BindingClusterConfig != nil && s.Config.AppClusterConfig.Host != s.Config.BindingClusterConfig.Host) {
+	if s.Config.ControlPlaneMode {
 		return Prepared{
 			prepared: &prepared{
 				Server: *s,
@@ -99,7 +98,7 @@ func (s *Server) PrepareRun(ctx context.Context) (Prepared, error) {
 		s.Config.BindingClusterApiextensionsClient.ApiextensionsV1().CustomResourceDefinitions(),
 		metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "apiservicebindings"},
 	); err != nil {
-		return Prepared{}, err
+		return Prepared{}, fmt.Errorf("failed to create APIServiceBinding CRD in binding cluster: %w", err)
 	}
 	return Prepared{
 		prepared: &prepared{
