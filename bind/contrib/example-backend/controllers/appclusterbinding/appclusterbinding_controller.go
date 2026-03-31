@@ -45,7 +45,7 @@ import (
 	"k8s.io/klog/v2"
 
 	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
-	examplebackendclient "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/exporttemplate"
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
 	bindinformers "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions/bind/v1alpha1"
@@ -85,10 +85,7 @@ func NewController(
 		return nil, err
 	}
 
-	exampleBackendClient, err := examplebackendclient.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
+	templateIndex := exporttemplate.NewCatalogue(config)
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -138,8 +135,8 @@ func NewController(
 			deleteServiceBinding: func(ctx context.Context, name string) error {
 				return bindClient.KlutchBindV1alpha1().APIServiceBindings().Delete(ctx, name, metav1.DeleteOptions{})
 			},
-			getAPIServiceExportTemplate: func(ctx context.Context, namespace, name string) (*examplebackendv1alpha1.APIServiceExportTemplate, error) {
-				return exampleBackendClient.ExampleBackendV1alpha1().APIServiceExportTemplates(namespace).Get(ctx, name, metav1.GetOptions{})
+			templateFor: func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error) {
+				return templateIndex.TemplateFor(ctx, group, resource)
 			},
 			listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
 				return bindClient.KlutchBindV1alpha1().APIServiceExportRequests(namespace).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})

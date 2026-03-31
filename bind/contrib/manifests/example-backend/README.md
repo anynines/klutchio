@@ -117,8 +117,10 @@ spec:
     name: app-cluster-kubeconfig
     key: kubeconfig
   apiExports:
-    - postgresql
-    - redis
+    - group: database.example.com
+      resource: postgresqls
+    - group: cache.example.com
+      resource: redisinstances
   konnector:
     deploy: true
     overrides:

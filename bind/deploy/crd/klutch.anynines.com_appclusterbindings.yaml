@@ -41,10 +41,21 @@ spec:
             description: spec represents the desired state of the AppClusterBinding.
             properties:
               apiExports:
-                description: apiExports is a list of APIServiceExport resource names to bind.
+                description: apiExports is a list of API group/resources to bind.
                 items:
-                  minLength: 1
-                  type: string
+                  properties:
+                    group:
+                      default: ""
+                      description: group is the name of an API group. For core groups this is the empty string '""'.
+                      pattern: ^(|[a-z0-9]([-a-z0-9]*[a-z0-9](\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)?)$
+                      type: string
+                    resource:
+                      description: "resource is the name of the resource. Note: it is worth noting that you can not ask for permissions for resource provided by a CRD not provided by an service binding export."
+                      pattern: ^[a-z][-a-z0-9]*[a-z0-9]$
+                      type: string
+                  required:
+                  - resource
+                  type: object
                 type: array
               kubeconfigSecretRef:
                 description: kubeconfigSecretRef points to the app cluster kubeconfig.
