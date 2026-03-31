@@ -143,14 +143,6 @@ func (in *AppClusterBinding) DeepCopy() *AppClusterBinding {
 	return out
 }
 
-// DeepCopyObject creates a new deep copy of the receiver as a runtime.Object.
-func (in *AppClusterBinding) DeepCopyObject() runtime.Object {
-	if c := in.DeepCopy(); c != nil {
-		return c
-	}
-	return nil
-}
-
 // DeepCopyInto copies in into out. in must be non-nil.
 func (in *AppClusterBindingSpec) DeepCopyInto(out *AppClusterBindingSpec) {
 	*out = *in
@@ -250,12 +242,4 @@ func (in *AppClusterBindingList) DeepCopy() *AppClusterBindingList {
 	out := new(AppClusterBindingList)
 	in.DeepCopyInto(out)
 	return out
-}
-
-// DeepCopyObject creates a new deep copy of the receiver as a runtime.Object.
-func (in *AppClusterBindingList) DeepCopyObject() runtime.Object {
-	if c := in.DeepCopy(); c != nil {
-		return c
-	}
-	return nil
 }
