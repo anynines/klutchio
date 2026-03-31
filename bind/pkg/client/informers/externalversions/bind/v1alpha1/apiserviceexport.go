@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,17 +27,17 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 
-	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	apisbindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	versioned "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
 )
 
 // APIServiceExportInformer provides access to a shared informer and lister for
 // APIServiceExports.
 type APIServiceExportInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.APIServiceExportLister
+	Lister() bindv1alpha1.APIServiceExportLister
 }
 
 type aPIServiceExportInformer struct {
@@ -72,7 +72,7 @@ func NewFilteredAPIServiceExportInformer(client versioned.Interface, namespace s
 				return client.KlutchBindV1alpha1().APIServiceExports(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&bindv1alpha1.APIServiceExport{},
+		&apisbindv1alpha1.APIServiceExport{},
 		resyncPeriod,
 		indexers,
 	)
@@ -83,9 +83,9 @@ func (f *aPIServiceExportInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *aPIServiceExportInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&bindv1alpha1.APIServiceExport{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisbindv1alpha1.APIServiceExport{}, f.defaultInformer)
 }
 
-func (f *aPIServiceExportInformer) Lister() v1alpha1.APIServiceExportLister {
-	return v1alpha1.NewAPIServiceExportLister(f.Informer().GetIndexer())
+func (f *aPIServiceExportInformer) Lister() bindv1alpha1.APIServiceExportLister {
+	return bindv1alpha1.NewAPIServiceExportLister(f.Informer().GetIndexer())
 }

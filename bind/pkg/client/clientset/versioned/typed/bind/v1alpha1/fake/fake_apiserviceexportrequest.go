@@ -19,125 +19,35 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	gentype "k8s.io/client-go/gentype"
 
 	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned/typed/bind/v1alpha1"
 )
 
-// FakeAPIServiceExportRequests implements APIServiceExportRequestInterface
-type FakeAPIServiceExportRequests struct {
+// fakeAPIServiceExportRequests implements APIServiceExportRequestInterface
+type fakeAPIServiceExportRequests struct {
+	*gentype.FakeClientWithList[*v1alpha1.APIServiceExportRequest, *v1alpha1.APIServiceExportRequestList]
 	Fake *FakeKlutchBindV1alpha1
-	ns   string
 }
 
-var apiserviceexportrequestsResource = schema.GroupVersionResource{Group: "klutch.anynines.com", Version: "v1alpha1", Resource: "apiserviceexportrequests"}
-
-var apiserviceexportrequestsKind = schema.GroupVersionKind{Group: "klutch.anynines.com", Version: "v1alpha1", Kind: "APIServiceExportRequest"}
-
-// Get takes name of the aPIServiceExportRequest, and returns the corresponding aPIServiceExportRequest object, and an error if there is any.
-func (c *FakeAPIServiceExportRequests) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.APIServiceExportRequest, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(apiserviceexportrequestsResource, c.ns, name), &v1alpha1.APIServiceExportRequest{})
-
-	if obj == nil {
-		return nil, err
+func newFakeAPIServiceExportRequests(fake *FakeKlutchBindV1alpha1, namespace string) bindv1alpha1.APIServiceExportRequestInterface {
+	return &fakeAPIServiceExportRequests{
+		gentype.NewFakeClientWithList[*v1alpha1.APIServiceExportRequest, *v1alpha1.APIServiceExportRequestList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("apiserviceexportrequests"),
+			v1alpha1.SchemeGroupVersion.WithKind("APIServiceExportRequest"),
+			func() *v1alpha1.APIServiceExportRequest { return &v1alpha1.APIServiceExportRequest{} },
+			func() *v1alpha1.APIServiceExportRequestList { return &v1alpha1.APIServiceExportRequestList{} },
+			func(dst, src *v1alpha1.APIServiceExportRequestList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.APIServiceExportRequestList) []*v1alpha1.APIServiceExportRequest {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.APIServiceExportRequestList, items []*v1alpha1.APIServiceExportRequest) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.APIServiceExportRequest), err
-}
-
-// List takes label and field selectors, and returns the list of APIServiceExportRequests that match those selectors.
-func (c *FakeAPIServiceExportRequests) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.APIServiceExportRequestList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(apiserviceexportrequestsResource, apiserviceexportrequestsKind, c.ns, opts), &v1alpha1.APIServiceExportRequestList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.APIServiceExportRequestList{ListMeta: obj.(*v1alpha1.APIServiceExportRequestList).ListMeta}
-	for _, item := range obj.(*v1alpha1.APIServiceExportRequestList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested aPIServiceExportRequests.
-func (c *FakeAPIServiceExportRequests) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(apiserviceexportrequestsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a aPIServiceExportRequest and creates it.  Returns the server's representation of the aPIServiceExportRequest, and an error, if there is any.
-func (c *FakeAPIServiceExportRequests) Create(ctx context.Context, aPIServiceExportRequest *v1alpha1.APIServiceExportRequest, opts v1.CreateOptions) (result *v1alpha1.APIServiceExportRequest, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(apiserviceexportrequestsResource, c.ns, aPIServiceExportRequest), &v1alpha1.APIServiceExportRequest{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.APIServiceExportRequest), err
-}
-
-// Update takes the representation of a aPIServiceExportRequest and updates it. Returns the server's representation of the aPIServiceExportRequest, and an error, if there is any.
-func (c *FakeAPIServiceExportRequests) Update(ctx context.Context, aPIServiceExportRequest *v1alpha1.APIServiceExportRequest, opts v1.UpdateOptions) (result *v1alpha1.APIServiceExportRequest, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(apiserviceexportrequestsResource, c.ns, aPIServiceExportRequest), &v1alpha1.APIServiceExportRequest{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.APIServiceExportRequest), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAPIServiceExportRequests) UpdateStatus(ctx context.Context, aPIServiceExportRequest *v1alpha1.APIServiceExportRequest, opts v1.UpdateOptions) (*v1alpha1.APIServiceExportRequest, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(apiserviceexportrequestsResource, "status", c.ns, aPIServiceExportRequest), &v1alpha1.APIServiceExportRequest{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.APIServiceExportRequest), err
-}
-
-// Delete takes name of the aPIServiceExportRequest and deletes it. Returns an error if one occurs.
-func (c *FakeAPIServiceExportRequests) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(apiserviceexportrequestsResource, c.ns, name, opts), &v1alpha1.APIServiceExportRequest{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeAPIServiceExportRequests) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(apiserviceexportrequestsResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.APIServiceExportRequestList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched aPIServiceExportRequest.
-func (c *FakeAPIServiceExportRequests) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.APIServiceExportRequest, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(apiserviceexportrequestsResource, c.ns, name, pt, data, subresources...), &v1alpha1.APIServiceExportRequest{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.APIServiceExportRequest), err
 }

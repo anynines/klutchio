@@ -19,11 +19,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 
-	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 // APIServiceBindingLister helps list APIServiceBindings.
@@ -31,39 +31,19 @@ import (
 type APIServiceBindingLister interface {
 	// List lists all APIServiceBindings in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.APIServiceBinding, err error)
+	List(selector labels.Selector) (ret []*bindv1alpha1.APIServiceBinding, err error)
 	// Get retrieves the APIServiceBinding from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.APIServiceBinding, error)
+	Get(name string) (*bindv1alpha1.APIServiceBinding, error)
 	APIServiceBindingListerExpansion
 }
 
 // aPIServiceBindingLister implements the APIServiceBindingLister interface.
 type aPIServiceBindingLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*bindv1alpha1.APIServiceBinding]
 }
 
 // NewAPIServiceBindingLister returns a new APIServiceBindingLister.
 func NewAPIServiceBindingLister(indexer cache.Indexer) APIServiceBindingLister {
-	return &aPIServiceBindingLister{indexer: indexer}
-}
-
-// List lists all APIServiceBindings in the indexer.
-func (s *aPIServiceBindingLister) List(selector labels.Selector) (ret []*v1alpha1.APIServiceBinding, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.APIServiceBinding))
-	})
-	return ret, err
-}
-
-// Get retrieves the APIServiceBinding from the index for a given name.
-func (s *aPIServiceBindingLister) Get(name string) (*v1alpha1.APIServiceBinding, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("apiservicebinding"), name)
-	}
-	return obj.(*v1alpha1.APIServiceBinding), nil
+	return &aPIServiceBindingLister{listers.New[*bindv1alpha1.APIServiceBinding](indexer, bindv1alpha1.Resource("apiservicebinding"))}
 }

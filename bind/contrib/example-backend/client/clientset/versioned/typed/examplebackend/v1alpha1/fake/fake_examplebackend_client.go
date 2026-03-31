@@ -30,7 +30,7 @@ type FakeExampleBackendV1alpha1 struct {
 }
 
 func (c *FakeExampleBackendV1alpha1) APIServiceExportTemplates(namespace string) v1alpha1.APIServiceExportTemplateInterface {
-	return &FakeAPIServiceExportTemplates{c, namespace}
+	return newFakeAPIServiceExportTemplates(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,17 +27,17 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 
-	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	apisbindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	versioned "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/anynines/klutchio/bind/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/client/listers/bind/v1alpha1"
 )
 
 // APIServiceBindingInformer provides access to a shared informer and lister for
 // APIServiceBindings.
 type APIServiceBindingInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.APIServiceBindingLister
+	Lister() bindv1alpha1.APIServiceBindingLister
 }
 
 type aPIServiceBindingInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredAPIServiceBindingInformer(client versioned.Interface, resyncPeri
 				return client.KlutchBindV1alpha1().APIServiceBindings().Watch(context.TODO(), options)
 			},
 		},
-		&bindv1alpha1.APIServiceBinding{},
+		&apisbindv1alpha1.APIServiceBinding{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *aPIServiceBindingInformer) defaultInformer(client versioned.Interface, 
 }
 
 func (f *aPIServiceBindingInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&bindv1alpha1.APIServiceBinding{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisbindv1alpha1.APIServiceBinding{}, f.defaultInformer)
 }
 
-func (f *aPIServiceBindingInformer) Lister() v1alpha1.APIServiceBindingLister {
-	return v1alpha1.NewAPIServiceBindingLister(f.Informer().GetIndexer())
+func (f *aPIServiceBindingInformer) Lister() bindv1alpha1.APIServiceBindingLister {
+	return bindv1alpha1.NewAPIServiceBindingLister(f.Informer().GetIndexer())
 }

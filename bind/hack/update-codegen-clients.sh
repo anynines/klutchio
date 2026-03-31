@@ -24,16 +24,32 @@ export GOPATH=$(go env GOPATH)
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
 CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; go list -f '{{.Dir}}' -m k8s.io/code-generator)}
 
-bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
-  github.com/anynines/klutchio/bind/pkg/client github.com/anynines/klutchio/bind/pkg/apis \
-  "bind:v1alpha1" \
-  --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate/boilerplate.generatego.txt \
-  --output-base "${SCRIPT_ROOT}" \
-  --trim-path-prefix github.com/anynines/klutchio/bind
+# Go 1.24 enables VCS stamping by default, but module cache paths used by
+# kube_codegen.sh are not always VCS worktrees.
+if [[ "${GOFLAGS:-}" != *"-buildvcs=false"* ]]; then
+  export GOFLAGS="${GOFLAGS:-} -buildvcs=false"
+fi
 
-bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
-  github.com/anynines/klutchio/bind/contrib/example-backend/client github.com/anynines/klutchio/bind/contrib/example-backend/apis \
-  "examplebackend:v1alpha1" \
-  --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate/boilerplate.generatego.txt \
-  --output-base "${SCRIPT_ROOT}" \
-  --trim-path-prefix github.com/anynines/klutchio/bind
+source "${CODEGEN_PKG}/kube_codegen.sh"
+
+kube::codegen::gen_helpers \
+  --boilerplate "${SCRIPT_ROOT}/hack/boilerplate/boilerplate.generatego.txt" \
+  "${SCRIPT_ROOT}/pkg/apis"
+
+kube::codegen::gen_client \
+  --with-watch \
+  --boilerplate "${SCRIPT_ROOT}/hack/boilerplate/boilerplate.generatego.txt" \
+  --output-dir "${SCRIPT_ROOT}/pkg/client" \
+  --output-pkg github.com/anynines/klutchio/bind/pkg/client \
+  "${SCRIPT_ROOT}/pkg/apis"
+
+kube::codegen::gen_helpers \
+  --boilerplate "${SCRIPT_ROOT}/hack/boilerplate/boilerplate.generatego.txt" \
+  "${SCRIPT_ROOT}/contrib/example-backend/apis"
+
+kube::codegen::gen_client \
+  --with-watch \
+  --boilerplate "${SCRIPT_ROOT}/hack/boilerplate/boilerplate.generatego.txt" \
+  --output-dir "${SCRIPT_ROOT}/contrib/example-backend/client" \
+  --output-pkg github.com/anynines/klutchio/bind/contrib/example-backend/client \
+  "${SCRIPT_ROOT}/contrib/example-backend/apis"

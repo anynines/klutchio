@@ -27,7 +27,7 @@ if ! git diff --quiet --exit-code -- pkg/client; then
 ERROR: This check enforces that the client code is generated correctly.
 ERROR: The client code is out of date. Run the following command to re-
 ERROR: generate the clients:
-ERROR: $ hack/update-generated-clients.sh
+ERROR: $ hack/update-codegen-clients.sh
 ERROR: The following differences were found:
 EOF
 	git diff
