@@ -45,6 +45,10 @@ func (c *FakeKlutchBindV1alpha1) APIServiceNamespaces(namespace string) v1alpha1
 	return newFakeAPIServiceNamespaces(c, namespace)
 }
 
+func (c *FakeKlutchBindV1alpha1) AppClusterBindings(namespace string) v1alpha1.AppClusterBindingInterface {
+	return newFakeAppClusterBindings(c, namespace)
+}
+
 func (c *FakeKlutchBindV1alpha1) ClusterBindings(namespace string) v1alpha1.ClusterBindingInterface {
 	return newFakeClusterBindings(c, namespace)
 }

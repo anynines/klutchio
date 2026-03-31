@@ -33,6 +33,7 @@ type KlutchBindV1alpha1Interface interface {
 	APIServiceExportsGetter
 	APIServiceExportRequestsGetter
 	APIServiceNamespacesGetter
+	AppClusterBindingsGetter
 	ClusterBindingsGetter
 }
 
@@ -55,6 +56,10 @@ func (c *KlutchBindV1alpha1Client) APIServiceExportRequests(namespace string) AP
 
 func (c *KlutchBindV1alpha1Client) APIServiceNamespaces(namespace string) APIServiceNamespaceInterface {
 	return newAPIServiceNamespaces(c, namespace)
+}
+
+func (c *KlutchBindV1alpha1Client) AppClusterBindings(namespace string) AppClusterBindingInterface {
+	return newAppClusterBindings(c, namespace)
 }
 
 func (c *KlutchBindV1alpha1Client) ClusterBindings(namespace string) ClusterBindingInterface {
