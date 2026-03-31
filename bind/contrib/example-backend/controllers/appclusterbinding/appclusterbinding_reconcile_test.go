@@ -140,17 +140,17 @@ func TestEnsureServiceExportRequestsUsesTemplateLookup(t *testing.T) {
 			Namespace: "my-ns",
 		},
 		Spec: bindv1alpha1.AppClusterBindingSpec{
-			APIExports: []string{"postgresql"},
+			APIExports: []bindv1alpha1.GroupResource{{Group: "db.example.com", Resource: "postgresqls"}},
 		},
 	}
 
 	created := []*bindv1alpha1.APIServiceExportRequest{}
 	r := &reconciler{
-		getAPIServiceExportTemplate: func(ctx context.Context, namespace, name string) (*examplebackendv1alpha1.APIServiceExportTemplate, error) {
-			if namespace != "my-ns" || name != "postgresql" {
-				t.Fatalf("unexpected template lookup %s/%s", namespace, name)
+		templateFor: func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error) {
+			if group != "db.example.com" || resource != "postgresqls" {
+				t.Fatalf("unexpected template lookup %s/%s", group, resource)
 			}
-			return &examplebackendv1alpha1.APIServiceExportTemplate{
+			return examplebackendv1alpha1.APIServiceExportTemplate{
 				ObjectMeta: metav1.ObjectMeta{Name: "postgresql"},
 				Spec: examplebackendv1alpha1.APIServiceExportTemplateSpec{
 					APIServiceSelector: examplebackendv1alpha1.APIServiceSelector{
@@ -190,18 +190,18 @@ func TestEnsureKonnectorClusterRBACIncludesTemplateResourceRules(t *testing.T) {
 			Namespace: "my-ns",
 		},
 		Spec: bindv1alpha1.AppClusterBindingSpec{
-			APIExports: []string{"postgresql"},
+			APIExports: []bindv1alpha1.GroupResource{{Group: "anynines.com", Resource: "postgresqlinstances"}},
 		},
 	}
 
 	var createdClusterRole *rbacv1.ClusterRole
 
 	r := &reconciler{
-		getAPIServiceExportTemplate: func(ctx context.Context, namespace, name string) (*examplebackendv1alpha1.APIServiceExportTemplate, error) {
-			if namespace != "my-ns" || name != "postgresql" {
-				t.Fatalf("unexpected template lookup %s/%s", namespace, name)
+		templateFor: func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error) {
+			if group != "anynines.com" || resource != "postgresqlinstances" {
+				t.Fatalf("unexpected template lookup %s/%s", group, resource)
 			}
-			return &examplebackendv1alpha1.APIServiceExportTemplate{
+			return examplebackendv1alpha1.APIServiceExportTemplate{
 				Spec: examplebackendv1alpha1.APIServiceExportTemplateSpec{
 					APIServiceSelector: examplebackendv1alpha1.APIServiceSelector{
 						GroupResource: bindv1alpha1.GroupResource{Group: "anynines.com", Resource: "postgresqlinstances"},

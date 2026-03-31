@@ -70,10 +70,10 @@ type AppClusterBindingSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="kubeconfigSecretRef is immutable"
 	KubeconfigSecretRef ClusterSecretKeyRef `json:"kubeconfigSecretRef"`
 
-	// apiExports is a list of APIServiceExport resource names to bind.
+	// apiExports is a list of GroupResource entries, where each entry specifies an API group and resource to bind.
 	//
 	// +optional
-	APIExports []string `json:"apiExports,omitempty"`
+	APIExports []GroupResource `json:"apiExports,omitempty"`
 
 	// konnector contains deployment settings for the konnector.
 	//
@@ -156,7 +156,7 @@ func (in *AppClusterBindingSpec) DeepCopyInto(out *AppClusterBindingSpec) {
 	*out = *in
 	out.KubeconfigSecretRef = in.KubeconfigSecretRef
 	if in.APIExports != nil {
-		out.APIExports = make([]string, len(in.APIExports))
+		out.APIExports = make([]GroupResource, len(in.APIExports))
 		copy(out.APIExports, in.APIExports)
 	}
 	if in.Konnector != nil {

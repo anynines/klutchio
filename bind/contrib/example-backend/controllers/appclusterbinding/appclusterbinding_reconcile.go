@@ -62,7 +62,7 @@ type reconciler struct {
 	createServiceBinding          func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error)
 	updateServiceBinding          func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error)
 	deleteServiceBinding          func(ctx context.Context, name string) error
-	getAPIServiceExportTemplate   func(ctx context.Context, namespace, name string) (*examplebackendv1alpha1.APIServiceExportTemplate, error)
+	templateFor                   func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error)
 	listAPIServiceExportRequests  func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error)
 	createAPIServiceExportRequest func(ctx context.Context, namespace string, req *bindv1alpha1.APIServiceExportRequest) (*bindv1alpha1.APIServiceExportRequest, error)
 	deleteAPIServiceExportRequest func(ctx context.Context, namespace, name string) error
@@ -605,14 +605,12 @@ func (r *reconciler) buildDynamicKonnectorRules(ctx context.Context, binding *bi
 	dynamicRules := make([]rbacv1.PolicyRule, 0, len(binding.Spec.APIExports))
 
 	for _, apiExport := range binding.Spec.APIExports {
-		templateName := strings.TrimSpace(apiExport)
-		if templateName == "" {
-			continue
-		}
-
-		template, err := r.getAPIServiceExportTemplate(ctx, binding.Namespace, templateName)
+		templateRef, template, err := r.resolveTemplate(ctx, apiExport)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get apiserviceexporttemplate %s/%s for clusterrole %q: %w", binding.Namespace, templateName, clusterRoleName, err)
+			return nil, fmt.Errorf("failed to get apiserviceexporttemplate for %s/%s for clusterrole %q: %w", templateRef.Group, templateRef.Resource, clusterRoleName, err)
+		}
+		if template == nil {
+			continue
 		}
 
 		templateCopy := template.DeepCopy()
@@ -634,6 +632,23 @@ func (r *reconciler) buildDynamicKonnectorRules(ctx context.Context, binding *bi
 	}
 
 	return dynamicRules, nil
+}
+
+func (r *reconciler) resolveTemplate(ctx context.Context, apiExport bindv1alpha1.GroupResource) (bindv1alpha1.GroupResource, *examplebackendv1alpha1.APIServiceExportTemplate, error) {
+	templateRef := bindv1alpha1.GroupResource{
+		Group:    strings.TrimSpace(apiExport.Group),
+		Resource: strings.TrimSpace(apiExport.Resource),
+	}
+	if templateRef.Resource == "" {
+		return templateRef, nil, nil
+	}
+
+	template, err := r.templateFor(ctx, templateRef.Group, templateRef.Resource)
+	if err != nil {
+		return templateRef, nil, err
+	}
+
+	return templateRef, &template, nil
 }
 
 // ensureKonnectorNamespacedRBAC creates Role and RoleBinding in the AppClusterBinding namespace for secrets
@@ -796,14 +811,12 @@ func (r *reconciler) ensureKonnectorBindingRootRBAC(ctx context.Context, binding
 func (r *reconciler) ensureServiceBindings(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
 	desired := map[string]*bindv1alpha1.APIServiceBinding{}
 	for _, apiExport := range binding.Spec.APIExports {
-		templateName := strings.TrimSpace(apiExport)
-		if templateName == "" {
-			continue
-		}
-
-		template, err := r.getAPIServiceExportTemplate(ctx, binding.Namespace, templateName)
+		templateRef, template, err := r.resolveTemplate(ctx, apiExport)
 		if err != nil {
-			return fmt.Errorf("failed to get apiserviceexporttemplate %s/%s: %w", binding.Namespace, templateName, err)
+			return fmt.Errorf("failed to get apiserviceexporttemplate for %s/%s: %w", templateRef.Group, templateRef.Resource, err)
+		}
+		if template == nil {
+			continue
 		}
 
 		bindingObj := newServiceBinding(binding, template)
@@ -862,14 +875,12 @@ func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *b
 	desired := map[string]*bindv1alpha1.APIServiceExportRequest{}
 	var errs []error
 	for _, apiExport := range binding.Spec.APIExports {
-		templateName := strings.TrimSpace(apiExport)
-		if templateName == "" {
+		templateRef, template, err := r.resolveTemplate(ctx, apiExport)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to get apiserviceexporttemplate for %s/%s: %w", templateRef.Group, templateRef.Resource, err))
 			continue
 		}
-
-		template, err := r.getAPIServiceExportTemplate(ctx, binding.Namespace, templateName)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to get apiserviceexporttemplate %s/%s: %w", binding.Namespace, templateName, err))
+		if template == nil {
 			continue
 		}
 

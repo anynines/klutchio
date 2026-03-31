@@ -10,7 +10,7 @@ This controller manages AppClusterBinding resources on the control plane, automa
 - Sets `SecretValid` condition on the AppClusterBinding status
 
 ### 2. APIServiceBinding Management
-- Creates APIServiceBinding resources for each export in `spec.apiExports`
+- Creates APIServiceBinding resources for each group/resource entry in `spec.apiExports`
 - Labels managed bindings for ownership tracking:
   - `klutch.anynines.com/appclusterbinding-name`
   - `klutch.anynines.com/appclusterbinding-namespace`
@@ -41,9 +41,12 @@ spec:
     name: my-app-kubeconfig
     key: kubeconfig
   apiExports:
-    - postgresql
-    - redis
-    - rabbitmq
+    - group: database.example.com
+      resource: postgresqls
+    - group: cache.example.com
+      resource: redisinstances
+    - group: messaging.example.com
+      resource: rabbitmqs
   konnector:
     deploy: true
     overrides:

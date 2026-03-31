@@ -60,9 +60,11 @@ spec:
     name: a
     namespace: b
     key: c
-  APIExports:
-    - servicebindings.anynines.com
-    - postgresqlinstances.anynines.com
+  apiExports:
+    - group: anynines.com
+      resource: servicebindings
+    - group: anynines.com
+      resource: postgresqlinstances
   konnector:
     deploy: yes
     overrides:
