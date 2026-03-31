@@ -58,6 +58,7 @@ func NewController(
 	providerNamespace string,
 	providerSecretNamespace string,
 	heartbeatInterval time.Duration,
+	controlPlaneMode bool,
 	bindingConfig, consumerConfig, providerConfig *rest.Config,
 	clusterBindingInformer bindinformers.ClusterBindingInformer,
 	serviceBindingInformer dynamic.Informer[bindlisters.APIServiceBindingLister],
@@ -117,6 +118,7 @@ func NewController(
 			consumerSecretRefKey: consumerSecretRefKey,
 			providerNamespace:    bindingRootNamespace,
 			heartbeatInterval:    heartbeatInterval,
+			controlPlaneMode:     controlPlaneMode,
 
 			getProviderSecret: func() (*corev1.Secret, error) {
 				cb, err := clusterBindingInformer.Lister().ClusterBindings(bindingRootNamespace).Get("cluster")

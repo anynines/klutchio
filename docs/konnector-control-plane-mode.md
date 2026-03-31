@@ -12,6 +12,15 @@ However, it can also be advantageous to run the konnector on the control plane i
 
 ## Architecture
 
+### Cluster Roles by Mode
+
+The **binding cluster** is a logical role and depends on the mode:
+
+- **Default mode**: binding cluster = app cluster
+- **Control plane mode**: binding cluster = control plane cluster
+
+`APIServiceBinding` objects and the `APIServiceBinding` CRD always belong to the **binding cluster**.
+
 ### Default Mode (Konnector on App Cluster)
 
 ```
@@ -277,8 +286,8 @@ spec:
 1. **Initialization**: The konnector loads the app cluster kubeconfig (from in-cluster config or --kubeconfig flag)
 
 2. **Resource Location**:
-   - APIServiceBinding CRD: app cluster
-   - APIServiceBinding CRs: app cluster
+   - APIServiceBinding CRD: binding cluster (app cluster in this mode)
+   - APIServiceBinding CRs: binding cluster (app cluster in this mode)
    - Bound service CRDs (e.g. `postgresqlinstances`): app cluster
    - Provider kubeconfig secrets: app cluster
 
@@ -296,8 +305,8 @@ When control plane mode is enabled:
 1. **Initialization**: The konnector loads the control plane kubeconfig (from in-cluster config or --kubeconfig flag) and fetches the app cluster kubeconfig from the specified secret
 
 2. **Resource Location**:
-   - APIServiceBinding CRD: control plane cluster
-   - APIServiceBinding CRs: control plane cluster
+   - APIServiceBinding CRD: binding cluster (control plane cluster in this mode)
+   - APIServiceBinding CRs: binding cluster (control plane cluster in this mode)
    - Bound service CRDs (e.g. `postgresqlinstances`): **app cluster** (always installed where resources are synced)
    - Provider kubeconfig secrets: control plane cluster
 

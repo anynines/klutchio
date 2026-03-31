@@ -25,7 +25,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
+
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
+
+// ExportRuleVerbs are the verbs needed for exported API resources and permission claims.
+var ExportRuleVerbs = []string{"get", "list", "watch", "update", "patch", "delete", "create"}
 
 // SecretAccessOptions contains configuration for secret access RBAC.
 type SecretAccessOptions struct {
@@ -113,4 +118,52 @@ func EnsureSecretAccessRBAC(ctx context.Context, client kubeclient.Interface, op
 	}
 
 	return nil
+}
+
+// AppendExportPolicyRules appends rules for an exported resource and all of its permission claims.
+// If seen is provided, rules are deduplicated by <group>/<resource>.
+func AppendExportPolicyRules(
+	rules []rbacv1.PolicyRule,
+	seen map[string]struct{},
+	group, resource string,
+	permissionClaims []bindv1alpha1.PermissionClaim,
+	verbs []string,
+) []rbacv1.PolicyRule {
+	rules = appendPolicyRule(rules, seen, group, resource, verbs)
+
+	for _, claim := range permissionClaims {
+		rules = appendPolicyRule(rules, seen, claim.Group, claim.Resource, verbs)
+	}
+
+	return rules
+}
+
+// appendPolicyRule appends a single PolicyRule for the given <group>/<resource> to rules.
+// If resource is empty, rules is returned unchanged.
+// When seen is nil, no deduplication is performed and the rule is always appended.
+// When seen is non-nil, the function constructs a deduplication key as group + "/" + resource
+// and appends the rule only if that key has not been seen before, recording it in the map.
+func appendPolicyRule(
+	rules []rbacv1.PolicyRule,
+	seen map[string]struct{},
+	group, resource string,
+	verbs []string,
+) []rbacv1.PolicyRule {
+	if resource == "" {
+		return rules
+	}
+
+	if seen != nil {
+		key := group + "/" + resource
+		if _, found := seen[key]; found {
+			return rules
+		}
+		seen[key] = struct{}{}
+	}
+
+	return append(rules, rbacv1.PolicyRule{
+		APIGroups: []string{group},
+		Resources: []string{resource},
+		Verbs:     verbs,
+	})
 }

@@ -50,6 +50,7 @@ const (
 	appClusterBindingNamespaceLabel   = "klutch.anynines.com/appclusterbinding-namespace"
 	bindingRootNamespacePrefix        = "klutch-bind"
 	apiServiceExportRequestNamePrefix = "appclusterbinding"
+	konnectorServiceAccountName       = "konnector"
 )
 
 type reconciler struct {
@@ -111,6 +112,9 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.AppClu
 	}
 	if secretValid {
 		if err := r.ensureBindingRootResources(ctx, binding); err != nil {
+			errs = append(errs, err)
+		}
+		if err := r.ensureKonnectorServiceAccount(ctx, binding); err != nil {
 			errs = append(errs, err)
 		}
 		if err := r.ensureServiceBindings(ctx, binding); err != nil {
@@ -403,13 +407,15 @@ func (r *reconciler) ensureBindingRootResources(ctx context.Context, binding *bi
 			binding.Spec.KubeconfigSecretRef.Key)
 	}
 
-	// Use shared RBAC helper for kubeconfig secret access
+	// Use shared RBAC helper for kubeconfig secret access.
+	// The konnector runs as the "konnector" SA in binding.Namespace, so grant
+	// that SA (not klutch-binder) read access to the kubeconfig secret.
 	roleName := fmt.Sprintf("klutch-bind-read-%s-%s", binding.Namespace, binding.Name)
 	if err := bindings.EnsureSecretAccessRBAC(ctx, r.kubeClient, bindings.SecretAccessOptions{
 		SecretNamespace:         binding.Spec.KubeconfigSecretRef.Namespace,
 		SecretName:              binding.Spec.KubeconfigSecretRef.Name,
-		ServiceAccountNamespace: rootNamespace,
-		ServiceAccountName:      kuberesources.ServiceAccountName,
+		ServiceAccountNamespace: binding.Namespace,
+		ServiceAccountName:      konnectorServiceAccountName,
 		RoleName:                roleName,
 	}); err != nil {
 		return fmt.Errorf("failed to ensure RBAC for kubeconfig secret: %w", err)
@@ -453,9 +459,35 @@ func (r *reconciler) ensureBindingRootResources(ctx context.Context, binding *bi
 	return nil
 }
 
+func (r *reconciler) ensureKonnectorServiceAccount(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
+	_, err := r.getServiceAccount(ctx, binding.Namespace, konnectorServiceAccountName)
+	if err == nil {
+		return nil
+	}
+	if !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to get konnector service account %s/%s: %w", binding.Namespace, konnectorServiceAccountName, err)
+	}
+
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      konnectorServiceAccountName,
+			Namespace: binding.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				ownerReferenceForAppClusterBinding(binding),
+			},
+		},
+	}
+	if _, err := r.createServiceAccount(ctx, binding.Namespace, sa); err != nil {
+		return fmt.Errorf("failed to create konnector service account %s/%s: %w", binding.Namespace, konnectorServiceAccountName, err)
+	}
+
+	return nil
+}
+
 // ensureKonnectorClusterRBAC creates ClusterRole and ClusterRoleBinding for konnector SA
 func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
 	clusterRoleName := fmt.Sprintf("klutch-konnector-%s-%s", binding.Namespace, binding.Name)
+	clusterRoleBindingName := clusterRoleName
 
 	// Create ClusterRole for konnector permissions
 	expectedClusterRole := &rbacv1.ClusterRole{
@@ -470,8 +502,23 @@ func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bi
 			},
 			{
 				APIGroups: []string{"klutch.anynines.com"},
-				Resources: []string{"apiservicebindings/status"},
+				Resources: []string{"apiservicebindings/status", "clusterbindings/status"},
 				Verbs:     []string{"patch", "update"},
+			},
+			{
+				APIGroups: []string{"klutch.anynines.com"},
+				Resources: []string{"apiserviceexports"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"klutch.anynines.com"},
+				Resources: []string{"apiserviceexports/status"},
+				Verbs:     []string{"patch", "update"},
+			},
+			{
+				APIGroups: []string{"klutch.anynines.com"},
+				Resources: []string{"apiservicenamespaces"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
 			},
 			{
 				APIGroups: []string{"coordination.k8s.io"},
@@ -490,6 +537,13 @@ func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bi
 			},
 		},
 	}
+
+	// In addition to bind API objects, konnector must be able to watch exported resources.
+	dynamicRules, err := r.buildDynamicKonnectorRules(ctx, binding, clusterRoleName, bindings.ExportRuleVerbs)
+	if err != nil {
+		return err
+	}
+	expectedClusterRole.Rules = append(expectedClusterRole.Rules, dynamicRules...)
 
 	cr, err := r.getClusterRole(ctx, clusterRoleName)
 	if err != nil {
@@ -510,7 +564,7 @@ func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bi
 	// Create ClusterRoleBinding to bind konnector SA to the ClusterRole
 	expectedClusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("klutch-konnector-%s-%s", binding.Namespace, binding.Name),
+			Name: clusterRoleBindingName,
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
@@ -520,13 +574,13 @@ func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bi
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "konnector",
+				Name:      konnectorServiceAccountName,
 				Namespace: binding.Namespace,
 			},
 		},
 	}
 
-	crb, err := r.getClusterRoleBinding(ctx, fmt.Sprintf("klutch-konnector-%s-%s", binding.Namespace, binding.Name))
+	crb, err := r.getClusterRoleBinding(ctx, clusterRoleBindingName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to get clusterrolebinding: %w", err)
@@ -544,6 +598,42 @@ func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bi
 	}
 
 	return nil
+}
+
+func (r *reconciler) buildDynamicKonnectorRules(ctx context.Context, binding *bindv1alpha1.AppClusterBinding, clusterRoleName string, verbs []string) ([]rbacv1.PolicyRule, error) {
+	seenRules := map[string]struct{}{}
+	dynamicRules := make([]rbacv1.PolicyRule, 0, len(binding.Spec.APIExports))
+
+	for _, apiExport := range binding.Spec.APIExports {
+		templateName := strings.TrimSpace(apiExport)
+		if templateName == "" {
+			continue
+		}
+
+		template, err := r.getAPIServiceExportTemplate(ctx, binding.Namespace, templateName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get apiserviceexporttemplate %s/%s for clusterrole %q: %w", binding.Namespace, templateName, clusterRoleName, err)
+		}
+
+		templateCopy := template.DeepCopy()
+		templateCopy.Spec.APIServiceSelector.GroupResource.Group = strings.TrimSpace(templateCopy.Spec.APIServiceSelector.GroupResource.Group)
+		templateCopy.Spec.APIServiceSelector.GroupResource.Resource = strings.TrimSpace(templateCopy.Spec.APIServiceSelector.GroupResource.Resource)
+		for i := range templateCopy.Spec.PermissionClaims {
+			templateCopy.Spec.PermissionClaims[i].Group = strings.TrimSpace(templateCopy.Spec.PermissionClaims[i].Group)
+			templateCopy.Spec.PermissionClaims[i].Resource = strings.TrimSpace(templateCopy.Spec.PermissionClaims[i].Resource)
+		}
+
+		dynamicRules = bindings.AppendExportPolicyRules(
+			dynamicRules,
+			seenRules,
+			templateCopy.Spec.APIServiceSelector.GroupResource.Group,
+			templateCopy.Spec.APIServiceSelector.GroupResource.Resource,
+			templateCopy.Spec.PermissionClaims,
+			verbs,
+		)
+	}
+
+	return dynamicRules, nil
 }
 
 // ensureKonnectorNamespacedRBAC creates Role and RoleBinding in the AppClusterBinding namespace for secrets
@@ -595,7 +685,7 @@ func (r *reconciler) ensureKonnectorNamespacedRBAC(ctx context.Context, binding 
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "konnector",
+				Name:      konnectorServiceAccountName,
 				Namespace: binding.Namespace,
 			},
 		},
@@ -673,7 +763,7 @@ func (r *reconciler) ensureKonnectorBindingRootRBAC(ctx context.Context, binding
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "konnector",
+				Name:      konnectorServiceAccountName,
 				Namespace: binding.Namespace,
 			},
 		},
@@ -1141,7 +1231,7 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy:      corev1.RestartPolicyAlways,
-					ServiceAccountName: "konnector",
+					ServiceAccountName: konnectorServiceAccountName,
 					Containers:         []corev1.Container{container},
 				},
 			},
