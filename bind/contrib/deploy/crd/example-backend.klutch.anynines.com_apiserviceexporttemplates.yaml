@@ -75,7 +75,6 @@ spec:
                     type: string
                 required:
                 - resource
-                - version
                 type: object
               permissionClaims:
                 description: |-
