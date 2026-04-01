@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,17 +27,17 @@ import (
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 
-	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	apisexamplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
 	versioned "github.com/anynines/klutchio/bind/contrib/example-backend/client/clientset/versioned"
 	internalinterfaces "github.com/anynines/klutchio/bind/contrib/example-backend/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/client/listers/examplebackend/v1alpha1"
+	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/client/listers/examplebackend/v1alpha1"
 )
 
 // APIServiceExportTemplateInformer provides access to a shared informer and lister for
 // APIServiceExportTemplates.
 type APIServiceExportTemplateInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.APIServiceExportTemplateLister
+	Lister() examplebackendv1alpha1.APIServiceExportTemplateLister
 }
 
 type aPIServiceExportTemplateInformer struct {
@@ -72,7 +72,7 @@ func NewFilteredAPIServiceExportTemplateInformer(client versioned.Interface, nam
 				return client.ExampleBackendV1alpha1().APIServiceExportTemplates(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&examplebackendv1alpha1.APIServiceExportTemplate{},
+		&apisexamplebackendv1alpha1.APIServiceExportTemplate{},
 		resyncPeriod,
 		indexers,
 	)
@@ -83,9 +83,9 @@ func (f *aPIServiceExportTemplateInformer) defaultInformer(client versioned.Inte
 }
 
 func (f *aPIServiceExportTemplateInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&examplebackendv1alpha1.APIServiceExportTemplate{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisexamplebackendv1alpha1.APIServiceExportTemplate{}, f.defaultInformer)
 }
 
-func (f *aPIServiceExportTemplateInformer) Lister() v1alpha1.APIServiceExportTemplateLister {
-	return v1alpha1.NewAPIServiceExportTemplateLister(f.Informer().GetIndexer())
+func (f *aPIServiceExportTemplateInformer) Lister() examplebackendv1alpha1.APIServiceExportTemplateLister {
+	return examplebackendv1alpha1.NewAPIServiceExportTemplateLister(f.Informer().GetIndexer())
 }

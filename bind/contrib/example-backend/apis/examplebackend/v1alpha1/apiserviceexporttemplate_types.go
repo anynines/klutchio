@@ -64,9 +64,9 @@ type APIServiceExportTemplateStatus struct{}
 type APIServiceSelector struct {
 	v1alpha1.GroupResource `json:","`
 
-	// +required
+	// +optional
 	// +kubebuilder:validation:MinLength:=1
-	Version string `json:"version"`
+	Version *string `json:"version"`
 }
 
 // APIServiceExportRequestList is the list of APIServiceExportRequest.

@@ -19,11 +19,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 
-	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
 // APIServiceExportRequestLister helps list APIServiceExportRequests.
@@ -31,7 +31,7 @@ import (
 type APIServiceExportRequestLister interface {
 	// List lists all APIServiceExportRequests in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportRequest, err error)
+	List(selector labels.Selector) (ret []*bindv1alpha1.APIServiceExportRequest, err error)
 	// APIServiceExportRequests returns an object that can list and get APIServiceExportRequests.
 	APIServiceExportRequests(namespace string) APIServiceExportRequestNamespaceLister
 	APIServiceExportRequestListerExpansion
@@ -39,25 +39,17 @@ type APIServiceExportRequestLister interface {
 
 // aPIServiceExportRequestLister implements the APIServiceExportRequestLister interface.
 type aPIServiceExportRequestLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*bindv1alpha1.APIServiceExportRequest]
 }
 
 // NewAPIServiceExportRequestLister returns a new APIServiceExportRequestLister.
 func NewAPIServiceExportRequestLister(indexer cache.Indexer) APIServiceExportRequestLister {
-	return &aPIServiceExportRequestLister{indexer: indexer}
-}
-
-// List lists all APIServiceExportRequests in the indexer.
-func (s *aPIServiceExportRequestLister) List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportRequest, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.APIServiceExportRequest))
-	})
-	return ret, err
+	return &aPIServiceExportRequestLister{listers.New[*bindv1alpha1.APIServiceExportRequest](indexer, bindv1alpha1.Resource("apiserviceexportrequest"))}
 }
 
 // APIServiceExportRequests returns an object that can list and get APIServiceExportRequests.
 func (s *aPIServiceExportRequestLister) APIServiceExportRequests(namespace string) APIServiceExportRequestNamespaceLister {
-	return aPIServiceExportRequestNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return aPIServiceExportRequestNamespaceLister{listers.NewNamespaced[*bindv1alpha1.APIServiceExportRequest](s.ResourceIndexer, namespace)}
 }
 
 // APIServiceExportRequestNamespaceLister helps list and get APIServiceExportRequests.
@@ -65,36 +57,15 @@ func (s *aPIServiceExportRequestLister) APIServiceExportRequests(namespace strin
 type APIServiceExportRequestNamespaceLister interface {
 	// List lists all APIServiceExportRequests in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportRequest, err error)
+	List(selector labels.Selector) (ret []*bindv1alpha1.APIServiceExportRequest, err error)
 	// Get retrieves the APIServiceExportRequest from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.APIServiceExportRequest, error)
+	Get(name string) (*bindv1alpha1.APIServiceExportRequest, error)
 	APIServiceExportRequestNamespaceListerExpansion
 }
 
 // aPIServiceExportRequestNamespaceLister implements the APIServiceExportRequestNamespaceLister
 // interface.
 type aPIServiceExportRequestNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all APIServiceExportRequests in the indexer for a given namespace.
-func (s aPIServiceExportRequestNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportRequest, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.APIServiceExportRequest))
-	})
-	return ret, err
-}
-
-// Get retrieves the APIServiceExportRequest from the indexer for a given namespace and name.
-func (s aPIServiceExportRequestNamespaceLister) Get(name string) (*v1alpha1.APIServiceExportRequest, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("apiserviceexportrequest"), name)
-	}
-	return obj.(*v1alpha1.APIServiceExportRequest), nil
+	listers.ResourceIndexer[*bindv1alpha1.APIServiceExportRequest]
 }

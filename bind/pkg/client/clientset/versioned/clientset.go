@@ -19,8 +19,8 @@ limitations under the License.
 package versioned
 
 import (
-	"fmt"
-	"net/http"
+	fmt "fmt"
+	http "net/http"
 
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -34,8 +34,7 @@ type Interface interface {
 	KlutchBindV1alpha1() klutchbindv1alpha1.KlutchBindV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	klutchBindV1alpha1 *klutchbindv1alpha1.KlutchBindV1alpha1Client

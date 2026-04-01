@@ -19,15 +19,14 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
-	"time"
+	context "context"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 
-	v1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	scheme "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned/scheme"
 )
 
@@ -39,158 +38,34 @@ type APIServiceExportsGetter interface {
 
 // APIServiceExportInterface has methods to work with APIServiceExport resources.
 type APIServiceExportInterface interface {
-	Create(ctx context.Context, aPIServiceExport *v1alpha1.APIServiceExport, opts v1.CreateOptions) (*v1alpha1.APIServiceExport, error)
-	Update(ctx context.Context, aPIServiceExport *v1alpha1.APIServiceExport, opts v1.UpdateOptions) (*v1alpha1.APIServiceExport, error)
-	UpdateStatus(ctx context.Context, aPIServiceExport *v1alpha1.APIServiceExport, opts v1.UpdateOptions) (*v1alpha1.APIServiceExport, error)
+	Create(ctx context.Context, aPIServiceExport *bindv1alpha1.APIServiceExport, opts v1.CreateOptions) (*bindv1alpha1.APIServiceExport, error)
+	Update(ctx context.Context, aPIServiceExport *bindv1alpha1.APIServiceExport, opts v1.UpdateOptions) (*bindv1alpha1.APIServiceExport, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, aPIServiceExport *bindv1alpha1.APIServiceExport, opts v1.UpdateOptions) (*bindv1alpha1.APIServiceExport, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.APIServiceExport, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.APIServiceExportList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*bindv1alpha1.APIServiceExport, error)
+	List(ctx context.Context, opts v1.ListOptions) (*bindv1alpha1.APIServiceExportList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.APIServiceExport, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *bindv1alpha1.APIServiceExport, err error)
 	APIServiceExportExpansion
 }
 
 // aPIServiceExports implements APIServiceExportInterface
 type aPIServiceExports struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*bindv1alpha1.APIServiceExport, *bindv1alpha1.APIServiceExportList]
 }
 
 // newAPIServiceExports returns a APIServiceExports
 func newAPIServiceExports(c *KlutchBindV1alpha1Client, namespace string) *aPIServiceExports {
 	return &aPIServiceExports{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*bindv1alpha1.APIServiceExport, *bindv1alpha1.APIServiceExportList](
+			"apiserviceexports",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *bindv1alpha1.APIServiceExport { return &bindv1alpha1.APIServiceExport{} },
+			func() *bindv1alpha1.APIServiceExportList { return &bindv1alpha1.APIServiceExportList{} },
+		),
 	}
-}
-
-// Get takes name of the aPIServiceExport, and returns the corresponding aPIServiceExport object, and an error if there is any.
-func (c *aPIServiceExports) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.APIServiceExport, err error) {
-	result = &v1alpha1.APIServiceExport{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of APIServiceExports that match those selectors.
-func (c *aPIServiceExports) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.APIServiceExportList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.APIServiceExportList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested aPIServiceExports.
-func (c *aPIServiceExports) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a aPIServiceExport and creates it.  Returns the server's representation of the aPIServiceExport, and an error, if there is any.
-func (c *aPIServiceExports) Create(ctx context.Context, aPIServiceExport *v1alpha1.APIServiceExport, opts v1.CreateOptions) (result *v1alpha1.APIServiceExport, err error) {
-	result = &v1alpha1.APIServiceExport{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aPIServiceExport).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a aPIServiceExport and updates it. Returns the server's representation of the aPIServiceExport, and an error, if there is any.
-func (c *aPIServiceExports) Update(ctx context.Context, aPIServiceExport *v1alpha1.APIServiceExport, opts v1.UpdateOptions) (result *v1alpha1.APIServiceExport, err error) {
-	result = &v1alpha1.APIServiceExport{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		Name(aPIServiceExport.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aPIServiceExport).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *aPIServiceExports) UpdateStatus(ctx context.Context, aPIServiceExport *v1alpha1.APIServiceExport, opts v1.UpdateOptions) (result *v1alpha1.APIServiceExport, err error) {
-	result = &v1alpha1.APIServiceExport{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		Name(aPIServiceExport.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aPIServiceExport).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the aPIServiceExport and deletes it. Returns an error if one occurs.
-func (c *aPIServiceExports) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *aPIServiceExports) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched aPIServiceExport.
-func (c *aPIServiceExports) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.APIServiceExport, err error) {
-	result = &v1alpha1.APIServiceExport{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("apiserviceexports").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

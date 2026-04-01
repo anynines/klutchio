@@ -19,11 +19,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 
-	v1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
+	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
 )
 
 // APIServiceExportTemplateLister helps list APIServiceExportTemplates.
@@ -31,7 +31,7 @@ import (
 type APIServiceExportTemplateLister interface {
 	// List lists all APIServiceExportTemplates in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportTemplate, err error)
+	List(selector labels.Selector) (ret []*examplebackendv1alpha1.APIServiceExportTemplate, err error)
 	// APIServiceExportTemplates returns an object that can list and get APIServiceExportTemplates.
 	APIServiceExportTemplates(namespace string) APIServiceExportTemplateNamespaceLister
 	APIServiceExportTemplateListerExpansion
@@ -39,25 +39,17 @@ type APIServiceExportTemplateLister interface {
 
 // aPIServiceExportTemplateLister implements the APIServiceExportTemplateLister interface.
 type aPIServiceExportTemplateLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*examplebackendv1alpha1.APIServiceExportTemplate]
 }
 
 // NewAPIServiceExportTemplateLister returns a new APIServiceExportTemplateLister.
 func NewAPIServiceExportTemplateLister(indexer cache.Indexer) APIServiceExportTemplateLister {
-	return &aPIServiceExportTemplateLister{indexer: indexer}
-}
-
-// List lists all APIServiceExportTemplates in the indexer.
-func (s *aPIServiceExportTemplateLister) List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportTemplate, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.APIServiceExportTemplate))
-	})
-	return ret, err
+	return &aPIServiceExportTemplateLister{listers.New[*examplebackendv1alpha1.APIServiceExportTemplate](indexer, examplebackendv1alpha1.Resource("apiserviceexporttemplate"))}
 }
 
 // APIServiceExportTemplates returns an object that can list and get APIServiceExportTemplates.
 func (s *aPIServiceExportTemplateLister) APIServiceExportTemplates(namespace string) APIServiceExportTemplateNamespaceLister {
-	return aPIServiceExportTemplateNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return aPIServiceExportTemplateNamespaceLister{listers.NewNamespaced[*examplebackendv1alpha1.APIServiceExportTemplate](s.ResourceIndexer, namespace)}
 }
 
 // APIServiceExportTemplateNamespaceLister helps list and get APIServiceExportTemplates.
@@ -65,36 +57,15 @@ func (s *aPIServiceExportTemplateLister) APIServiceExportTemplates(namespace str
 type APIServiceExportTemplateNamespaceLister interface {
 	// List lists all APIServiceExportTemplates in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportTemplate, err error)
+	List(selector labels.Selector) (ret []*examplebackendv1alpha1.APIServiceExportTemplate, err error)
 	// Get retrieves the APIServiceExportTemplate from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.APIServiceExportTemplate, error)
+	Get(name string) (*examplebackendv1alpha1.APIServiceExportTemplate, error)
 	APIServiceExportTemplateNamespaceListerExpansion
 }
 
 // aPIServiceExportTemplateNamespaceLister implements the APIServiceExportTemplateNamespaceLister
 // interface.
 type aPIServiceExportTemplateNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all APIServiceExportTemplates in the indexer for a given namespace.
-func (s aPIServiceExportTemplateNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.APIServiceExportTemplate, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.APIServiceExportTemplate))
-	})
-	return ret, err
-}
-
-// Get retrieves the APIServiceExportTemplate from the indexer for a given namespace and name.
-func (s aPIServiceExportTemplateNamespaceLister) Get(name string) (*v1alpha1.APIServiceExportTemplate, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("apiserviceexporttemplate"), name)
-	}
-	return obj.(*v1alpha1.APIServiceExportTemplate), nil
+	listers.ResourceIndexer[*examplebackendv1alpha1.APIServiceExportTemplate]
 }
