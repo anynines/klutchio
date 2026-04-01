@@ -1,0 +1,57 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-backend
+  labels:
+    app: example-backend
+    mode: control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-backend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: example-backend
+        mode: control-plane
+    spec:
+      serviceAccountName: example-backend
+      containers:
+        - name: example-backend
+          image: ghcr.io/lhaendler/example-backend-b5cf54fdc24668b76dfd456f2567a813@sha256:c53a6db80f42b928d602578a069690cf1e4045d02dbf86f15fc23a93db628e33
+          command:
+            - /ko-app/example-backend
+          args:
+            - --namespace-prefix=cluster
+            - --pretty-name=MangoDB
+            - --consumer-scope=Namespaced
+            - --control-plane-mode
+          resources:
+            limits:
+              cpu: '1'
+              memory: 512Mi
+            requests:
+              cpu: '50m'
+              memory: 128Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: example-backend
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: example-backend
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: example-backend
+  namespace: default

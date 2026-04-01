@@ -46,6 +46,14 @@ type APIServiceNamespaceListerExpansion interface{}
 // APIServiceNamespaceNamespaceLister.
 type APIServiceNamespaceNamespaceListerExpansion interface{}
 
+// AppClusterBindingListerExpansion allows custom methods to be added to
+// AppClusterBindingLister.
+type AppClusterBindingListerExpansion interface{}
+
+// AppClusterBindingNamespaceListerExpansion allows custom methods to be added to
+// AppClusterBindingNamespaceLister.
+type AppClusterBindingNamespaceListerExpansion interface{}
+
 // ClusterBindingListerExpansion allows custom methods to be added to
 // ClusterBindingLister.
 type ClusterBindingListerExpansion interface{}

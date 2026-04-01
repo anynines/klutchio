@@ -50,7 +50,8 @@ type ExtraOptions struct {
 	ExternalCA             []byte
 	TLSExternalServerName  string
 
-	TestingAutoSelect string
+	TestingAutoSelect   string
+	ControlPlaneMode    bool
 }
 
 type completedOptions struct {
@@ -103,17 +104,23 @@ func (options *Options) AddFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&options.TestingAutoSelect, "testing-auto-select", options.TestingAutoSelect, "<resource>.<group> that is automatically selected on th bind screen for testing")
 	fs.MarkHidden("testing-auto-select") // nolint: errcheck
+
+	fs.BoolVar(&options.ControlPlaneMode, "control-plane-mode", options.ControlPlaneMode, "Enable control plane mode: run controllers without web server, OIDC, or cookies")
 }
 
 func (options *Options) Complete() (*CompletedOptions, error) {
-	if err := options.OIDC.Complete(); err != nil {
-		return nil, err
+	if !options.ControlPlaneMode {
+		if err := options.OIDC.Complete(); err != nil {
+			return nil, err
+		}
+		if err := options.Cookie.Complete(); err != nil {
+			return nil, err
+		}
 	}
-	if err := options.Cookie.Complete(); err != nil {
-		return nil, err
-	}
-	if err := options.Serve.Complete(); err != nil {
-		return nil, err
+	if !options.ControlPlaneMode {
+		if err := options.Serve.Complete(); err != nil {
+			return nil, err
+		}
 	}
 
 	// normalize the scope and the isolation
@@ -162,11 +169,13 @@ func (options *CompletedOptions) Validate() error {
 		return fmt.Errorf("pretty name cannot be empty")
 	}
 
-	if err := options.OIDC.Validate(); err != nil {
-		return err
-	}
-	if err := options.Cookie.Validate(); err != nil {
-		return err
+	if !options.ControlPlaneMode {
+		if err := options.OIDC.Validate(); err != nil {
+			return err
+		}
+		if err := options.Cookie.Validate(); err != nil {
+			return err
+		}
 	}
 	if options.ConsumerScope != string(bindv1alpha1.NamespacedScope) && options.ConsumerScope != string(bindv1alpha1.ClusterScope) {
 		return fmt.Errorf("consumer scope must be either %q or %q", bindv1alpha1.NamespacedScope, bindv1alpha1.ClusterScope)

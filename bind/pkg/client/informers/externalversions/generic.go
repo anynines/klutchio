@@ -62,6 +62,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.KlutchBind().V1alpha1().APIServiceExportRequests().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("apiservicenamespaces"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.KlutchBind().V1alpha1().APIServiceNamespaces().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("appclusterbindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.KlutchBind().V1alpha1().AppClusterBindings().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("clusterbindings"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.KlutchBind().V1alpha1().ClusterBindings().Informer()}, nil
 

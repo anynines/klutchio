@@ -29,10 +29,14 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/utils/pointer"
 
-	kuberesources "github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes/resources"
+	"github.com/anynines/klutchio/bind/contrib/example-backend/kubernetes/bindings"
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/util/conditions"
+)
+
+const (
+	serviceAccountName = "klutch-binder"
 )
 
 type reconciler struct {
@@ -149,21 +153,14 @@ func (r *reconciler) ensureRBACClusterRole(ctx context.Context, clusterBinding *
 	}
 	for _, export := range exports {
 		export := export
-		expected.Rules = append(expected.Rules, rbacv1.PolicyRule{
-			APIGroups: []string{export.Spec.Group},
-			Resources: []string{export.Spec.Names.Plural},
-			Verbs:     []string{"get", "list", "watch", "update", "patch", "delete", "create"},
-		})
-		for _, e := range export.Spec.PermissionClaims {
-			e := e
-			// TODO more fine grained filtering
-
-			expected.Rules = append(expected.Rules, rbacv1.PolicyRule{
-				APIGroups: []string{e.Group},
-				Resources: []string{e.Resource},
-				Verbs:     []string{"get", "list", "watch", "update", "patch", "delete", "create"},
-			})
-		}
+		expected.Rules = bindings.AppendExportPolicyRules(
+			expected.Rules,
+			nil,
+			export.Spec.Group,
+			export.Spec.Names.Plural,
+			export.Spec.PermissionClaims,
+			bindings.ExportRuleVerbs,
+		)
 	}
 
 	if role == nil {
@@ -216,7 +213,7 @@ func (r *reconciler) ensureRBACClusterRoleBinding(ctx context.Context, clusterBi
 			{
 				Kind:      "ServiceAccount",
 				Namespace: clusterBinding.Namespace,
-				Name:      kuberesources.ServiceAccountName,
+				Name:      serviceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -250,12 +247,12 @@ func (r *reconciler) ensureRBACRoleBinding(ctx context.Context, clusterBinding *
 
 	expected := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: kuberesources.ServiceAccountName,
+			Name: serviceAccountName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      kuberesources.ServiceAccountName,
+				Name:      serviceAccountName,
 				Namespace: clusterBinding.Namespace,
 			},
 		},

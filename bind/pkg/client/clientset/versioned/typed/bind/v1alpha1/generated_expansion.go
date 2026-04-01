@@ -26,4 +26,6 @@ type APIServiceExportRequestExpansion interface{}
 
 type APIServiceNamespaceExpansion interface{}
 
+type AppClusterBindingExpansion interface{}
+
 type ClusterBindingExpansion interface{}

@@ -1,0 +1,73 @@
+#+title: Konnector On Control Plane
+
+** Inventory
+The default mode for klutch bind is to run the konnector, the controller that syncs kubernetes
+resources between the app cluster and the control plane, runs on the app cluster. This facilitates
+trust for the user because they can verify that the exact code that is available open source is
+running on the control plane.
+
+However, it might also be advantageous to run the konnector outside of the app cluster. For example
+to minimize the footprint, or hide the fairly privileged service account token that the konnector
+uses to authenticate to the control plane.
+
+The spin-up process for the konnector looks like this:
+
+1. Derive app cluster kubeconfig from environment (.kubeconfig file, or service account mounted)
+2. Get klutch API bindings
+3. Fetch kubeconfigs for bindings as secrets
+4. Start bindings controller with preconfigured kube clients for control plane and app cluster
+
+To achieve the goal of limiting user access to critical infomration, we need to remove the
+kubeconfig saved in the app cluster. When the konnector starts up in the control plane cluster
+instead of the app cluster, the initialization sequence needs to be modified. The konnector
+immediately has acces to a service account in the control plane, but not in the app cluster.
+
+A further question still remains. Do we want to store the binding information on the app cluster or
+on the control plane. Storing it on the app cluster might allow users to selectively control the
+APIs they want to "mount" into their cluster. Storing the bindings in the control plane allows the
+platform operator more control.
+
+** Proposed solution
+
+The connector starts on the control plane cluster, and uses the provided service account on the
+control plane to fetch a secret containing the kubeconfig for the app cluster. The apiservicebinding
+objects are stored on the control plane in the app cluster's "root" namespace.
+
+*** How to activate "control plane mode"?
+Because the syncing mechanism is unchanged and most of the logic besides the initialization of the
+clients is the same, I believe it makes more sense to implement this mode of running in the existing
+konnector image instead of creating a new binary. The konnector will not be able to determine
+whether it runs in the control plane or an app cluster based on the environment alone, so we need to
+implement a code path to activate the mode. I believe a command line flag makes the most sense here.
+
+Options:
+- `--control-plane-mode`
+*** Deployment considerations
+** Possibilities for binding process automation
+
+Suggestion: the creation of a binding environment and the konnector deployment are managed by a
+controller on the control plane.
+
+CRD draft:
+
+#+BEGIN_SRC yaml
+apiVersion: klutch.io/v1beta1
+kind: AppClusterBinding
+metadata: ...
+
+spec:
+  kubeconfigSecretRef:
+    name: a
+    namespace: b
+    key: c
+  apiExports:
+    - group: anynines.com
+      resource: servicebindings
+    - group: anynines.com
+      resource: postgresqlinstances
+  konnector:
+    deploy: yes
+    overrides:
+      image: ...
+      containerSettings: {}
+#+END_SRC
