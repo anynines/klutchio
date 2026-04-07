@@ -67,7 +67,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		kube:               mgr.GetClient(),
 		log:                o.Logger.WithValues("controller", name),
 		nowFn:              time.Now,
-		newOsbServiceFn:    osbpkg.NewOsbService,
+		newOsbServiceFn:    osbpkg.NewOsbServiceWithTLS,
 		newBackupManagerFn: bmpkg.NewBackupManagerServiceWithTLS,
 		recorder:           mgr.GetEventRecorderFor(name),
 	}
@@ -83,7 +83,7 @@ type reconciler struct {
 	kube               k8sclient.Client
 	log                logging.Logger
 	nowFn              func() time.Time
-	newOsbServiceFn    func(username, password []byte, url string) (osbclient.Client, error)
+	newOsbServiceFn    func(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (osbclient.Client, error)
 	newBackupManagerFn func(username, password []byte, url string, insecureSkipVerify bool, caBundle []byte, overrideServerName string) (bmclient.Client, error)
 	recorder           record.EventRecorder
 }
@@ -178,22 +178,15 @@ func (r reconciler) performCheck(ctx context.Context, pc *v1.ProviderConfig) (bo
 		return false, fmt.Sprintf("Extracting credentials: %v", err)
 	}
 
-	// Use HTTPS to distinguish between backup manager (HTTPS) and OSB (HTTP)
-	if isBackupManagerService(pc.Spec.Url) {
+	if pc.Spec.ServiceType == v1.ServiceTypeBackupManager {
 		return r.performBackupManagerCheck(ctx, pc, credentials)
 	}
 
 	return r.performOsbCheck(ctx, pc, credentials)
 }
 
-// isBackupManagerService detects if this is a backup manager service based on HTTPS usage
-func isBackupManagerService(url string) bool {
-	// Backup manager services use HTTPS; OSB services typically use HTTP
-	return len(url) > 5 && url[:5] == "https"
-}
-
 func (r reconciler) performOsbCheck(ctx context.Context, pc *v1.ProviderConfig, credentials credhelp.Credentials) (bool, string) {
-	svc, err := r.newOsbServiceFn(credentials.Username, credentials.Password, pc.Spec.Url)
+	svc, err := r.newOsbServiceFn(credentials.Username, credentials.Password, pc.Spec.Url, credentials.InsecureSkipVerify, credentials.CABundle, credentials.OverrideServerName)
 	if err != nil {
 		return false, fmt.Sprintf("Constructing OSB service client: %v", err)
 	}

@@ -165,6 +165,12 @@ spec:
                 - source
                 - username
                 type: object
+              serviceType:
+                description: ServiceType identifies the type of backend service.
+                enum:
+                - servicebroker
+                - backupmanager
+                type: string
               tls:
                 description: TLS configuration for the provider connection.
                 properties:
@@ -200,6 +206,7 @@ spec:
                 type: string
             required:
             - providerCredentials
+            - serviceType
             - url
             type: object
           status:
