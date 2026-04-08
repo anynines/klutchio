@@ -1,13 +1,6 @@
 name: Trigger website build on docs change
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-  pull_request:
-    paths:
-      - 'docs/**'
+  workflow_dispatch:
   
 jobs:
   # Job to dispatch a production build event when changes are pushed to the 'main' branch
