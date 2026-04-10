@@ -198,6 +198,10 @@ endif
 
 COUNT ?= 1
 E2E_PARALLELISM ?= 1
+KCP_SECURE_PORT ?= 16443
+DEX_HTTP_PORT ?= 5556
+KCP_READY_TIMEOUT_SECONDS ?= 180
+KEEP_E2E_ARTIFACTS ?= 0
 
 dex:
 		git clone https://github.com/dexidp/dex.git
@@ -207,9 +211,9 @@ dex/bin/dex: dex
 
 $(DEX):
 	mkdir -p $(TOOLS_DIR)
+	rm -rf $(TOOLS_DIR)/dex-clone-$(DEX_VER)
 	git clone --branch $(DEX_VER) --depth 1 https://github.com/dexidp/dex $(TOOLS_DIR)/dex-clone-$(DEX_VER)
-	cd $(TOOLS_DIR)/dex-clone-$(DEX_VER) && make build
-	cp -a $(TOOLS_DIR)/dex-clone-$(DEX_VER)/bin/dex $(DEX)
+	cd $(TOOLS_DIR)/dex-clone-$(DEX_VER) && GOPROXY=https://proxy.golang.org,direct go build -o $(DEX) ./cmd/dex
 
 $(KCP):
 	mkdir -p $(TOOLS_DIR)
@@ -225,12 +229,20 @@ test-e2e: TEST_ARGS ?=
 test-e2e: WORK_DIR ?= .
 test-e2e: WHAT ?= ./test/e2e...
 test-e2e: $(KCP) $(DEX) build-all
-	mkdir .kcp
-	$(DEX) serve hack/dex-config-dev.yaml 2>&1 & DEX_PID=$$!; \
-	$(KCP) start &>.kcp/kcp.log & KCP_PID=$$!; \
-	trap 'kill -TERM $$DEX_PID $$KCP_PID; rm -rf .kcp' TERM INT EXIT && \
-	echo "Waiting for kcp to be ready (check .kcp/kcp.log)." && while ! KUBECONFIG=.kcp/admin.kubeconfig kubectl get --raw /readyz &>/dev/null; do sleep 1; echo -n "."; done && echo && \
-	KUBECONFIG=$$PWD/.kcp/admin.kubeconfig GOOS=$(OS) GOARCH=$(ARCH) $(GO_TEST) -race -count $(COUNT) -p $(E2E_PARALLELISM) -parallel $(E2E_PARALLELISM) $(WHAT) $(TEST_ARGS)
+	DEX_BIN="$(DEX)" \
+	KCP_BIN="$(KCP)" \
+	GO_TEST_CMD='$(GO_TEST)' \
+	GOOS_VALUE="$(OS)" \
+	GOARCH_VALUE="$(ARCH)" \
+	COUNT_VALUE="$(COUNT)" \
+	E2E_PARALLELISM_VALUE="$(E2E_PARALLELISM)" \
+	WHAT_VALUE='$(WHAT)' \
+	TEST_ARGS_VALUE='$(TEST_ARGS)' \
+	KCP_SECURE_PORT_VALUE="$(KCP_SECURE_PORT)" \
+	DEX_HTTP_PORT_VALUE="$(DEX_HTTP_PORT)" \
+	KCP_READY_TIMEOUT_SECONDS_VALUE="$(KCP_READY_TIMEOUT_SECONDS)" \
+	KEEP_E2E_ARTIFACTS_VALUE="$(KEEP_E2E_ARTIFACTS)" \
+	bash ./hack/test-e2e.sh
 
 .PHONY: test
 ifdef USE_GOTESTSUM
