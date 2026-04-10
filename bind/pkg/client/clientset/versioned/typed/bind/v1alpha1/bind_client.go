@@ -42,8 +42,8 @@ type KlutchBindV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *KlutchBindV1alpha1Client) APIServiceBindings() APIServiceBindingInterface {
-	return newAPIServiceBindings(c)
+func (c *KlutchBindV1alpha1Client) APIServiceBindings(namespace string) APIServiceBindingInterface {
+	return newAPIServiceBindings(c, namespace)
 }
 
 func (c *KlutchBindV1alpha1Client) APIServiceExports(namespace string) APIServiceExportInterface {

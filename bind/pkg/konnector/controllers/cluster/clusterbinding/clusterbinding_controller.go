@@ -442,7 +442,7 @@ func (c *controller) updateServiceBindings(ctx context.Context, update func(*bin
 		update(binding)
 		if !reflect.DeepEqual(binding.Status.Conditions, orig.Status.Conditions) {
 			logger.V(2).Info("updating service binding", "binding", binding.Name)
-			if _, err := c.bindingBindClient.KlutchBindV1alpha1().APIServiceBindings().UpdateStatus(ctx, binding, metav1.UpdateOptions{}); err != nil {
+			if _, err := c.bindingBindClient.KlutchBindV1alpha1().APIServiceBindings(c.providerNamespace).UpdateStatus(ctx, binding, metav1.UpdateOptions{}); err != nil {
 				logger.Error(err, "failed to update service binding", "binding", binding.Name)
 				continue
 			}

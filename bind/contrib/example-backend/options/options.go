@@ -50,8 +50,8 @@ type ExtraOptions struct {
 	ExternalCA             []byte
 	TLSExternalServerName  string
 
-	TestingAutoSelect   string
-	ControlPlaneMode    bool
+	TestingAutoSelect string
+	ControlPlaneMode  bool
 }
 
 type completedOptions struct {

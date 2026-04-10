@@ -79,7 +79,7 @@ func NewController(
 
 		commit: committer.NewCommitter[*bindv1alpha1.APIServiceBinding, *bindv1alpha1.APIServiceBindingSpec, *bindv1alpha1.APIServiceBindingStatus](
 			func(ns string) committer.Patcher[*bindv1alpha1.APIServiceBinding] {
-				return consumerBindClient.KlutchBindV1alpha1().APIServiceBindings()
+				return consumerBindClient.KlutchBindV1alpha1().APIServiceBindings(ns)
 			},
 		),
 	}
@@ -231,7 +231,7 @@ func (c *controller) process(ctx context.Context, key string) error {
 
 	logger := klog.FromContext(ctx)
 
-	obj, err := c.serviceBindingLister.Get(name)
+	obj, err := c.serviceBindingLister.APIServiceBindings("").Get(name)
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	} else if errors.IsNotFound(err) {

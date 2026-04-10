@@ -32,9 +32,8 @@ type APIServiceBindingLister interface {
 	// List lists all APIServiceBindings in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*bindv1alpha1.APIServiceBinding, err error)
-	// Get retrieves the APIServiceBinding from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*bindv1alpha1.APIServiceBinding, error)
+	// APIServiceBindings returns an object that can list and get APIServiceBindings.
+	APIServiceBindings(namespace string) APIServiceBindingNamespaceLister
 	APIServiceBindingListerExpansion
 }
 
@@ -46,4 +45,27 @@ type aPIServiceBindingLister struct {
 // NewAPIServiceBindingLister returns a new APIServiceBindingLister.
 func NewAPIServiceBindingLister(indexer cache.Indexer) APIServiceBindingLister {
 	return &aPIServiceBindingLister{listers.New[*bindv1alpha1.APIServiceBinding](indexer, bindv1alpha1.Resource("apiservicebinding"))}
+}
+
+// APIServiceBindings returns an object that can list and get APIServiceBindings.
+func (s *aPIServiceBindingLister) APIServiceBindings(namespace string) APIServiceBindingNamespaceLister {
+	return aPIServiceBindingNamespaceLister{listers.NewNamespaced[*bindv1alpha1.APIServiceBinding](s.ResourceIndexer, namespace)}
+}
+
+// APIServiceBindingNamespaceLister helps list and get APIServiceBindings.
+// All objects returned here must be treated as read-only.
+type APIServiceBindingNamespaceLister interface {
+	// List lists all APIServiceBindings in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*bindv1alpha1.APIServiceBinding, err error)
+	// Get retrieves the APIServiceBinding from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*bindv1alpha1.APIServiceBinding, error)
+	APIServiceBindingNamespaceListerExpansion
+}
+
+// aPIServiceBindingNamespaceLister implements the APIServiceBindingNamespaceLister
+// interface.
+type aPIServiceBindingNamespaceLister struct {
+	listers.ResourceIndexer[*bindv1alpha1.APIServiceBinding]
 }

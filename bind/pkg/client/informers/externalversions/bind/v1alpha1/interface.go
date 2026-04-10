@@ -51,7 +51,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 
 // APIServiceBindings returns a APIServiceBindingInformer.
 func (v *version) APIServiceBindings() APIServiceBindingInformer {
-	return &aPIServiceBindingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &aPIServiceBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // APIServiceExports returns a APIServiceExportInformer.

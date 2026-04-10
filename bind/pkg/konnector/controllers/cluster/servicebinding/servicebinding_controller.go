@@ -101,7 +101,7 @@ func NewController(
 				return serviceExportInformer.Lister().APIServiceExports(providerNamespace).Get(name)
 			},
 			getServiceBinding: func(name string) (*bindv1alpha1.APIServiceBinding, error) {
-				return serviceBindingInformer.Lister().Get(name)
+				return serviceBindingInformer.Lister().APIServiceBindings(providerNamespace).Get(name)
 			},
 			getClusterBinding: func(ctx context.Context) (*bindv1alpha1.ClusterBinding, error) {
 				return providerBindClient.KlutchBindV1alpha1().ClusterBindings(providerNamespace).Get(ctx, "cluster", metav1.GetOptions{})
@@ -122,7 +122,7 @@ func NewController(
 
 		commit: committer.NewCommitter[*bindv1alpha1.APIServiceBinding, *bindv1alpha1.APIServiceBindingSpec, *bindv1alpha1.APIServiceBindingStatus](
 			func(ns string) committer.Patcher[*bindv1alpha1.APIServiceBinding] {
-				return bindingBindClient.KlutchBindV1alpha1().APIServiceBindings()
+				return bindingBindClient.KlutchBindV1alpha1().APIServiceBindings(ns)
 			},
 		),
 	}
@@ -297,7 +297,7 @@ func (c *controller) process(ctx context.Context, key string) error {
 
 	logger := klog.FromContext(ctx)
 
-	obj, err := c.serviceBindingInformer.Lister().Get(name)
+	obj, err := c.serviceBindingInformer.Lister().APIServiceBindings(c.providerNamespace).Get(name)
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	} else if errors.IsNotFound(err) {

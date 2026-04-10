@@ -51,9 +51,8 @@ const (
 //
 // +crd
 // +genclient
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:scope=Cluster,categories=kube-bindings,shortName=sb
+// +kubebuilder:resource:scope=Namespaced,categories=kube-bindings,shortName=sb
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Provider",type="string",JSONPath=`.status.providerPrettyName`,priority=0
 // +kubebuilder:printcolumn:name="Resources",type="string",JSONPath=`.metadata.annotations.bind\.klutch.\anynines\.com/resources`,priority=1

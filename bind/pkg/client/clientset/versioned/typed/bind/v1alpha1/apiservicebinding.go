@@ -33,7 +33,7 @@ import (
 // APIServiceBindingsGetter has a method to return a APIServiceBindingInterface.
 // A group's client should implement this interface.
 type APIServiceBindingsGetter interface {
-	APIServiceBindings() APIServiceBindingInterface
+	APIServiceBindings(namespace string) APIServiceBindingInterface
 }
 
 // APIServiceBindingInterface has methods to work with APIServiceBinding resources.
@@ -57,13 +57,13 @@ type aPIServiceBindings struct {
 }
 
 // newAPIServiceBindings returns a APIServiceBindings
-func newAPIServiceBindings(c *KlutchBindV1alpha1Client) *aPIServiceBindings {
+func newAPIServiceBindings(c *KlutchBindV1alpha1Client, namespace string) *aPIServiceBindings {
 	return &aPIServiceBindings{
 		gentype.NewClientWithList[*bindv1alpha1.APIServiceBinding, *bindv1alpha1.APIServiceBindingList](
 			"apiservicebindings",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			"",
+			namespace,
 			func() *bindv1alpha1.APIServiceBinding { return &bindv1alpha1.APIServiceBinding{} },
 			func() *bindv1alpha1.APIServiceBindingList { return &bindv1alpha1.APIServiceBindingList{} },
 		),

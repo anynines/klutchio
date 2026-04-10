@@ -96,7 +96,7 @@ func NewController(
 				return crdInformer.Lister().Get(name)
 			},
 			getServiceBinding: func(name string) (*bindv1alpha1.APIServiceBinding, error) {
-				return serviceBindingInformer.Lister().Get(name)
+				return serviceBindingInformer.Lister().APIServiceBindings(providerNamespace).Get(name)
 			},
 		},
 

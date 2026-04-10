@@ -35,8 +35,8 @@ import (
 )
 
 type Config struct {
-	ControlPlaneMode      bool
-	BindingRootNamespace  string
+	ControlPlaneMode     bool
+	BindingRootNamespace string
 
 	// App Cluster: where resources are synced to (the "consumer")
 	AppClusterConfig                 *rest.Config
@@ -48,12 +48,12 @@ type Config struct {
 	// Binding Cluster: where APIServiceBindings and provider kubeconfig secrets are stored
 	// - In default mode: same as app cluster
 	// - In control plane mode: the control plane cluster
-	BindingClusterConfig                *rest.Config
-	BindingClusterBindClient            *bindclient.Clientset
-	BindingClusterKubeClient            *kubernetesclient.Clientset
-	BindingClusterApiextensionsClient   *apiextensionsclient.Clientset
-	BindingClusterBindInformers         bindinformers.SharedInformerFactory
-	BindingClusterKubeInformers         kubeinformers.SharedInformerFactory
+	BindingClusterConfig              *rest.Config
+	BindingClusterBindClient          *bindclient.Clientset
+	BindingClusterKubeClient          *kubernetesclient.Clientset
+	BindingClusterApiextensionsClient *apiextensionsclient.Clientset
+	BindingClusterBindInformers       bindinformers.SharedInformerFactory
+	BindingClusterKubeInformers       kubeinformers.SharedInformerFactory
 
 	// Control Plane: only used in control plane mode
 	// In default mode, these are nil
