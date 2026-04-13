@@ -1,0 +1,37 @@
+name: Dead Link Check
+
+on:
+    pull_request:
+    push:
+        branches:
+            - main
+
+jobs:
+    link-check:
+        name: Check for dead links in docs
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install lychee
+              uses: lycheeverse/lychee-action@v2.0.2
+              env:
+                  # This allows checking many github.com links
+                  # without getting a "403 Forbidden" rate limit error.
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}              
+              with:
+                  # Scan all markdown and HTML files
+                  args: >
+                      --config lychee.toml
+                      --verbose
+                      --no-progress
+                      .
+
+            - name: Upload lychee report (optional)
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dead-link-report
+                  path: lychee-report.json
