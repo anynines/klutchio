@@ -50,6 +50,11 @@ func (b *BindAPIServiceOptions) createAPIServiceBindings(ctx context.Context, co
 		return nil, err
 	}
 
+	return b.createAPIServiceBindingsWithClients(ctx, bindClient, apiextensionsClient, request, secretName)
+}
+
+func (b *BindAPIServiceOptions) createAPIServiceBindingsWithClients(ctx context.Context, bindClient bindclient.Interface, apiextensionsClient apiextensionsclientset.Interface, request *bindv1alpha1.APIServiceExportRequest, secretName string) ([]*bindv1alpha1.APIServiceBinding, error) {
+
 	var bindings []*bindv1alpha1.APIServiceBinding
 	for _, resource := range request.Spec.Resources {
 		name := resource.Resource + "." + resource.Group
