@@ -67,7 +67,7 @@ users:
 			ControlPlaneMode: false,
 		},
 	}
-	
+
 	completed, err := opts.Complete()
 	require.NoError(t, err)
 
@@ -75,14 +75,14 @@ users:
 	require.NoError(t, err)
 	require.NotNil(t, config)
 	require.False(t, config.ControlPlaneMode)
-	
+
 	// App cluster fields should be populated
 	require.NotNil(t, config.AppClusterConfig)
 	require.NotNil(t, config.AppClusterKubeClient)
 	require.NotNil(t, config.AppClusterApiextensionsClient)
 	require.NotNil(t, config.AppClusterKubeInformers)
 	require.NotNil(t, config.AppClusterApiextensionsInformers)
-	
+
 	// Binding cluster fields should be populated (same as app cluster in default mode)
 	require.NotNil(t, config.BindingClusterConfig)
 	require.NotNil(t, config.BindingClusterBindClient)
@@ -90,7 +90,7 @@ users:
 	require.NotNil(t, config.BindingClusterApiextensionsClient)
 	require.NotNil(t, config.BindingClusterBindInformers)
 	require.NotNil(t, config.BindingClusterKubeInformers)
-	
+
 	// Verify binding cluster and app cluster point to the same config in default mode
 	require.Equal(t, config.AppClusterConfig, config.BindingClusterConfig)
 
@@ -167,7 +167,7 @@ users:
 			AppClusterKubeconfigSecretKey:       "kubeconfig",
 		},
 	}
-	
+
 	completed, err := opts.Complete()
 	require.NoError(t, err)
 
@@ -218,7 +218,7 @@ users:
 			AppClusterKubeconfigSecretKey:       "kubeconfig",
 		},
 	}
-	
+
 	completed, err := opts.Complete()
 	require.NoError(t, err)
 

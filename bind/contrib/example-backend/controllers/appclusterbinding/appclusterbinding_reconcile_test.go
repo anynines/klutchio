@@ -27,6 +27,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/utils/pointer"
 
 	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
@@ -56,7 +57,7 @@ func TestNewServiceBindingClusterScoped(t *testing.T) {
 					Group:    "klutch.anynines.com",
 					Resource: "widgets",
 				},
-				Version: "v1alpha1",
+				Version: pointer.String("v1alpha1"),
 			},
 		},
 	}
@@ -78,7 +79,7 @@ func TestAPIServiceBindingName(t *testing.T) {
 					Group:    "anynines.com",
 					Resource: "postgresqlinstances",
 				},
-				Version: "v1alpha1",
+				Version: pointer.String("v1alpha1"),
 			},
 		},
 	}
@@ -103,7 +104,7 @@ func TestNewAPIServiceExportRequest(t *testing.T) {
 					Group:    "db.example.com",
 					Resource: "postgresqls",
 				},
-				Version: "v1alpha1",
+				Version: pointer.String("v1alpha1"),
 			},
 			PermissionClaims: []bindv1alpha1.PermissionClaim{{
 				GroupResource: bindv1alpha1.GroupResource{Group: "", Resource: "secrets"},
@@ -155,7 +156,7 @@ func TestEnsureServiceExportRequestsUsesTemplateLookup(t *testing.T) {
 				Spec: examplebackendv1alpha1.APIServiceExportTemplateSpec{
 					APIServiceSelector: examplebackendv1alpha1.APIServiceSelector{
 						GroupResource: bindv1alpha1.GroupResource{Group: "db.example.com", Resource: "postgresqls"},
-						Version:       "v1alpha1",
+						Version:       pointer.String("v1alpha1"),
 					},
 				},
 			}, nil
@@ -205,7 +206,7 @@ func TestEnsureKonnectorClusterRBACIncludesTemplateResourceRules(t *testing.T) {
 				Spec: examplebackendv1alpha1.APIServiceExportTemplateSpec{
 					APIServiceSelector: examplebackendv1alpha1.APIServiceSelector{
 						GroupResource: bindv1alpha1.GroupResource{Group: "anynines.com", Resource: "postgresqlinstances"},
-						Version:       "v1",
+						Version:       pointer.String("v1"),
 					},
 					PermissionClaims: []bindv1alpha1.PermissionClaim{
 						{GroupResource: bindv1alpha1.GroupResource{Group: "", Resource: "configmaps"}, Version: "v1"},
