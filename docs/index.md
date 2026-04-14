@@ -32,7 +32,11 @@ environments.
 
 To get started, use the klutch-bind CLI. It installs a lightweight component in the application cluster, which
 establishes a connection to the Control Plane and enables the provisioning and management of databases and other data
-services. The application cluster itself does not run data services.
+services. By default, this component (konnector) runs in the application cluster, but it can also run in control
+plane mode on the Control Plane Cluster for centralized operation. The application cluster itself does not run data
+services.
+
+For control plane mode details, see [Konnector Control Plane Mode](./konnector-control-plane-mode.md).
 
 #### 2. Deploy a data service with YAML
 

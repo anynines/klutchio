@@ -7,6 +7,9 @@
 - Bumped a9s Data Service integration to 1.4.1: update supported services: add a9s-messaging 4
 - **breaking**: `providerconfigs.dataservices.anynines.com` now expects a field `spec.serviceType`, which can be either `servicebroker` or `backupmanager`.
 - Added TLS support for communication with service-broker in provider-anynines. Service-broker URL can now use https.
+- Klutch-bind: advanced konnector control plane mode with explicit client separation for control plane, binding cluster, and app cluster paths, plus fixes for APIServiceBinding writes in both modes.
+- Klutch-bind: migrated APIServiceBinding handling to namespace scope as part of control plane mode hardening.
+- Klutch-bind: updated control plane mode root namespace handling for app cluster kubeconfig and simplified AppClusterBinding RBAC.
 
 ## [1.4.0] - 2025-12-18
 
