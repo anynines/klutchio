@@ -18,13 +18,61 @@ package plugin
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"testing"
 
+	apiextensionsfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	k8stesting "k8s.io/client-go/testing"
 
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	bindfake "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned/fake"
 )
+
+func TestCreateAPIServiceBindings_OIDCBindingNamespaceIsKlutchBind(t *testing.T) {
+	t.Parallel()
+
+	opts := NewBindAPIServiceOptions(genericclioptions.NewTestIOStreamsDiscard())
+	bindClient := bindfake.NewSimpleClientset()
+	apiExtensionsClient := apiextensionsfake.NewSimpleClientset()
+	request := &bindv1alpha1.APIServiceExportRequest{
+		Spec: bindv1alpha1.APIServiceExportRequestSpec{
+			Resources: []bindv1alpha1.APIServiceExportRequestResource{{
+				GroupResource: bindv1alpha1.GroupResource{Group: "mangodb.com", Resource: "mangodbs"},
+				Versions:      []string{"v1alpha1"},
+			}},
+		},
+	}
+
+	bindings, err := opts.createAPIServiceBindingsWithClients(context.Background(), bindClient, apiExtensionsClient, request, "kubeconfig-secret")
+	if err != nil {
+		t.Fatalf("createAPIServiceBindings returned error: %v", err)
+	}
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 APIServiceBinding, got %d", len(bindings))
+	}
+	if bindings[0].Namespace != "klutch-bind" {
+		t.Fatalf("expected created APIServiceBinding namespace %q, got %q", "klutch-bind", bindings[0].Namespace)
+	}
+
+	createActionCount := 0
+	for _, action := range bindClient.Actions() {
+		if action.GetVerb() == "create" && action.GetResource().Resource == "apiservicebindings" {
+			createActionCount++
+			nsAction, ok := action.(k8stesting.CreateAction)
+			if !ok {
+				t.Fatalf("expected create action type, got %T", action)
+			}
+			if nsAction.GetNamespace() != "klutch-bind" {
+				t.Fatalf("expected APIServiceBinding create in namespace klutch-bind, got %q", nsAction.GetNamespace())
+			}
+		}
+	}
+	if createActionCount != 1 {
+		t.Fatalf("expected 1 APIServiceBinding create action, got %d", createActionCount)
+	}
+}
 
 func TestHumanReadablePromt(t *testing.T) {
 	t.Parallel()

@@ -20,7 +20,7 @@ spec:
       serviceAccountName: example-backend
       containers:
         - name: example-backend
-          image: ghcr.io/kube-bind/example-backend:latest
+          image: ghcr.io/lhaendler/example-backend-b5cf54fdc24668b76dfd456f2567a813@sha256:5d51d88c6307a42d2e2a75abb52025c7f36ecc5b28c0a12e97bb933010c23f70
           command:
             - /example-backend
           args:

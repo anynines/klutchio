@@ -38,7 +38,11 @@ type reconciler struct {
 	lock        sync.RWMutex
 	controllers map[string]*controllerContext // by service binding name
 
-	newClusterController func(consumerSecretRefKey, providerNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error)
+	controlPlaneMode     bool
+	bindingRootNamespace string
+	bindingConfig        *rest.Config
+
+	newClusterController func(consumerSecretRefKey, bindingRootNamespace, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error)
 	getSecret            func(ns, name string) (*corev1.Secret, error)
 }
 
@@ -93,26 +97,39 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 		}
 	}
 
-	// extract which namespace this kubeconfig points to
-	cfg, err := clientcmd.Load([]byte(kubeconfig))
-	if err != nil {
-		logger.Error(err, "invalid kubeconfig in secret", "namespace", ref.Namespace, "name", ref.Name)
-		return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
-	}
-	kubeContext, found := cfg.Contexts[cfg.CurrentContext]
-	if !found {
-		logger.Error(err, "kubeconfig in secret does not have a current context", "namespace", ref.Namespace, "name", ref.Name)
-		return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
-	}
-	if kubeContext.Namespace == "" {
-		logger.Error(err, "kubeconfig in secret does not have a namespace set for the current context", "namespace", ref.Namespace, "name", ref.Name)
-		return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
-	}
-	providerNamespace := kubeContext.Namespace
-	providerConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
-	if err != nil {
-		logger.Error(err, "invalid kubeconfig in secret", "namespace", ref.Namespace, "name", ref.Name)
-		return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
+	bindingRootNamespace := ""
+	providerNamespace := ""
+	providerSecretNamespace := ""
+	var providerConfig *rest.Config
+	if r.controlPlaneMode {
+		bindingRootNamespace = r.bindingRootNamespace
+		providerNamespace = r.bindingRootNamespace
+		providerSecretNamespace = r.bindingRootNamespace
+		providerConfig = r.bindingConfig
+	} else {
+		// extract which namespace this kubeconfig points to
+		cfg, err := clientcmd.Load([]byte(kubeconfig))
+		if err != nil {
+			logger.Error(err, "invalid kubeconfig in secret", "namespace", ref.Namespace, "name", ref.Name)
+			return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
+		}
+		kubeContext, found := cfg.Contexts[cfg.CurrentContext]
+		if !found {
+			logger.Error(err, "kubeconfig in secret does not have a current context", "namespace", ref.Namespace, "name", ref.Name)
+			return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
+		}
+		if kubeContext.Namespace == "" {
+			logger.Error(err, "kubeconfig in secret does not have a namespace set for the current context", "namespace", ref.Namespace, "name", ref.Name)
+			return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
+		}
+		bindingRootNamespace = kubeContext.Namespace
+		providerNamespace = kubeContext.Namespace
+		providerSecretNamespace = kubeContext.Namespace
+		providerConfig, err = clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+		if err != nil {
+			logger.Error(err, "invalid kubeconfig in secret", "namespace", ref.Namespace, "name", ref.Name)
+			return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
+		}
 	}
 
 	ctrlCtx, cancel := context.WithCancel(ctx)
@@ -126,7 +143,9 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 	logger.V(2).Info("starting new Controller", "secret", ref.Namespace+"/"+ref.Name)
 	ctrl, err := r.newClusterController(
 		binding.Spec.KubeconfigSecretRef.Namespace+"/"+binding.Spec.KubeconfigSecretRef.Name,
+		bindingRootNamespace,
 		providerNamespace,
+		providerSecretNamespace,
 		func(svcBinding *bindv1alpha1.APIServiceBinding) bool {
 			r.lock.RLock()
 			defer r.lock.RUnlock()

@@ -31,11 +31,11 @@ type fakeAPIServiceBindings struct {
 	Fake *FakeKlutchBindV1alpha1
 }
 
-func newFakeAPIServiceBindings(fake *FakeKlutchBindV1alpha1) bindv1alpha1.APIServiceBindingInterface {
+func newFakeAPIServiceBindings(fake *FakeKlutchBindV1alpha1, namespace string) bindv1alpha1.APIServiceBindingInterface {
 	return &fakeAPIServiceBindings{
 		gentype.NewFakeClientWithList[*v1alpha1.APIServiceBinding, *v1alpha1.APIServiceBindingList](
 			fake.Fake,
-			"",
+			namespace,
 			v1alpha1.SchemeGroupVersion.WithResource("apiservicebindings"),
 			v1alpha1.SchemeGroupVersion.WithKind("APIServiceBinding"),
 			func() *v1alpha1.APIServiceBinding { return &v1alpha1.APIServiceBinding{} },

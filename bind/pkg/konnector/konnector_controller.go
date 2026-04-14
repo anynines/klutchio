@@ -53,6 +53,9 @@ const (
 // New returns a konnector controller.
 func New(
 	consumerConfig *rest.Config,
+	bindingConfig *rest.Config,
+	bindingRootNamespace string,
+	controlPlaneMode bool,
 	serviceBindingInformer bindinformers.APIServiceBindingInformer,
 	secretInformer coreinformers.SecretInformer,
 	namespaceInformer coreinformers.NamespaceInformer,
@@ -65,12 +68,15 @@ func New(
 	consumerConfig = rest.CopyConfig(consumerConfig)
 	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
 
-	bindClient, err := bindclient.NewForConfig(consumerConfig)
+	bindingConfig = rest.CopyConfig(bindingConfig)
+	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
+
+	bindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	servicebindingCtrl, err := servicebinding.NewController(consumerConfig, serviceBindingInformer, secretInformer)
+	servicebindingCtrl, err := servicebinding.NewController(bindingConfig, serviceBindingInformer, secretInformer)
 	if err != nil {
 		return nil, err
 	}
@@ -93,18 +99,25 @@ func New(
 		ServiceBindingCtrl: servicebindingCtrl,
 
 		reconciler: reconciler{
-			controllers: map[string]*controllerContext{},
+			controllers:          map[string]*controllerContext{},
+			controlPlaneMode:     controlPlaneMode,
+			bindingRootNamespace: bindingRootNamespace,
+			bindingConfig:        bindingConfig,
 			getSecret: func(ns, name string) (*corev1.Secret, error) {
 				return secretInformer.Lister().Secrets(ns).Get(name)
 			},
-			newClusterController: func(consumerSecretRefKey, providerNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
+			newClusterController: func(consumerSecretRefKey, bindingRootNamespace, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
 				providerConfig = rest.CopyConfig(providerConfig)
 				providerConfig = rest.AddUserAgent(providerConfig, controllerName)
 
 				return cluster.NewController(
 					consumerSecretRefKey,
+					bindingRootNamespace,
 					providerNamespace,
+					providerSecretNamespace,
+					controlPlaneMode,
 					reconcileServiceBinding,
+					bindingConfig,
 					consumerConfig,
 					providerConfig,
 					namespaceDynamicInformer,
@@ -116,7 +129,7 @@ func New(
 
 		commit: committer.NewCommitter[*bindv1alpha1.APIServiceBinding, *bindv1alpha1.APIServiceBindingSpec, *bindv1alpha1.APIServiceBindingStatus](
 			func(ns string) committer.Patcher[*bindv1alpha1.APIServiceBinding] {
-				return bindClient.KlutchBindV1alpha1().APIServiceBindings()
+				return bindClient.KlutchBindV1alpha1().APIServiceBindings(ns)
 			},
 		),
 	}
@@ -280,13 +293,13 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 }
 
 func (c *Controller) process(ctx context.Context, key string) error {
-	_, name, err := cache.SplitMetaNamespaceKey(key)
+	ns, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		runtime.HandleError(err)
 		return nil // we cannot do anything
 	}
 
-	obj, err := c.serviceBindingLister.Get(name)
+	obj, err := c.serviceBindingLister.APIServiceBindings(ns).Get(name)
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	} else if errors.IsNotFound(err) {

@@ -80,7 +80,7 @@ func (i Index) GetExported(ctx context.Context) ([]apiextensionsv1.CustomResourc
 func (i Index) TemplateFor(ctx context.Context, group, resource string) (v1alpha1.APIServiceExportTemplate, error) {
 	exports, err := i.templates.ExampleBackendV1alpha1().APIServiceExportTemplates(i.clusterNs).List(ctx, v1.ListOptions{})
 	if err != nil {
-		return v1alpha1.APIServiceExportTemplate{}, nil
+		return v1alpha1.APIServiceExportTemplate{}, err
 	}
 
 	for _, e := range exports.Items {

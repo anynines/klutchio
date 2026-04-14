@@ -51,7 +51,7 @@ const (
 func NewController(
 	consumerSecretRefKey, providerNamespace string,
 	reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool,
-	consumerConfig, providerConfig *rest.Config,
+	bindingConfig, consumerConfig, providerConfig *rest.Config,
 	serviceBindingInformer dynamic.Informer[bindlisters.APIServiceBindingLister],
 	serviceExportInformer bindinformers.APIServiceExportInformer,
 	crdInformer dynamic.Informer[apiextensionslisters.CustomResourceDefinitionLister],
@@ -63,10 +63,13 @@ func NewController(
 	providerConfig = rest.CopyConfig(providerConfig)
 	providerConfig = rest.AddUserAgent(providerConfig, controllerName)
 
+	bindingConfig = rest.CopyConfig(bindingConfig)
+	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
+
 	consumerConfig = rest.CopyConfig(consumerConfig)
 	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
 
-	consumerBindClient, err := bindclient.NewForConfig(consumerConfig)
+	bindingBindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +101,7 @@ func NewController(
 				return serviceExportInformer.Lister().APIServiceExports(providerNamespace).Get(name)
 			},
 			getServiceBinding: func(name string) (*bindv1alpha1.APIServiceBinding, error) {
-				return serviceBindingInformer.Lister().Get(name)
+				return serviceBindingInformer.Lister().APIServiceBindings(providerNamespace).Get(name)
 			},
 			getClusterBinding: func(ctx context.Context) (*bindv1alpha1.ClusterBinding, error) {
 				return providerBindClient.KlutchBindV1alpha1().ClusterBindings(providerNamespace).Get(ctx, "cluster", metav1.GetOptions{})
@@ -119,7 +122,7 @@ func NewController(
 
 		commit: committer.NewCommitter[*bindv1alpha1.APIServiceBinding, *bindv1alpha1.APIServiceBindingSpec, *bindv1alpha1.APIServiceBindingStatus](
 			func(ns string) committer.Patcher[*bindv1alpha1.APIServiceBinding] {
-				return consumerBindClient.KlutchBindV1alpha1().APIServiceBindings()
+				return bindingBindClient.KlutchBindV1alpha1().APIServiceBindings(ns)
 			},
 		),
 	}
@@ -206,9 +209,25 @@ func (c *controller) enqueueCRD(logger klog.Logger, obj interface{}) {
 	}
 	for _, obj := range exports {
 		export := obj.(*bindv1alpha1.APIServiceExport)
-		key := export.Name
-		logger.V(2).Info("queueing APIServiceBinding", "key", key, "reason", "CustomResourceDefinition", "CustomResourceDefinitionKey", name)
-		c.queue.Add(key)
+
+		bindings, err := c.serviceBindingInformer.Informer().GetIndexer().ByIndex(indexers.ByServiceBindingKubeconfigSecret, c.reconciler.consumerSecretRefKey)
+		if err != nil {
+			runtime.HandleError(err)
+			return
+		}
+		for _, obj := range bindings {
+			binding := obj.(*bindv1alpha1.APIServiceBinding)
+			if binding.Name != export.Name {
+				continue
+			}
+			key, err := cache.MetaNamespaceKeyFunc(binding)
+			if err != nil {
+				runtime.HandleError(err)
+				return
+			}
+			logger.V(2).Info("queueing APIServiceBinding", "key", key, "reason", "CustomResourceDefinition", "CustomResourceDefinitionKey", name)
+			c.queue.Add(key)
+		}
 	}
 }
 
@@ -286,7 +305,7 @@ func (c *controller) processNextWorkItem(ctx context.Context) bool {
 }
 
 func (c *controller) process(ctx context.Context, key string) error {
-	_, name, err := cache.SplitMetaNamespaceKey(key)
+	ns, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		runtime.HandleError(err)
 		return nil // we cannot do anything
@@ -294,7 +313,7 @@ func (c *controller) process(ctx context.Context, key string) error {
 
 	logger := klog.FromContext(ctx)
 
-	obj, err := c.serviceBindingInformer.Lister().Get(name)
+	obj, err := c.serviceBindingInformer.Lister().APIServiceBindings(ns).Get(name)
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	} else if errors.IsNotFound(err) {

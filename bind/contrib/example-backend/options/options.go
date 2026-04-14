@@ -51,6 +51,7 @@ type ExtraOptions struct {
 	TLSExternalServerName  string
 
 	TestingAutoSelect string
+	ControlPlaneMode  bool
 }
 
 type completedOptions struct {
@@ -103,17 +104,23 @@ func (options *Options) AddFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&options.TestingAutoSelect, "testing-auto-select", options.TestingAutoSelect, "<resource>.<group> that is automatically selected on th bind screen for testing")
 	fs.MarkHidden("testing-auto-select") // nolint: errcheck
+
+	fs.BoolVar(&options.ControlPlaneMode, "control-plane-mode", options.ControlPlaneMode, "Enable control plane mode: run controllers without web server, OIDC, or cookies")
 }
 
 func (options *Options) Complete() (*CompletedOptions, error) {
-	if err := options.OIDC.Complete(); err != nil {
-		return nil, err
+	if shouldEnableOIDC(options.ControlPlaneMode, options.OIDC) {
+		if err := options.OIDC.Complete(); err != nil {
+			return nil, err
+		}
+		if err := options.Cookie.Complete(); err != nil {
+			return nil, err
+		}
 	}
-	if err := options.Cookie.Complete(); err != nil {
-		return nil, err
-	}
-	if err := options.Serve.Complete(); err != nil {
-		return nil, err
+	if shouldEnableOIDC(options.ControlPlaneMode, options.OIDC) {
+		if err := options.Serve.Complete(); err != nil {
+			return nil, err
+		}
 	}
 
 	// normalize the scope and the isolation
@@ -162,11 +169,13 @@ func (options *CompletedOptions) Validate() error {
 		return fmt.Errorf("pretty name cannot be empty")
 	}
 
-	if err := options.OIDC.Validate(); err != nil {
-		return err
-	}
-	if err := options.Cookie.Validate(); err != nil {
-		return err
+	if shouldEnableOIDC(options.ControlPlaneMode, options.OIDC) {
+		if err := options.OIDC.Validate(); err != nil {
+			return err
+		}
+		if err := options.Cookie.Validate(); err != nil {
+			return err
+		}
 	}
 	if options.ConsumerScope != string(bindv1alpha1.NamespacedScope) && options.ConsumerScope != string(bindv1alpha1.ClusterScope) {
 		return fmt.Errorf("consumer scope must be either %q or %q", bindv1alpha1.NamespacedScope, bindv1alpha1.ClusterScope)
@@ -183,4 +192,23 @@ func (options *CompletedOptions) Validate() error {
 	}
 
 	return nil
+}
+
+func (options *CompletedOptions) OIDCEnabled() bool {
+	return shouldEnableOIDC(options.ControlPlaneMode, options.OIDC)
+}
+
+func shouldEnableOIDC(controlPlaneMode bool, oidc *OIDC) bool {
+	if !controlPlaneMode {
+		return true
+	}
+	if oidc == nil {
+		return false
+	}
+
+	return oidc.IssuerClientID != "" ||
+		oidc.IssuerClientSecret != "" ||
+		oidc.IssuerURL != "" ||
+		oidc.CallbackURL != "" ||
+		oidc.AuthorizeURL != ""
 }
