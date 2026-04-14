@@ -67,8 +67,8 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, fmt.Errorf("error setting up HTTP Server: %w", err)
 	}
 
-	// setup oidc backend and web server components (non-control-plane mode only)
-	if !config.Options.ControlPlaneMode {
+	// setup oidc backend and web server components when enabled
+	if config.Options.OIDCEnabled() {
 		callback := config.Options.OIDC.CallbackURL
 		if callback == "" {
 			callback = fmt.Sprintf("http://%s/callback", s.WebServer.Addr().String())

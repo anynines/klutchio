@@ -109,7 +109,7 @@ func (options *Options) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (options *Options) Complete() (*CompletedOptions, error) {
-	if !options.ControlPlaneMode {
+	if shouldEnableOIDC(options.ControlPlaneMode, options.OIDC) {
 		if err := options.OIDC.Complete(); err != nil {
 			return nil, err
 		}
@@ -117,7 +117,7 @@ func (options *Options) Complete() (*CompletedOptions, error) {
 			return nil, err
 		}
 	}
-	if !options.ControlPlaneMode {
+	if shouldEnableOIDC(options.ControlPlaneMode, options.OIDC) {
 		if err := options.Serve.Complete(); err != nil {
 			return nil, err
 		}
@@ -169,7 +169,7 @@ func (options *CompletedOptions) Validate() error {
 		return fmt.Errorf("pretty name cannot be empty")
 	}
 
-	if !options.ControlPlaneMode {
+	if shouldEnableOIDC(options.ControlPlaneMode, options.OIDC) {
 		if err := options.OIDC.Validate(); err != nil {
 			return err
 		}
@@ -192,4 +192,23 @@ func (options *CompletedOptions) Validate() error {
 	}
 
 	return nil
+}
+
+func (options *CompletedOptions) OIDCEnabled() bool {
+	return shouldEnableOIDC(options.ControlPlaneMode, options.OIDC)
+}
+
+func shouldEnableOIDC(controlPlaneMode bool, oidc *OIDC) bool {
+	if !controlPlaneMode {
+		return true
+	}
+	if oidc == nil {
+		return false
+	}
+
+	return oidc.IssuerClientID != "" ||
+		oidc.IssuerClientSecret != "" ||
+		oidc.IssuerURL != "" ||
+		oidc.CallbackURL != "" ||
+		oidc.AuthorizeURL != ""
 }
