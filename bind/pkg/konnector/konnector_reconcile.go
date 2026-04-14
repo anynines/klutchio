@@ -108,8 +108,8 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 	var providerConfig *rest.Config
 	if r.controlPlaneMode {
 		bindingRootNamespace = r.bindingRootNamespace
-		providerNamespace = providerExportNamespaceForBinding(binding)
-		providerSecretNamespace = providerSecretNamespaceForBinding(binding)
+		providerNamespace = r.bindingRootNamespace
+		providerSecretNamespace = r.bindingRootNamespace
 		providerConfig = r.bindingConfig
 	} else {
 		// extract which namespace this kubeconfig points to

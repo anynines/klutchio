@@ -127,13 +127,13 @@ func NewController(
 				return bindClient.KlutchBindV1alpha1().APIServiceBindings("").List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 			},
 			createServiceBinding: func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error) {
-				return bindClient.KlutchBindV1alpha1().APIServiceBindings("").Create(ctx, binding, metav1.CreateOptions{})
+				return bindClient.KlutchBindV1alpha1().APIServiceBindings(binding.Namespace).Create(ctx, binding, metav1.CreateOptions{})
 			},
 			updateServiceBinding: func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error) {
-				return bindClient.KlutchBindV1alpha1().APIServiceBindings("").Update(ctx, binding, metav1.UpdateOptions{})
+				return bindClient.KlutchBindV1alpha1().APIServiceBindings(binding.Namespace).Update(ctx, binding, metav1.UpdateOptions{})
 			},
-			deleteServiceBinding: func(ctx context.Context, name string) error {
-				return bindClient.KlutchBindV1alpha1().APIServiceBindings("").Delete(ctx, name, metav1.DeleteOptions{})
+			deleteServiceBinding: func(ctx context.Context, namespace, name string) error {
+				return bindClient.KlutchBindV1alpha1().APIServiceBindings(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 			},
 			templateFor: func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error) {
 				return templateIndex.TemplateFor(ctx, group, resource)

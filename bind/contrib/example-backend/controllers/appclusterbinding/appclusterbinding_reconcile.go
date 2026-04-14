@@ -50,7 +50,7 @@ const (
 	appClusterBindingNamespaceLabel   = "klutch.anynines.com/appclusterbinding-namespace"
 	bindingRootNamespacePrefix        = "klutch-bind"
 	apiServiceExportRequestNamePrefix = "appclusterbinding"
-	konnectorServiceAccountName       = "konnector"
+	konnectorServiceAccountName       = "klutch-binder"
 )
 
 type reconciler struct {
@@ -61,7 +61,7 @@ type reconciler struct {
 	listServiceBindings           func(ctx context.Context, labelSelector string) (*bindv1alpha1.APIServiceBindingList, error)
 	createServiceBinding          func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error)
 	updateServiceBinding          func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error)
-	deleteServiceBinding          func(ctx context.Context, name string) error
+	deleteServiceBinding          func(ctx context.Context, namespace, name string) error
 	templateFor                   func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error)
 	listAPIServiceExportRequests  func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error)
 	createAPIServiceExportRequest func(ctx context.Context, namespace string, req *bindv1alpha1.APIServiceExportRequest) (*bindv1alpha1.APIServiceExportRequest, error)
@@ -114,7 +114,10 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.AppClu
 		if err := r.ensureBindingRootResources(ctx, binding); err != nil {
 			errs = append(errs, err)
 		}
-		if err := r.ensureKonnectorServiceAccount(ctx, binding); err != nil {
+		if err := r.ensureServiceBindingRBAC(ctx, binding); err != nil {
+			errs = append(errs, err)
+		}
+		if err := r.ensureLeaderElectionRBAC(ctx, binding); err != nil {
 			errs = append(errs, err)
 		}
 		if err := r.ensureServiceBindings(ctx, binding); err != nil {
@@ -123,15 +126,15 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.AppClu
 		if err := r.ensureServiceExportRequests(ctx, binding); err != nil {
 			errs = append(errs, err)
 		}
-		if err := r.ensureKonnectorClusterRBAC(ctx, binding); err != nil {
-			errs = append(errs, err)
-		}
-		if err := r.ensureKonnectorNamespacedRBAC(ctx, binding); err != nil {
-			errs = append(errs, err)
-		}
-		if err := r.ensureKonnectorBindingRootRBAC(ctx, binding); err != nil {
-			errs = append(errs, err)
-		}
+		// if err := r.ensureKonnectorClusterRBAC(ctx, binding); err != nil {
+		// 	errs = append(errs, err)
+		// }
+		// if err := r.ensureKonnectorNamespacedRBAC(ctx, binding); err != nil {
+		// 	errs = append(errs, err)
+		// }
+		// if err := r.ensureKonnectorBindingRootRBAC(ctx, binding); err != nil {
+		// 	errs = append(errs, err)
+		// }
 		if err := r.ensureKonnectorDeployment(ctx, binding); err != nil {
 			errs = append(errs, err)
 		}
@@ -156,7 +159,8 @@ func (r *reconciler) ensureDeleted(ctx context.Context, binding *bindv1alpha1.Ap
 	} else {
 		for i := range serviceBindings.Items {
 			name := serviceBindings.Items[i].Name
-			if err := r.deleteServiceBinding(ctx, name); err != nil && !errors.IsNotFound(err) {
+			namespace := serviceBindings.Items[i].Namespace
+			if err := r.deleteServiceBinding(ctx, namespace, name); err != nil && !errors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("failed to delete apiservicebinding %q: %w", name, err))
 			}
 		}
@@ -213,15 +217,16 @@ func (r *reconciler) ensureDeleted(ctx context.Context, binding *bindv1alpha1.Ap
 	}
 
 	deploymentName := fmt.Sprintf("konnector-%s", binding.Name)
-	if err := r.deleteDeployment(ctx, binding.Namespace, deploymentName); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete deployment %s/%s: %w", binding.Namespace, deploymentName, err))
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
+	if err := r.deleteDeployment(ctx, bindingRootNamespace, deploymentName); err != nil && !errors.IsNotFound(err) {
+		errs = append(errs, fmt.Errorf("failed to delete deployment %s/%s: %w", bindingRootNamespace, deploymentName, err))
 	}
-	if _, err := r.getDeployment(ctx, binding.Namespace, deploymentName); err != nil {
+	if _, err := r.getDeployment(ctx, bindingRootNamespace, deploymentName); err != nil {
 		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify deployment cleanup %s/%s: %w", binding.Namespace, deploymentName, err))
+			errs = append(errs, fmt.Errorf("failed to verify deployment cleanup %s/%s: %w", bindingRootNamespace, deploymentName, err))
 		}
 	} else {
-		errs = append(errs, fmt.Errorf("deployment %s/%s still exists", binding.Namespace, deploymentName))
+		errs = append(errs, fmt.Errorf("deployment %s/%s still exists", bindingRootNamespace, deploymentName))
 	}
 
 	if err := r.deleteRoleBinding(ctx, binding.Namespace, "konnector-secret-reader"); err != nil && !errors.IsNotFound(err) {
@@ -270,7 +275,50 @@ func (r *reconciler) ensureDeleted(ctx context.Context, binding *bindv1alpha1.Ap
 		errs = append(errs, fmt.Errorf("role %s/%s still exists", secretNamespace, secretAccessRoleName))
 	}
 
-	bindingRootNamespace := r.getBindingRootNamespace(binding)
+	if err := r.deleteRoleBinding(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil && !errors.IsNotFound(err) {
+		errs = append(errs, fmt.Errorf("failed to delete rolebinding %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+	}
+	if _, err := r.getRoleBinding(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil {
+		if !errors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("failed to verify rolebinding cleanup %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+		}
+	} else {
+		errs = append(errs, fmt.Errorf("rolebinding %s/%s still exists", bindingRootNamespace, "apiservicebinding-manager"))
+	}
+
+	if err := r.deleteRole(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil && !errors.IsNotFound(err) {
+		errs = append(errs, fmt.Errorf("failed to delete role %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+	}
+	if _, err := r.getRole(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil {
+		if !errors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("failed to verify role cleanup %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+		}
+	} else {
+		errs = append(errs, fmt.Errorf("role %s/%s still exists", bindingRootNamespace, "apiservicebinding-manager"))
+	}
+
+	if err := r.deleteRoleBinding(ctx, bindingRootNamespace, "leader-election"); err != nil && !errors.IsNotFound(err) {
+		errs = append(errs, fmt.Errorf("failed to delete rolebinding %s/%s: %w", bindingRootNamespace, "leader-election", err))
+	}
+	if _, err := r.getRoleBinding(ctx, bindingRootNamespace, "leader-election"); err != nil {
+		if !errors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("failed to verify rolebinding cleanup %s/%s: %w", bindingRootNamespace, "leader-election", err))
+		}
+	} else {
+		errs = append(errs, fmt.Errorf("rolebinding %s/%s still exists", bindingRootNamespace, "leader-election"))
+	}
+
+	if err := r.deleteRole(ctx, bindingRootNamespace, "leader-election"); err != nil && !errors.IsNotFound(err) {
+		errs = append(errs, fmt.Errorf("failed to delete role %s/%s: %w", bindingRootNamespace, "leader-election", err))
+	}
+	if _, err := r.getRole(ctx, bindingRootNamespace, "leader-election"); err != nil {
+		if !errors.IsNotFound(err) {
+			errs = append(errs, fmt.Errorf("failed to verify role cleanup %s/%s: %w", bindingRootNamespace, "leader-election", err))
+		}
+	} else {
+		errs = append(errs, fmt.Errorf("role %s/%s still exists", bindingRootNamespace, "leader-election"))
+	}
+
 	if err := r.deleteNamespace(ctx, bindingRootNamespace); err != nil && !errors.IsNotFound(err) {
 		errs = append(errs, fmt.Errorf("failed to delete binding root namespace %q: %w", bindingRootNamespace, err))
 	}
@@ -407,18 +455,8 @@ func (r *reconciler) ensureBindingRootResources(ctx context.Context, binding *bi
 			binding.Spec.KubeconfigSecretRef.Key)
 	}
 
-	// Use shared RBAC helper for kubeconfig secret access.
-	// The konnector runs as the "konnector" SA in binding.Namespace, so grant
-	// that SA (not klutch-binder) read access to the kubeconfig secret.
-	roleName := fmt.Sprintf("klutch-bind-read-%s-%s", binding.Namespace, binding.Name)
-	if err := bindings.EnsureSecretAccessRBAC(ctx, r.kubeClient, bindings.SecretAccessOptions{
-		SecretNamespace:         binding.Spec.KubeconfigSecretRef.Namespace,
-		SecretName:              binding.Spec.KubeconfigSecretRef.Name,
-		ServiceAccountNamespace: binding.Namespace,
-		ServiceAccountName:      konnectorServiceAccountName,
-		RoleName:                roleName,
-	}); err != nil {
-		return fmt.Errorf("failed to ensure RBAC for kubeconfig secret: %w", err)
+	if err := r.ensureBindingRootKubeconfigSecret(ctx, binding, sourceSecret, rootNamespace); err != nil {
+		return err
 	}
 
 	// Create ClusterBinding in binding root namespace with labels for konnector RBAC
@@ -459,26 +497,50 @@ func (r *reconciler) ensureBindingRootResources(ctx context.Context, binding *bi
 	return nil
 }
 
-func (r *reconciler) ensureKonnectorServiceAccount(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
-	_, err := r.getServiceAccount(ctx, binding.Namespace, konnectorServiceAccountName)
-	if err == nil {
-		return nil
-	}
-	if !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get konnector service account %s/%s: %w", binding.Namespace, konnectorServiceAccountName, err)
+func (r *reconciler) ensureBindingRootKubeconfigSecret(ctx context.Context, binding *bindv1alpha1.AppClusterBinding, sourceSecret *corev1.Secret, rootNamespace string) error {
+	key := binding.Spec.KubeconfigSecretRef.Key
+	kubeconfigData, found := sourceSecret.Data[key]
+	if !found {
+		return fmt.Errorf("kubeconfig secret %s/%s is missing %q string key",
+			binding.Spec.KubeconfigSecretRef.Namespace,
+			binding.Spec.KubeconfigSecretRef.Name,
+			key)
 	}
 
-	sa := &corev1.ServiceAccount{
+	labels := ensureBindingLabels(nil, binding)
+	expected := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      konnectorServiceAccountName,
-			Namespace: binding.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				ownerReferenceForAppClusterBinding(binding),
-			},
+			Name:      binding.Spec.KubeconfigSecretRef.Name,
+			Namespace: rootNamespace,
+			Labels:    labels,
+		},
+		Type: sourceSecret.Type,
+		Data: map[string][]byte{
+			key: kubeconfigData,
 		},
 	}
-	if _, err := r.createServiceAccount(ctx, binding.Namespace, sa); err != nil {
-		return fmt.Errorf("failed to create konnector service account %s/%s: %w", binding.Namespace, konnectorServiceAccountName, err)
+
+	existing, err := r.getSecret(rootNamespace, expected.Name)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to get mirrored kubeconfig secret %s/%s: %w", rootNamespace, expected.Name, err)
+		}
+		if _, err := r.createSecret(ctx, rootNamespace, expected); err != nil {
+			return fmt.Errorf("failed to create mirrored kubeconfig secret %s/%s: %w", rootNamespace, expected.Name, err)
+		}
+		return nil
+	}
+
+	updated := existing.DeepCopy()
+	updated.Labels = ensureBindingLabels(updated.Labels, binding)
+	updated.Type = expected.Type
+	updated.Data = expected.Data
+	if !reflect.DeepEqual(existing.Labels, updated.Labels) ||
+		!reflect.DeepEqual(existing.Data, updated.Data) ||
+		existing.Type != updated.Type {
+		if _, err := r.updateSecret(ctx, rootNamespace, updated); err != nil {
+			return fmt.Errorf("failed to update mirrored kubeconfig secret %s/%s: %w", rootNamespace, expected.Name, err)
+		}
 	}
 
 	return nil
@@ -562,6 +624,7 @@ func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bi
 	}
 
 	// Create ClusterRoleBinding to bind konnector SA to the ClusterRole
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
 	expectedClusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterRoleBindingName,
@@ -575,7 +638,7 @@ func (r *reconciler) ensureKonnectorClusterRBAC(ctx context.Context, binding *bi
 			{
 				Kind:      "ServiceAccount",
 				Name:      konnectorServiceAccountName,
-				Namespace: binding.Namespace,
+				Namespace: bindingRootNamespace,
 			},
 		},
 	}
@@ -653,15 +716,12 @@ func (r *reconciler) resolveTemplate(ctx context.Context, apiExport bindv1alpha1
 
 // ensureKonnectorNamespacedRBAC creates Role and RoleBinding in the AppClusterBinding namespace for secrets
 func (r *reconciler) ensureKonnectorNamespacedRBAC(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
-	ownerRef := ownerReferenceForAppClusterBinding(binding)
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
 
 	expectedRole := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "konnector-secret-reader",
 			Namespace: binding.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				ownerRef,
-			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -680,10 +740,9 @@ func (r *reconciler) ensureKonnectorNamespacedRBAC(ctx context.Context, binding 
 		if _, err := r.createRole(ctx, binding.Namespace, expectedRole); err != nil {
 			return fmt.Errorf("failed to create role: %w", err)
 		}
-	} else if !reflect.DeepEqual(role.Rules, expectedRole.Rules) || !reflect.DeepEqual(role.OwnerReferences, expectedRole.OwnerReferences) {
+	} else if !reflect.DeepEqual(role.Rules, expectedRole.Rules) {
 		role = role.DeepCopy()
 		role.Rules = expectedRole.Rules
-		role.OwnerReferences = expectedRole.OwnerReferences
 		if _, err := r.updateRole(ctx, binding.Namespace, role); err != nil {
 			return fmt.Errorf("failed to update role: %w", err)
 		}
@@ -693,15 +752,12 @@ func (r *reconciler) ensureKonnectorNamespacedRBAC(ctx context.Context, binding 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "konnector-secret-reader",
 			Namespace: binding.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				ownerRef,
-			},
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
 				Name:      konnectorServiceAccountName,
-				Namespace: binding.Namespace,
+				Namespace: bindingRootNamespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -719,10 +775,9 @@ func (r *reconciler) ensureKonnectorNamespacedRBAC(ctx context.Context, binding 
 		if _, err := r.createRoleBinding(ctx, binding.Namespace, expectedRB); err != nil {
 			return fmt.Errorf("failed to create rolebinding: %w", err)
 		}
-	} else if !reflect.DeepEqual(rb.Subjects, expectedRB.Subjects) || !reflect.DeepEqual(rb.OwnerReferences, expectedRB.OwnerReferences) {
+	} else if !reflect.DeepEqual(rb.Subjects, expectedRB.Subjects) {
 		rb = rb.DeepCopy()
 		rb.Subjects = expectedRB.Subjects
-		rb.OwnerReferences = expectedRB.OwnerReferences
 		if _, err := r.updateRoleBinding(ctx, binding.Namespace, rb); err != nil {
 			return fmt.Errorf("failed to update rolebinding: %w", err)
 		}
@@ -779,7 +834,7 @@ func (r *reconciler) ensureKonnectorBindingRootRBAC(ctx context.Context, binding
 			{
 				Kind:      "ServiceAccount",
 				Name:      konnectorServiceAccountName,
-				Namespace: binding.Namespace,
+				Namespace: bindingRootNamespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -808,6 +863,155 @@ func (r *reconciler) ensureKonnectorBindingRootRBAC(ctx context.Context, binding
 	return nil
 }
 
+func (r *reconciler) ensureServiceBindingRBAC(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
+
+	expectedRole := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "apiservicebinding-manager",
+			Namespace: bindingRootNamespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"klutch.anynines.com"},
+				Resources: []string{"apiservicebindings"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{"klutch.anynines.com"},
+				Resources: []string{"apiservicebindings/status"},
+				Verbs:     []string{"patch", "update"},
+			},
+		},
+	}
+
+	role, err := r.getRole(ctx, bindingRootNamespace, "apiservicebinding-manager")
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to get role: %w", err)
+		}
+		if _, err := r.createRole(ctx, bindingRootNamespace, expectedRole); err != nil {
+			return fmt.Errorf("failed to create role: %w", err)
+		}
+	} else if !reflect.DeepEqual(role.Rules, expectedRole.Rules) {
+		role = role.DeepCopy()
+		role.Rules = expectedRole.Rules
+		if _, err := r.updateRole(ctx, bindingRootNamespace, role); err != nil {
+			return fmt.Errorf("failed to update role: %w", err)
+		}
+	}
+
+	expectedRB := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "apiservicebinding-manager",
+			Namespace: bindingRootNamespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      konnectorServiceAccountName,
+				Namespace: bindingRootNamespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "apiservicebinding-manager",
+		},
+	}
+
+	rb, err := r.getRoleBinding(ctx, bindingRootNamespace, "apiservicebinding-manager")
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to get rolebinding: %w", err)
+		}
+		if _, err := r.createRoleBinding(ctx, bindingRootNamespace, expectedRB); err != nil {
+			return fmt.Errorf("failed to create rolebinding: %w", err)
+		}
+	} else if !reflect.DeepEqual(rb.Subjects, expectedRB.Subjects) || !reflect.DeepEqual(rb.RoleRef, expectedRB.RoleRef) {
+		rb = rb.DeepCopy()
+		rb.Subjects = expectedRB.Subjects
+		rb.RoleRef = expectedRB.RoleRef
+		if _, err := r.updateRoleBinding(ctx, bindingRootNamespace, rb); err != nil {
+			return fmt.Errorf("failed to update rolebinding: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) ensureLeaderElectionRBAC(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
+
+	expectedRole := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "leader-election",
+			Namespace: bindingRootNamespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+		},
+	}
+
+	role, err := r.getRole(ctx, bindingRootNamespace, "leader-election")
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to get role: %w", err)
+		}
+		if _, err := r.createRole(ctx, bindingRootNamespace, expectedRole); err != nil {
+			return fmt.Errorf("failed to create role: %w", err)
+		}
+	} else if !reflect.DeepEqual(role.Rules, expectedRole.Rules) {
+		role = role.DeepCopy()
+		role.Rules = expectedRole.Rules
+		if _, err := r.updateRole(ctx, bindingRootNamespace, role); err != nil {
+			return fmt.Errorf("failed to update role: %w", err)
+		}
+	}
+
+	expectedRB := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "leader-election",
+			Namespace: bindingRootNamespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      konnectorServiceAccountName,
+				Namespace: bindingRootNamespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "leader-election",
+		},
+	}
+
+	rb, err := r.getRoleBinding(ctx, bindingRootNamespace, "leader-election")
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to get rolebinding: %w", err)
+		}
+		if _, err := r.createRoleBinding(ctx, bindingRootNamespace, expectedRB); err != nil {
+			return fmt.Errorf("failed to create rolebinding: %w", err)
+		}
+	} else if !reflect.DeepEqual(rb.Subjects, expectedRB.Subjects) || !reflect.DeepEqual(rb.RoleRef, expectedRB.RoleRef) {
+		rb = rb.DeepCopy()
+		rb.Subjects = expectedRB.Subjects
+		rb.RoleRef = expectedRB.RoleRef
+		if _, err := r.updateRoleBinding(ctx, bindingRootNamespace, rb); err != nil {
+			return fmt.Errorf("failed to update rolebinding: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (r *reconciler) ensureServiceBindings(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
 	desired := map[string]*bindv1alpha1.APIServiceBinding{}
 	for _, apiExport := range binding.Spec.APIExports {
@@ -819,7 +1023,7 @@ func (r *reconciler) ensureServiceBindings(ctx context.Context, binding *bindv1a
 			continue
 		}
 
-		bindingObj := newServiceBinding(binding, template)
+		bindingObj := newServiceBinding(binding, template, r.getBindingRootNamespace(binding))
 		if bindingObj == nil {
 			continue
 		}
@@ -841,7 +1045,7 @@ func (r *reconciler) ensureServiceBindings(ctx context.Context, binding *bindv1a
 		existing := existingList.Items[i]
 		desiredBinding, shouldExist := desired[existing.Name]
 		if !shouldExist {
-			if err := r.deleteServiceBinding(ctx, existing.Name); err != nil && !errors.IsNotFound(err) {
+			if err := r.deleteServiceBinding(ctx, existing.Namespace, existing.Name); err != nil && !errors.IsNotFound(err) {
 				errs = append(errs, err)
 			}
 			continue
@@ -884,7 +1088,7 @@ func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *b
 			continue
 		}
 
-		req := newAPIServiceExportRequest(binding, template)
+		req := r.newAPIServiceExportRequest(binding, template)
 		if req == nil {
 			continue
 		}
@@ -896,7 +1100,8 @@ func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *b
 		appClusterBindingNamespaceLabel: binding.Namespace,
 	}.AsSelector().String()
 
-	existingList, err := r.listAPIServiceExportRequests(ctx, binding.Namespace, selector)
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
+	existingList, err := r.listAPIServiceExportRequests(ctx, bindingRootNamespace, selector)
 	if err != nil {
 		errs = append(errs, err)
 		return utilerrors.NewAggregate(errs)
@@ -906,7 +1111,7 @@ func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *b
 		existing := existingList.Items[i]
 		desiredReq, shouldExist := desired[existing.Name]
 		if !shouldExist {
-			if err := r.deleteAPIServiceExportRequest(ctx, binding.Namespace, existing.Name); err != nil && !errors.IsNotFound(err) {
+			if err := r.deleteAPIServiceExportRequest(ctx, bindingRootNamespace, existing.Name); err != nil && !errors.IsNotFound(err) {
 				errs = append(errs, err)
 			}
 			continue
@@ -914,18 +1119,18 @@ func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *b
 
 		delete(desired, existing.Name)
 		if !reflect.DeepEqual(existing.Spec.Resources, desiredReq.Spec.Resources) {
-			if err := r.deleteAPIServiceExportRequest(ctx, binding.Namespace, existing.Name); err != nil && !errors.IsNotFound(err) {
+			if err := r.deleteAPIServiceExportRequest(ctx, bindingRootNamespace, existing.Name); err != nil && !errors.IsNotFound(err) {
 				errs = append(errs, err)
 				continue
 			}
-			if _, err := r.createAPIServiceExportRequest(ctx, binding.Namespace, desiredReq); err != nil && !errors.IsAlreadyExists(err) {
+			if _, err := r.createAPIServiceExportRequest(ctx, bindingRootNamespace, desiredReq); err != nil && !errors.IsAlreadyExists(err) {
 				errs = append(errs, err)
 			}
 		}
 	}
 
 	for _, desiredReq := range desired {
-		if _, err := r.createAPIServiceExportRequest(ctx, binding.Namespace, desiredReq); err != nil && !errors.IsAlreadyExists(err) {
+		if _, err := r.createAPIServiceExportRequest(ctx, bindingRootNamespace, desiredReq); err != nil && !errors.IsAlreadyExists(err) {
 			errs = append(errs, err)
 		}
 	}
@@ -933,7 +1138,7 @@ func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *b
 	return utilerrors.NewAggregate(errs)
 }
 
-func newAPIServiceExportRequest(binding *bindv1alpha1.AppClusterBinding, template *examplebackendv1alpha1.APIServiceExportTemplate) *bindv1alpha1.APIServiceExportRequest {
+func (r *reconciler) newAPIServiceExportRequest(binding *bindv1alpha1.AppClusterBinding, template *examplebackendv1alpha1.APIServiceExportTemplate) *bindv1alpha1.APIServiceExportRequest {
 	if template == nil {
 		return nil
 	}
@@ -947,7 +1152,7 @@ func newAPIServiceExportRequest(binding *bindv1alpha1.AppClusterBinding, templat
 	return &bindv1alpha1.APIServiceExportRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      apiServiceExportRequestName(binding.Name, template.Name),
-			Namespace: binding.Namespace,
+			Namespace: r.getBindingRootNamespace(binding),
 			Labels:    ensureBindingLabels(map[string]string{}, binding),
 		},
 		Spec: bindv1alpha1.APIServiceExportRequestSpec{
@@ -1027,7 +1232,7 @@ func sanitizeNamePart(input string) string {
 	return sanitized
 }
 
-func newServiceBinding(binding *bindv1alpha1.AppClusterBinding, template *examplebackendv1alpha1.APIServiceExportTemplate) *bindv1alpha1.APIServiceBinding {
+func newServiceBinding(binding *bindv1alpha1.AppClusterBinding, template *examplebackendv1alpha1.APIServiceExportTemplate, namespace string) *bindv1alpha1.APIServiceBinding {
 	if template == nil {
 		return nil
 	}
@@ -1038,14 +1243,17 @@ func newServiceBinding(binding *bindv1alpha1.AppClusterBinding, template *exampl
 	}
 
 	labels := ensureBindingLabels(nil, binding)
+	secretRef := binding.Spec.KubeconfigSecretRef
+	secretRef.Namespace = namespace
 
 	return &bindv1alpha1.APIServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
 		},
 		Spec: bindv1alpha1.APIServiceBindingSpec{
-			KubeconfigSecretRef: binding.Spec.KubeconfigSecretRef,
+			KubeconfigSecretRef: secretRef,
 		},
 	}
 }
@@ -1096,11 +1304,12 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 		return nil
 	}
 
-	// Deploy konnector to control plane cluster in the binding's namespace
+	// Deploy konnector to control plane cluster in the binding root namespace
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
 	deployment := r.buildKonnectorDeployment(binding)
 	deploymentName := fmt.Sprintf("konnector-%s", binding.Name)
 
-	existing, err := r.getDeployment(ctx, binding.Namespace, deploymentName)
+	existing, err := r.getDeployment(ctx, bindingRootNamespace, deploymentName)
 	if err != nil && !errors.IsNotFound(err) {
 		conditions.MarkFalse(
 			binding,
@@ -1112,7 +1321,7 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 		)
 		return err
 	} else if errors.IsNotFound(err) {
-		if _, err := r.createDeployment(ctx, binding.Namespace, deployment); err != nil {
+		if _, err := r.createDeployment(ctx, bindingRootNamespace, deployment); err != nil {
 			conditions.MarkFalse(
 				binding,
 				bindv1alpha1.AppClusterBindingConditionKonnectorDeployed,
@@ -1133,7 +1342,7 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 	if !reflect.DeepEqual(existing.Spec, deployment.Spec) {
 		updated := existing.DeepCopy()
 		updated.Spec = deployment.Spec
-		if _, err := r.updateDeployment(ctx, binding.Namespace, updated); err != nil {
+		if _, err := r.updateDeployment(ctx, bindingRootNamespace, updated); err != nil {
 			conditions.MarkFalse(
 				binding,
 				bindv1alpha1.AppClusterBindingConditionKonnectorDeployed,
@@ -1167,7 +1376,7 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 	args := []string{
 		"--control-plane-mode",
 		fmt.Sprintf("--app-cluster-kubeconfig-secret-name=%s", binding.Spec.KubeconfigSecretRef.Name),
-		fmt.Sprintf("--app-cluster-kubeconfig-secret-namespace=%s", binding.Spec.KubeconfigSecretRef.Namespace),
+		fmt.Sprintf("--app-cluster-kubeconfig-secret-namespace=%s", bindingRootNamespace),
 		fmt.Sprintf("--app-cluster-kubeconfig-secret-key=%s", binding.Spec.KubeconfigSecretRef.Key),
 		fmt.Sprintf("--binding-root-namespace=%s", bindingRootNamespace),
 		"--lease-namespace=$(POD_NAMESPACE)",
@@ -1219,17 +1428,8 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentName,
-			Namespace: binding.Namespace,
+			Namespace: bindingRootNamespace,
 			Labels:    labels,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: bindv1alpha1.SchemeGroupVersion.String(),
-					Kind:       "AppClusterBinding",
-					Name:       binding.Name,
-					UID:        binding.UID,
-					Controller: pointer.Bool(true),
-				},
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
