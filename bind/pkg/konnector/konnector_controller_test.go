@@ -247,7 +247,7 @@ func TestNewServer_ConsumerConfig_IsAppCluster(t *testing.T) {
 	if err := config.initAppCluster(appConfig); err != nil {
 		t.Fatal(err)
 	}
-	if err := config.initBindingCluster(cpConfig); err != nil {
+	if err := config.initBindingCluster(cpConfig, "klutch-bind"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -270,7 +270,7 @@ func TestNewServer_DefaultMode_SameConfigs(t *testing.T) {
 	if err := config.initAppCluster(singleConfig); err != nil {
 		t.Fatal(err)
 	}
-	if err := config.initBindingCluster(singleConfig); err != nil {
+	if err := config.initBindingCluster(singleConfig, "klutch-bind"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -296,7 +296,7 @@ func TestNewServer_ControlPlaneMode_CommitTargetsControlPlane(t *testing.T) {
 	if err := config.initAppCluster(appConfig); err != nil {
 		t.Fatal(err)
 	}
-	if err := config.initBindingCluster(cpConfig); err != nil {
+	if err := config.initBindingCluster(cpConfig, "klutch-bind"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -336,7 +336,7 @@ func TestNewServer_DefaultMode_CommitTargetsSameCluster(t *testing.T) {
 	if err := config.initAppCluster(singleConfig); err != nil {
 		t.Fatal(err)
 	}
-	if err := config.initBindingCluster(singleConfig); err != nil {
+	if err := config.initBindingCluster(singleConfig, "klutch-bind"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -390,7 +390,7 @@ func TestConfig_DefaultMode_SameConfigs(t *testing.T) {
 
 	config := &Config{}
 	require.NoError(t, config.initAppCluster(cfg))
-	require.NoError(t, config.initBindingCluster(cfg))
+	require.NoError(t, config.initBindingCluster(cfg, "klutch-bind"))
 
 	// In default mode, AppCluster and BindingCluster configs share the same host
 	require.Equal(t, config.AppClusterConfig.Host, config.BindingClusterConfig.Host,
@@ -409,7 +409,7 @@ func TestConfig_ControlPlaneMode_DifferentConfigs(t *testing.T) {
 		ControlPlaneConfig: cpConfig,
 	}
 	require.NoError(t, config.initAppCluster(appConfig))
-	require.NoError(t, config.initBindingCluster(cpConfig))
+	require.NoError(t, config.initBindingCluster(cpConfig, "klutch-bind"))
 
 	require.NotEqual(t, config.AppClusterConfig.Host, config.BindingClusterConfig.Host,
 		"in control plane mode, app and binding cluster should differ")
@@ -436,7 +436,7 @@ func TestConfig_InitBindingCluster_PopulatesAllFields(t *testing.T) {
 	cfg := &rest.Config{Host: server.URL}
 
 	config := &Config{}
-	require.NoError(t, config.initBindingCluster(cfg))
+	require.NoError(t, config.initBindingCluster(cfg, "klutch-bind"))
 
 	require.NotNil(t, config.BindingClusterConfig)
 	require.NotNil(t, config.BindingClusterBindClient)
@@ -458,7 +458,7 @@ func TestConfig_InformersUseDifferentClients(t *testing.T) {
 		ControlPlaneConfig: cpConfig,
 	}
 	require.NoError(t, config.initAppCluster(appConfig))
-	require.NoError(t, config.initBindingCluster(cpConfig))
+	require.NoError(t, config.initBindingCluster(cpConfig, "klutch-bind"))
 
 	// Verify that informer factories are distinct objects in CP mode
 	// (they watch different clusters)
@@ -478,7 +478,7 @@ func TestNewServer_InformersStartCorrectly(t *testing.T) {
 		ControlPlaneConfig: cpConfig,
 	}
 	require.NoError(t, config.initAppCluster(appConfig))
-	require.NoError(t, config.initBindingCluster(cpConfig))
+	require.NoError(t, config.initBindingCluster(cpConfig, "klutch-bind"))
 
 	s, err := NewServer(config)
 	require.NoError(t, err)
