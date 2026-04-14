@@ -50,6 +50,7 @@ const (
 	bindingRootNamespacePrefix        = "klutch-bind"
 	apiServiceExportRequestNamePrefix = "appclusterbinding"
 	konnectorServiceAccountName       = "klutch-binder"
+	controlPlaneConnectorRoleName     = "control-plane-connector"
 )
 
 type reconciler struct {
@@ -104,10 +105,7 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.AppClu
 		if err := r.ensureBindingRootResources(ctx, binding); err != nil {
 			errs = append(errs, err)
 		}
-		if err := r.ensureServiceBindingRBAC(ctx, binding); err != nil {
-			errs = append(errs, err)
-		}
-		if err := r.ensureLeaderElectionRBAC(ctx, binding); err != nil {
+		if err := r.ensureControlPlaneConnectorRBAC(ctx, binding); err != nil {
 			errs = append(errs, err)
 		}
 		if err := r.ensureServiceBindings(ctx, binding); err != nil {
@@ -210,48 +208,26 @@ func (r *reconciler) ensureDeleted(ctx context.Context, binding *bindv1alpha1.Ap
 		errs = append(errs, fmt.Errorf("deployment %s/%s still exists", bindingRootNamespace, deploymentName))
 	}
 
-	if err := r.deleteRoleBinding(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete rolebinding %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+	if err := r.deleteRoleBinding(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil && !errors.IsNotFound(err) {
+		errs = append(errs, fmt.Errorf("failed to delete rolebinding %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
 	}
-	if _, err := r.getRoleBinding(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil {
+	if _, err := r.getRoleBinding(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil {
 		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify rolebinding cleanup %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+			errs = append(errs, fmt.Errorf("failed to verify rolebinding cleanup %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
 		}
 	} else {
-		errs = append(errs, fmt.Errorf("rolebinding %s/%s still exists", bindingRootNamespace, "apiservicebinding-manager"))
+		errs = append(errs, fmt.Errorf("rolebinding %s/%s still exists", bindingRootNamespace, controlPlaneConnectorRoleName))
 	}
 
-	if err := r.deleteRole(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete role %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+	if err := r.deleteRole(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil && !errors.IsNotFound(err) {
+		errs = append(errs, fmt.Errorf("failed to delete role %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
 	}
-	if _, err := r.getRole(ctx, bindingRootNamespace, "apiservicebinding-manager"); err != nil {
+	if _, err := r.getRole(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil {
 		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify role cleanup %s/%s: %w", bindingRootNamespace, "apiservicebinding-manager", err))
+			errs = append(errs, fmt.Errorf("failed to verify role cleanup %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
 		}
 	} else {
-		errs = append(errs, fmt.Errorf("role %s/%s still exists", bindingRootNamespace, "apiservicebinding-manager"))
-	}
-
-	if err := r.deleteRoleBinding(ctx, bindingRootNamespace, "leader-election"); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete rolebinding %s/%s: %w", bindingRootNamespace, "leader-election", err))
-	}
-	if _, err := r.getRoleBinding(ctx, bindingRootNamespace, "leader-election"); err != nil {
-		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify rolebinding cleanup %s/%s: %w", bindingRootNamespace, "leader-election", err))
-		}
-	} else {
-		errs = append(errs, fmt.Errorf("rolebinding %s/%s still exists", bindingRootNamespace, "leader-election"))
-	}
-
-	if err := r.deleteRole(ctx, bindingRootNamespace, "leader-election"); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete role %s/%s: %w", bindingRootNamespace, "leader-election", err))
-	}
-	if _, err := r.getRole(ctx, bindingRootNamespace, "leader-election"); err != nil {
-		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify role cleanup %s/%s: %w", bindingRootNamespace, "leader-election", err))
-		}
-	} else {
-		errs = append(errs, fmt.Errorf("role %s/%s still exists", bindingRootNamespace, "leader-election"))
+		errs = append(errs, fmt.Errorf("role %s/%s still exists", bindingRootNamespace, controlPlaneConnectorRoleName))
 	}
 
 	if err := r.deleteNamespace(ctx, bindingRootNamespace); err != nil && !errors.IsNotFound(err) {
@@ -498,12 +474,12 @@ func (r *reconciler) resolveTemplate(ctx context.Context, apiExport bindv1alpha1
 	return templateRef, &template, nil
 }
 
-func (r *reconciler) ensureServiceBindingRBAC(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
+func (r *reconciler) ensureControlPlaneConnectorRBAC(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
 	bindingRootNamespace := r.getBindingRootNamespace(binding)
 
 	expectedRole := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apiservicebinding-manager",
+			Name:      controlPlaneConnectorRoleName,
 			Namespace: bindingRootNamespace,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -517,73 +493,6 @@ func (r *reconciler) ensureServiceBindingRBAC(ctx context.Context, binding *bind
 				Resources: []string{"apiservicebindings/status"},
 				Verbs:     []string{"patch", "update"},
 			},
-		},
-	}
-
-	role, err := r.getRole(ctx, bindingRootNamespace, "apiservicebinding-manager")
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to get role: %w", err)
-		}
-		if _, err := r.createRole(ctx, bindingRootNamespace, expectedRole); err != nil {
-			return fmt.Errorf("failed to create role: %w", err)
-		}
-	} else if !reflect.DeepEqual(role.Rules, expectedRole.Rules) {
-		role = role.DeepCopy()
-		role.Rules = expectedRole.Rules
-		if _, err := r.updateRole(ctx, bindingRootNamespace, role); err != nil {
-			return fmt.Errorf("failed to update role: %w", err)
-		}
-	}
-
-	expectedRB := &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apiservicebinding-manager",
-			Namespace: bindingRootNamespace,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      konnectorServiceAccountName,
-				Namespace: bindingRootNamespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     "apiservicebinding-manager",
-		},
-	}
-
-	rb, err := r.getRoleBinding(ctx, bindingRootNamespace, "apiservicebinding-manager")
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to get rolebinding: %w", err)
-		}
-		if _, err := r.createRoleBinding(ctx, bindingRootNamespace, expectedRB); err != nil {
-			return fmt.Errorf("failed to create rolebinding: %w", err)
-		}
-	} else if !reflect.DeepEqual(rb.Subjects, expectedRB.Subjects) || !reflect.DeepEqual(rb.RoleRef, expectedRB.RoleRef) {
-		rb = rb.DeepCopy()
-		rb.Subjects = expectedRB.Subjects
-		rb.RoleRef = expectedRB.RoleRef
-		if _, err := r.updateRoleBinding(ctx, bindingRootNamespace, rb); err != nil {
-			return fmt.Errorf("failed to update rolebinding: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (r *reconciler) ensureLeaderElectionRBAC(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
-	bindingRootNamespace := r.getBindingRootNamespace(binding)
-
-	expectedRole := &rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "leader-election",
-			Namespace: bindingRootNamespace,
-		},
-		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"coordination.k8s.io"},
 				Resources: []string{"leases"},
@@ -592,7 +501,7 @@ func (r *reconciler) ensureLeaderElectionRBAC(ctx context.Context, binding *bind
 		},
 	}
 
-	role, err := r.getRole(ctx, bindingRootNamespace, "leader-election")
+	role, err := r.getRole(ctx, bindingRootNamespace, controlPlaneConnectorRoleName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to get role: %w", err)
@@ -610,7 +519,7 @@ func (r *reconciler) ensureLeaderElectionRBAC(ctx context.Context, binding *bind
 
 	expectedRB := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "leader-election",
+			Name:      controlPlaneConnectorRoleName,
 			Namespace: bindingRootNamespace,
 		},
 		Subjects: []rbacv1.Subject{
@@ -623,11 +532,11 @@ func (r *reconciler) ensureLeaderElectionRBAC(ctx context.Context, binding *bind
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     "leader-election",
+			Name:     controlPlaneConnectorRoleName,
 		},
 	}
 
-	rb, err := r.getRoleBinding(ctx, bindingRootNamespace, "leader-election")
+	rb, err := r.getRoleBinding(ctx, bindingRootNamespace, controlPlaneConnectorRoleName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to get rolebinding: %w", err)
