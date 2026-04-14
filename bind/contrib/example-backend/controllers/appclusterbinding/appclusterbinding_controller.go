@@ -147,15 +147,6 @@ func NewController(
 			deleteAPIServiceExportRequest: func(ctx context.Context, namespace, name string) error {
 				return bindClient.KlutchBindV1alpha1().APIServiceExportRequests(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 			},
-			getServiceAccount: func(ctx context.Context, namespace, name string) (*corev1.ServiceAccount, error) {
-				return kubeClient.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
-			},
-			createServiceAccount: func(ctx context.Context, namespace string, sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-				return kubeClient.CoreV1().ServiceAccounts(namespace).Create(ctx, sa, metav1.CreateOptions{})
-			},
-			deleteServiceAccount: func(ctx context.Context, namespace, name string) error {
-				return kubeClient.CoreV1().ServiceAccounts(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-			},
 			getRole: func(ctx context.Context, namespace, name string) (*rbacv1.Role, error) {
 				return kubeClient.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
 			},
@@ -171,23 +162,11 @@ func NewController(
 			getClusterRole: func(ctx context.Context, name string) (*rbacv1.ClusterRole, error) {
 				return kubeClient.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
 			},
-			createClusterRole: func(ctx context.Context, role *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-				return kubeClient.RbacV1().ClusterRoles().Create(ctx, role, metav1.CreateOptions{})
-			},
-			updateClusterRole: func(ctx context.Context, role *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-				return kubeClient.RbacV1().ClusterRoles().Update(ctx, role, metav1.UpdateOptions{})
-			},
 			deleteClusterRole: func(ctx context.Context, name string) error {
 				return kubeClient.RbacV1().ClusterRoles().Delete(ctx, name, metav1.DeleteOptions{})
 			},
 			getClusterRoleBinding: func(ctx context.Context, name string) (*rbacv1.ClusterRoleBinding, error) {
 				return kubeClient.RbacV1().ClusterRoleBindings().Get(ctx, name, metav1.GetOptions{})
-			},
-			createClusterRoleBinding: func(ctx context.Context, workingClusterBinding *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-				return kubeClient.RbacV1().ClusterRoleBindings().Create(ctx, workingClusterBinding, metav1.CreateOptions{})
-			},
-			updateClusterRoleBinding: func(ctx context.Context, workingClusterBinding *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-				return kubeClient.RbacV1().ClusterRoleBindings().Update(ctx, workingClusterBinding, metav1.UpdateOptions{})
 			},
 			deleteClusterRoleBinding: func(ctx context.Context, name string) error {
 				return kubeClient.RbacV1().ClusterRoleBindings().Delete(ctx, name, metav1.DeleteOptions{})
@@ -206,9 +185,6 @@ func NewController(
 			},
 			getNamespace: func(ctx context.Context, name string) (*corev1.Namespace, error) {
 				return kubeClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
-			},
-			createNamespace: func(ctx context.Context, namespace *corev1.Namespace) (*corev1.Namespace, error) {
-				return kubeClient.CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
 			},
 			deleteNamespace: func(ctx context.Context, name string) error {
 				return kubeClient.CoreV1().Namespaces().Delete(ctx, name, metav1.DeleteOptions{})

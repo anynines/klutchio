@@ -30,11 +30,6 @@ import (
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
-const (
-	providerNamespaceLabel          = "klutch.anynines.com/provider-namespace"
-	appClusterBindingNamespaceLabel = "klutch.anynines.com/appclusterbinding-namespace"
-)
-
 type startable interface {
 	Start(ctx context.Context)
 }
@@ -166,27 +161,4 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 	go ctrl.Start(ctrlCtx)
 
 	return nil
-}
-
-func providerExportNamespaceForBinding(binding *bindv1alpha1.APIServiceBinding) string {
-	if binding == nil {
-		return ""
-	}
-
-	if ns := binding.Labels[providerNamespaceLabel]; ns != "" {
-		return ns
-	}
-	if ns := binding.Labels[appClusterBindingNamespaceLabel]; ns != "" {
-		return ns
-	}
-
-	return binding.Spec.KubeconfigSecretRef.Namespace
-}
-
-func providerSecretNamespaceForBinding(binding *bindv1alpha1.APIServiceBinding) string {
-	if binding == nil {
-		return ""
-	}
-
-	return binding.Spec.KubeconfigSecretRef.Namespace
 }

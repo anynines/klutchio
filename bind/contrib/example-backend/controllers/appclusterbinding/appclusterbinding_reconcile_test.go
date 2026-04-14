@@ -33,7 +33,7 @@ import (
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
-func TestNewServiceBindingClusterScoped(t *testing.T) {
+func TestNewServiceBindingNamespaced(t *testing.T) {
 	binding := &bindv1alpha1.AppClusterBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-binding",
@@ -62,12 +62,15 @@ func TestNewServiceBindingClusterScoped(t *testing.T) {
 		},
 	}
 
-	got := newServiceBinding(binding, template)
-	if got.Namespace != "" {
-		t.Fatalf("expected cluster-scoped APIServiceBinding with empty namespace, got %q", got.Namespace)
+	got := newServiceBinding(binding, template, "root-ns")
+	if got.Namespace != "root-ns" {
+		t.Fatalf("expected namespaced APIServiceBinding in root namespace, got %q", got.Namespace)
 	}
 	if got.Name != "widgets.klutch.anynines.com" {
 		t.Fatalf("expected fully qualified binding name, got %q", got.Name)
+	}
+	if got.Spec.KubeconfigSecretRef.Namespace != "root-ns" {
+		t.Fatalf("expected kubeconfig secret namespace root-ns, got %q", got.Spec.KubeconfigSecretRef.Namespace)
 	}
 }
 
@@ -113,12 +116,14 @@ func TestNewAPIServiceExportRequest(t *testing.T) {
 		},
 	}
 
-	req := newAPIServiceExportRequest(binding, template)
+	r := &reconciler{}
+	req := r.newAPIServiceExportRequest(binding, template)
 	if req == nil {
 		t.Fatal("expected request to be created")
 	}
-	if req.Namespace != "my-ns" {
-		t.Fatalf("expected namespace my-ns, got %q", req.Namespace)
+	expectedNamespace := "klutch-bind-my-ns-my-binding"
+	if req.Namespace != expectedNamespace {
+		t.Fatalf("expected namespace %s, got %q", expectedNamespace, req.Namespace)
 	}
 	if req.Spec.Resources[0].Resource != "postgresqls" {
 		t.Fatalf("expected resource postgresqls, got %q", req.Spec.Resources[0].Resource)
@@ -184,186 +189,6 @@ func TestEnsureServiceExportRequestsUsesTemplateLookup(t *testing.T) {
 	}
 }
 
-func TestEnsureKonnectorClusterRBACIncludesTemplateResourceRules(t *testing.T) {
-	binding := &bindv1alpha1.AppClusterBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-binding",
-			Namespace: "my-ns",
-		},
-		Spec: bindv1alpha1.AppClusterBindingSpec{
-			APIExports: []bindv1alpha1.GroupResource{{Group: "anynines.com", Resource: "postgresqlinstances"}},
-		},
-	}
-
-	var createdClusterRole *rbacv1.ClusterRole
-
-	r := &reconciler{
-		templateFor: func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error) {
-			if group != "anynines.com" || resource != "postgresqlinstances" {
-				t.Fatalf("unexpected template lookup %s/%s", group, resource)
-			}
-			return examplebackendv1alpha1.APIServiceExportTemplate{
-				Spec: examplebackendv1alpha1.APIServiceExportTemplateSpec{
-					APIServiceSelector: examplebackendv1alpha1.APIServiceSelector{
-						GroupResource: bindv1alpha1.GroupResource{Group: "anynines.com", Resource: "postgresqlinstances"},
-						Version:       pointer.String("v1"),
-					},
-					PermissionClaims: []bindv1alpha1.PermissionClaim{
-						{GroupResource: bindv1alpha1.GroupResource{Group: "", Resource: "configmaps"}, Version: "v1"},
-					},
-				},
-			}, nil
-		},
-		getClusterRole: func(ctx context.Context, name string) (*rbacv1.ClusterRole, error) {
-			return nil, apierrors.NewNotFound(schema.GroupResource{Resource: "clusterroles"}, name)
-		},
-		createClusterRole: func(ctx context.Context, role *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			createdClusterRole = role.DeepCopy()
-			return role, nil
-		},
-		getClusterRoleBinding: func(ctx context.Context, name string) (*rbacv1.ClusterRoleBinding, error) {
-			return nil, apierrors.NewNotFound(schema.GroupResource{Resource: "clusterrolebindings"}, name)
-		},
-		createClusterRoleBinding: func(ctx context.Context, crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			return crb, nil
-		},
-	}
-
-	if err := r.ensureKonnectorClusterRBAC(context.Background(), binding); err != nil {
-		t.Fatalf("expected ensureKonnectorClusterRBAC success, got %v", err)
-	}
-	if createdClusterRole == nil {
-		t.Fatal("expected clusterrole to be created")
-	}
-
-	foundPostgresqlInstancesRule := false
-	foundConfigMapsRule := false
-	foundClusterBindingStatusRule := false
-	for _, rule := range createdClusterRole.Rules {
-		if len(rule.APIGroups) == 1 && len(rule.Resources) == 1 && rule.APIGroups[0] == "anynines.com" && rule.Resources[0] == "postgresqlinstances" {
-			for _, verb := range rule.Verbs {
-				if verb == "create" {
-					foundPostgresqlInstancesRule = true
-					break
-				}
-			}
-		}
-		if len(rule.APIGroups) == 1 && len(rule.Resources) == 1 && rule.APIGroups[0] == "" && rule.Resources[0] == "configmaps" {
-			for _, verb := range rule.Verbs {
-				if verb == "create" {
-					foundConfigMapsRule = true
-					break
-				}
-			}
-		}
-		if len(rule.APIGroups) == 1 && rule.APIGroups[0] == "klutch.anynines.com" {
-			hasClusterBindingStatus := false
-			hasPatch := false
-			for _, resource := range rule.Resources {
-				if resource == "clusterbindings/status" {
-					hasClusterBindingStatus = true
-					break
-				}
-			}
-			for _, verb := range rule.Verbs {
-				if verb == "patch" {
-					hasPatch = true
-					break
-				}
-			}
-			if hasClusterBindingStatus && hasPatch {
-				foundClusterBindingStatusRule = true
-			}
-		}
-	}
-
-	if !foundPostgresqlInstancesRule {
-		t.Fatalf("expected dynamic rule for anynines.com/postgresqlinstances, got %#v", createdClusterRole.Rules)
-	}
-	if !foundConfigMapsRule {
-		t.Fatalf("expected dynamic permission claim rule for core/configmaps, got %#v", createdClusterRole.Rules)
-	}
-	if !foundClusterBindingStatusRule {
-		t.Fatalf("expected status patch rule for klutch.anynines.com/clusterbindings/status, got %#v", createdClusterRole.Rules)
-	}
-}
-
-func TestEnsureKonnectorServiceAccountCreatesWhenMissing(t *testing.T) {
-	binding := &bindv1alpha1.AppClusterBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-binding",
-			Namespace: "my-ns",
-			UID:       "1234",
-		},
-	}
-
-	created := false
-	r := &reconciler{
-		getServiceAccount: func(ctx context.Context, namespace, name string) (*corev1.ServiceAccount, error) {
-			if namespace != "my-ns" {
-				t.Fatalf("expected namespace my-ns, got %q", namespace)
-			}
-			if name != konnectorServiceAccountName {
-				t.Fatalf("expected service account %q, got %q", konnectorServiceAccountName, name)
-			}
-			return nil, apierrors.NewNotFound(schema.GroupResource{Resource: "serviceaccounts"}, name)
-		},
-		createServiceAccount: func(ctx context.Context, namespace string, sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			created = true
-			if namespace != "my-ns" {
-				t.Fatalf("expected namespace my-ns, got %q", namespace)
-			}
-			if sa.Name != konnectorServiceAccountName {
-				t.Fatalf("expected service account name %q, got %q", konnectorServiceAccountName, sa.Name)
-			}
-			if sa.Namespace != "my-ns" {
-				t.Fatalf("expected service account namespace my-ns, got %q", sa.Namespace)
-			}
-			if len(sa.OwnerReferences) != 1 {
-				t.Fatalf("expected one owner reference, got %d", len(sa.OwnerReferences))
-			}
-			if sa.OwnerReferences[0].Name != binding.Name {
-				t.Fatalf("expected owner reference %q, got %q", binding.Name, sa.OwnerReferences[0].Name)
-			}
-			return sa, nil
-		},
-	}
-
-	if err := r.ensureKonnectorServiceAccount(context.Background(), binding); err != nil {
-		t.Fatalf("expected ensureKonnectorServiceAccount success, got %v", err)
-	}
-	if !created {
-		t.Fatal("expected service account to be created")
-	}
-}
-
-func TestEnsureKonnectorServiceAccountNoopWhenExisting(t *testing.T) {
-	binding := &bindv1alpha1.AppClusterBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-binding",
-			Namespace: "my-ns",
-		},
-	}
-
-	created := false
-	r := &reconciler{
-		getServiceAccount: func(ctx context.Context, namespace, name string) (*corev1.ServiceAccount, error) {
-			return &corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}, nil
-		},
-		createServiceAccount: func(ctx context.Context, namespace string, sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			created = true
-			return sa, nil
-		},
-	}
-
-	if err := r.ensureKonnectorServiceAccount(context.Background(), binding); err != nil {
-		t.Fatalf("expected ensureKonnectorServiceAccount success, got %v", err)
-	}
-	if created {
-		t.Fatal("expected existing service account to avoid create call")
-	}
-}
-
 func TestEnsureDeletedBlocksUntilNamespaceGone(t *testing.T) {
 	notFound := func(resource, name string) error {
 		return apierrors.NewNotFound(schema.GroupResource{Resource: resource}, name)
@@ -373,7 +198,7 @@ func TestEnsureDeletedBlocksUntilNamespaceGone(t *testing.T) {
 		listServiceBindings: func(ctx context.Context, labelSelector string) (*bindv1alpha1.APIServiceBindingList, error) {
 			return &bindv1alpha1.APIServiceBindingList{}, nil
 		},
-		deleteServiceBinding: func(ctx context.Context, name string) error {
+		deleteServiceBinding: func(ctx context.Context, namespace, name string) error {
 			return nil
 		},
 		listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
@@ -454,7 +279,7 @@ func TestEnsureDeletedBlocksUntilAPIServiceExportRequestsGone(t *testing.T) {
 		listServiceBindings: func(ctx context.Context, labelSelector string) (*bindv1alpha1.APIServiceBindingList, error) {
 			return &bindv1alpha1.APIServiceBindingList{}, nil
 		},
-		deleteServiceBinding: func(ctx context.Context, name string) error {
+		deleteServiceBinding: func(ctx context.Context, namespace, name string) error {
 			return nil
 		},
 		listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
