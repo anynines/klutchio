@@ -1,0 +1,24 @@
+# Tell lychee that links starting with "/" refer to this directory
+root_dir = "."
+
+# Pretend to be a normal web browser to bypass Bot Protection/Firewalls
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+
+# Exclude URLs that are known to fail, require auth, or are private
+exclude = [
+  "https://localhost",
+  "http://localhost",
+  "https://example.com",
+  "http://example.com",
+  ".*github.com/crossplane/crossplane-build.*",
+  ".*coveralls\\.io.*",
+]
+
+# Allow redirect codes
+accept = [200, 301, 302]
+
+# Increase request timeout
+timeout = 20
+
+# Concurrency limit to avoid rate limiting
+max_concurrency = 3
