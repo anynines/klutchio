@@ -61,7 +61,7 @@ func NewController(
 	providerSecretNamespace string,
 	controlPlaneMode bool,
 	reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool,
-	bindingConfig, consumerConfig, providerConfig *rest.Config,
+	bindingConfig, appClusterConfig, controlPlaneClusterConfig *rest.Config,
 	namespaceInformer dynamic.Informer[corelisters.NamespaceLister],
 	serviceBindingInformer dynamic.Informer[bindlisters.APIServiceBindingLister],
 	crdInformer dynamic.Informer[crdlisters.CustomResourceDefinitionLister],
@@ -69,26 +69,26 @@ func NewController(
 	bindingConfig = rest.CopyConfig(bindingConfig)
 	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
 
-	consumerConfig = rest.CopyConfig(consumerConfig)
-	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
+	appClusterConfig = rest.CopyConfig(appClusterConfig)
+	appClusterConfig = rest.AddUserAgent(appClusterConfig, controllerName)
 
-	providerConfig = rest.CopyConfig(providerConfig)
-	providerConfig = rest.AddUserAgent(providerConfig, controllerName)
+	controlPlaneClusterConfig = rest.CopyConfig(controlPlaneClusterConfig)
+	controlPlaneClusterConfig = rest.AddUserAgent(controlPlaneClusterConfig, controllerName)
 
 	// create shared informer factories
 	bindingBindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
-	providerBindClient, err := bindclient.NewForConfig(providerConfig)
+	providerBindClient, err := bindclient.NewForConfig(controlPlaneClusterConfig)
 	if err != nil {
 		return nil, err
 	}
-	providerKubeClient, err := kubernetesclient.NewForConfig(providerConfig)
+	providerKubeClient, err := kubernetesclient.NewForConfig(controlPlaneClusterConfig)
 	if err != nil {
 		return nil, err
 	}
-	consumerKubeClient, err := kubernetesclient.NewForConfig(consumerConfig)
+	consumerKubeClient, err := kubernetesclient.NewForConfig(appClusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +115,8 @@ func NewController(
 		heartbeatInterval,
 		controlPlaneMode,
 		bindingConfig,
-		consumerConfig,
-		providerConfig,
+		appClusterConfig,
+		controlPlaneClusterConfig,
 		bindingRootBindInformers.KlutchBind().V1alpha1().ClusterBindings(),
 		serviceBindingInformer,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceExports(),
@@ -127,7 +127,7 @@ func NewController(
 		return nil, err
 	}
 	namespacedeletionCtrl, err := namespacedeletion.NewController(
-		providerConfig,
+		controlPlaneClusterConfig,
 		providerNamespace,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceNamespaces(),
 		namespaceInformer,
@@ -140,8 +140,8 @@ func NewController(
 		providerNamespace,
 		reconcileServiceBinding,
 		bindingConfig,
-		consumerConfig,
-		providerConfig,
+		appClusterConfig,
+		controlPlaneClusterConfig,
 		serviceBindingInformer,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceExports(),
 		crdInformer,
@@ -152,8 +152,8 @@ func NewController(
 	serviceexportCtrl, err := serviceexport.NewController(
 		consumerSecretRefKey,
 		providerNamespace,
-		consumerConfig,
-		providerConfig,
+		appClusterConfig,
+		controlPlaneClusterConfig,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceExports(),
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceNamespaces(),
 		serviceBindingInformer,
