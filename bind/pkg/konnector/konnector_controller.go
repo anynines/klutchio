@@ -106,7 +106,7 @@ func New(
 			getSecret: func(ns, name string) (*corev1.Secret, error) {
 				return secretInformer.Lister().Secrets(ns).Get(name)
 			},
-			newClusterController: func(consumerSecretRefKey, bindingRootNamespace, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
+			newClusterController: func(consumerSecretRefKey, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
 				providerConfig = rest.CopyConfig(providerConfig)
 				providerConfig = rest.AddUserAgent(providerConfig, controllerName)
 
