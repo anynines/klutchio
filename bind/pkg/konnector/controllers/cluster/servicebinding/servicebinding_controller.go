@@ -26,6 +26,7 @@ import (
 	apiextensionslisters "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtimeschema "k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -101,7 +102,17 @@ func NewController(
 				return serviceExportInformer.Lister().APIServiceExports(providerNamespace).Get(name)
 			},
 			getServiceBinding: func(name string) (*bindv1alpha1.APIServiceBinding, error) {
-				return serviceBindingInformer.Lister().APIServiceBindings(providerNamespace).Get(name)
+				objs, err := serviceBindingInformer.Informer().GetIndexer().ByIndex(indexers.ByServiceBindingKubeconfigSecret, consumerSecretRefKey)
+				if err != nil {
+					return nil, err
+				}
+				for _, obj := range objs {
+					binding := obj.(*bindv1alpha1.APIServiceBinding)
+					if binding.Name == name {
+						return binding, nil
+					}
+				}
+				return nil, errors.NewNotFound(runtimeschema.GroupResource{Group: "klutch.anynines.com", Resource: "apiservicebindings"}, name)
 			},
 			getClusterBinding: func(ctx context.Context) (*bindv1alpha1.ClusterBinding, error) {
 				return controlPlaneBindClient.KlutchBindV1alpha1().ClusterBindings(providerNamespace).Get(ctx, "cluster", metav1.GetOptions{})

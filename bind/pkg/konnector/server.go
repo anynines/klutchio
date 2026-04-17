@@ -36,12 +36,12 @@ type Server struct {
 }
 
 func NewServer(config *Config) (*Server, error) {
-	consumerConfig := config.AppClusterConfig
+	appClusterConfig := config.AppClusterConfig
 	namespaceInformer := config.AppClusterKubeInformers.Core().V1().Namespaces()
 	crdInformer := config.AppClusterApiextensionsInformers.Apiextensions().V1().CustomResourceDefinitions()
 
 	k, err := New(
-		consumerConfig,
+		appClusterConfig,
 		config.BindingClusterConfig,
 		config.BindingRootNamespace,
 		config.ControlPlaneMode,

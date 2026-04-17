@@ -264,13 +264,15 @@ func NewController(
 		return nil, err
 	}
 
-	// Watch Deployment for drift detection
-	if _, err := deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(_, newObj interface{}) {
-			c.enqueueRBACResourceOwner(logger, newObj)
-		},
-	}); err != nil {
-		return nil, err
+	// Watch Deployment for drift detection (optional, not available on all platforms)
+	if deploymentInformer != nil {
+		if _, err := deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+			UpdateFunc: func(_, newObj interface{}) {
+				c.enqueueRBACResourceOwner(logger, newObj)
+			},
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	// Watch APIServiceBinding for drift detection

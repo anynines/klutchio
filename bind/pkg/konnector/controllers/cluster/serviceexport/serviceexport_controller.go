@@ -24,6 +24,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionslisters "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	runtimeschema "k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -48,7 +49,7 @@ const (
 // NewController returns a new controller for ServiceExports, spawning spec
 // and status syncer on-demand.
 func NewController(
-	consumerSecretRefKey, providerNamespace string,
+	consumerSecretRefKey, providerNamespace, bindingNamespace string,
 	consumerConfig, providerConfig *rest.Config,
 	serviceExportInformer bindinformers.APIServiceExportInformer,
 	serviceNamespaceInformer bindinformers.APIServiceNamespaceInformer,
@@ -96,7 +97,17 @@ func NewController(
 				return crdInformer.Lister().Get(name)
 			},
 			getServiceBinding: func(name string) (*bindv1alpha1.APIServiceBinding, error) {
-				return serviceBindingInformer.Lister().APIServiceBindings(providerNamespace).Get(name)
+				objs, err := serviceBindingInformer.Informer().GetIndexer().ByIndex(indexers.ByServiceBindingKubeconfigSecret, consumerSecretRefKey)
+				if err != nil {
+					return nil, err
+				}
+				for _, obj := range objs {
+					binding := obj.(*bindv1alpha1.APIServiceBinding)
+					if binding.Name == name {
+						return binding, nil
+					}
+				}
+				return nil, errors.NewNotFound(runtimeschema.GroupResource{Group: "klutch.anynines.com", Resource: "apiservicebindings"}, name)
 			},
 		},
 

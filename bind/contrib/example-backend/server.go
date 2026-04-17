@@ -23,7 +23,9 @@ import (
 	"net"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	appsinformers "k8s.io/client-go/informers/apps/v1"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/appclusterbinding"
@@ -177,12 +179,16 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, fmt.Errorf("error setting up ServiceExportRequest Controller: %w", err)
 	}
 	if config.Options.ControlPlaneMode {
+		var deploymentsInformer appsinformers.DeploymentInformer
+		if hasDeploymentsAPI(config.KubeClient) {
+			deploymentsInformer = config.KubeInformers.Apps().V1().Deployments()
+		}
 		s.AppClusterBinding, err = appclusterbinding.NewController(
 			config.ClientConfig,
 			config.KubeInformers.Core().V1().Secrets(),
 			config.KubeInformers.Rbac().V1().Roles(),
 			config.KubeInformers.Rbac().V1().RoleBindings(),
-			config.KubeInformers.Apps().V1().Deployments(),
+			deploymentsInformer,
 			config.BindInformers.KlutchBind().V1alpha1().APIServiceBindings(),
 		)
 		if err != nil {
@@ -239,4 +245,20 @@ func (s *Server) Run(ctx context.Context) error {
 		<-ctx.Done()
 	}()
 	return s.WebServer.Start(ctx)
+}
+
+// hasDeploymentsAPI checks whether the apps/v1 Deployments resource is available
+// on the cluster. On kcp workspaces without a compute API binding, this API does
+// not exist and Deployments informers would block forever.
+func hasDeploymentsAPI(client kubernetes.Interface) bool {
+	resources, err := client.Discovery().ServerResourcesForGroupVersion("apps/v1")
+	if err != nil {
+		return false
+	}
+	for _, r := range resources.APIResources {
+		if r.Name == "deployments" {
+			return true
+		}
+	}
+	return false
 }
