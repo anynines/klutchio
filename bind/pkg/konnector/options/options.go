@@ -83,7 +83,7 @@ func (options *Options) AddFlags(fs *pflag.FlagSet) {
 	logsv1.AddFlags(options.Logs, fs)
 
 	fs.StringVar(&options.KubeConfigPath, "kubeconfig", options.KubeConfigPath, "Kubeconfig file for the local cluster.")
-	fs.BoolVar(&options.ControlPlaneMode, "control-plane-mode", options.ControlPlaneMode, "Run konnector on control plane instead of app cluster. When enabled, the konnector uses the control plane service account and fetches the app cluster kubeconfig from a secret.")
+	fs.BoolVar(&options.ControlPlaneMode, "control-plane-mode", false, "Run konnector on control plane instead of app cluster. When enabled, the konnector uses the control plane service account and fetches the app cluster kubeconfig from a secret.")
 	fs.StringVar(&options.AppClusterKubeconfigSecretName, "app-cluster-kubeconfig-secret-name", options.AppClusterKubeconfigSecretName, "Name of secret containing app cluster kubeconfig (required when --control-plane-mode is enabled)")
 	fs.StringVar(&options.AppClusterKubeconfigSecretNamespace, "app-cluster-kubeconfig-secret-namespace", options.AppClusterKubeconfigSecretNamespace, "Namespace of secret containing app cluster kubeconfig (required when --control-plane-mode is enabled)")
 	fs.StringVar(&options.AppClusterKubeconfigSecretKey, "app-cluster-kubeconfig-secret-key", "kubeconfig", "Key in secret containing app cluster kubeconfig (default: kubeconfig)")
