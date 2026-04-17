@@ -195,7 +195,7 @@ func NewController(
 			if !ok {
 				return
 			}
-			newExport, ok := old.(*bindv1alpha1.APIServiceExport)
+			newExport, ok := newObj.(*bindv1alpha1.APIServiceExport)
 			if !ok {
 				return
 			}
@@ -378,6 +378,9 @@ func (c *controller) process(ctx context.Context, key string) error {
 	}
 	if name != "cluster" {
 		return nil // cannot happen by OpenAPI validation
+	}
+	if ns == "" {
+		return fmt.Errorf("namespace is empty. this should not happen")
 	}
 
 	logger := klog.FromContext(ctx)
