@@ -110,9 +110,14 @@ func New(
 				controlPlaneClusterConfig = rest.CopyConfig(controlPlaneClusterConfig)
 				controlPlaneClusterConfig = rest.AddUserAgent(controlPlaneClusterConfig, controllerName)
 
+				bindingRootNS := bindingRootNamespace
+				if !controlPlaneMode {
+					bindingRootNS = providerNamespace
+				}
+
 				return cluster.NewController(
 					consumerSecretRefKey,
-					bindingRootNamespace,
+					bindingRootNS,
 					providerNamespace,
 					providerSecretNamespace,
 					controlPlaneMode,

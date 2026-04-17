@@ -152,6 +152,7 @@ func NewController(
 	serviceexportCtrl, err := serviceexport.NewController(
 		consumerSecretRefKey,
 		providerNamespace,
+		bindingRootNamespace,
 		appClusterConfig,
 		controlPlaneClusterConfig,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceExports(),
