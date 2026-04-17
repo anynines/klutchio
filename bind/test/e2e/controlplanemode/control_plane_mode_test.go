@@ -14,29 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package konnector
+package controlplanemode
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
 
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
+	providerfixtures "github.com/anynines/klutchio/bind/test/e2e/bind/fixtures/provider"
 	"github.com/anynines/klutchio/bind/test/e2e/framework"
 )
 
-func TestControlPlaneModeKonnectorDeployment(t *testing.T) {
+func TestControlPlaneModeInstanceSync(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
@@ -46,22 +47,27 @@ func TestControlPlaneModeKonnectorDeployment(t *testing.T) {
 	t.Logf("Starting backend in control plane mode")
 	framework.StartBackendWithoutDefaultArgs(t, providerConfig, "--kubeconfig="+providerKubeconfig, "--control-plane-mode")
 
-	t.Logf("Creating app-cluster workspace to provide kubeconfig secret")
-	_, appClusterKubeconfig := framework.NewWorkspace(t, framework.ClientConfig(t), framework.WithGenerateName("test-control-plane-app-cluster"))
-	kubeconfigData, err := os.ReadFile(appClusterKubeconfig)
-	require.NoError(t, err)
+	t.Logf("Creating CRDs on provider side")
+	providerfixtures.Bootstrap(t, framework.DiscoveryClient(t, providerConfig), framework.DynamicClient(t, providerConfig), nil)
 
+	t.Logf("Creating consumer workspace")
+	consumerConfig, _ := framework.NewWorkspace(t, framework.ClientConfig(t), framework.WithGenerateName("test-control-plane-consumer"))
+
+	t.Logf("Storing consumer kubeconfig as secret on provider")
 	providerKubeClient := framework.KubeClient(t, providerConfig)
+	consumerKubeconfigData, err := clientcmd.Write(framework.RestToKubeconfig(consumerConfig, "default"))
+	require.NoError(t, err)
 	_, err = providerKubeClient.CoreV1().Secrets("default").Create(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "app-cluster-kubeconfig", Namespace: "default"},
-		Data:       map[string][]byte{"kubeconfig": kubeconfigData},
+		Data:       map[string][]byte{"kubeconfig": consumerKubeconfigData},
 	}, metav1.CreateOptions{})
 	require.NoError(t, err)
 
+	t.Logf("Creating AppClusterBinding on provider")
 	bindClient, err := bindclient.NewForConfig(providerConfig)
 	require.NoError(t, err)
 
-	bindingName := "control-plane-valid"
+	bindingName := "control-plane-test"
 	createAppClusterBindingEventually(t, ctx, bindClient, "default", &bindv1alpha1.AppClusterBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: bindingName, Namespace: "default"},
 		Spec: bindv1alpha1.AppClusterBindingSpec{
@@ -69,32 +75,21 @@ func TestControlPlaneModeKonnectorDeployment(t *testing.T) {
 				LocalSecretKeyRef: bindv1alpha1.LocalSecretKeyRef{Name: "app-cluster-kubeconfig", Key: "kubeconfig"},
 				Namespace:         "default",
 			},
-			Konnector: &bindv1alpha1.KonnectorSpec{Deploy: true},
+			APIExports: []bindv1alpha1.GroupResource{
+				{Group: "mangodb.com", Resource: "mangodbs"},
+			},
 		},
 	})
 
-	expectedDeploymentName := "konnector-" + bindingName
 	expectedRootNamespace := "klutch-bind-default-" + bindingName
 
-	var deployment *appsv1.Deployment
-	require.Eventually(t, func() bool {
-		deployment, err = providerKubeClient.AppsV1().Deployments("default").Get(ctx, expectedDeploymentName, metav1.GetOptions{})
-		return err == nil
-	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for control-plane konnector deployment to be created")
-
-	require.NotEmpty(t, deployment.Spec.Template.Spec.Containers)
-	args := deployment.Spec.Template.Spec.Containers[0].Args
-	require.Contains(t, args, "--control-plane-mode")
-	require.Contains(t, args, "--app-cluster-kubeconfig-secret-name=app-cluster-kubeconfig")
-	require.Contains(t, args, "--app-cluster-kubeconfig-secret-namespace=default")
-	require.Contains(t, args, "--app-cluster-kubeconfig-secret-key=kubeconfig")
-	require.Contains(t, args, "--binding-root-namespace="+expectedRootNamespace)
-
+	t.Logf("Waiting for binding root namespace to be created by backend")
 	require.Eventually(t, func() bool {
 		_, err := providerKubeClient.CoreV1().Namespaces().Get(ctx, expectedRootNamespace, metav1.GetOptions{})
 		return err == nil
-	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for binding root namespace to be created")
+	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for binding root namespace")
 
+	t.Logf("Waiting for SecretValid condition to be true")
 	require.Eventually(t, func() bool {
 		binding, err := bindClient.KlutchBindV1alpha1().AppClusterBindings("default").Get(ctx, bindingName, metav1.GetOptions{})
 		if err != nil {
@@ -102,7 +97,55 @@ func TestControlPlaneModeKonnectorDeployment(t *testing.T) {
 		}
 		status, ok := conditionStatus(binding.Status.Conditions, bindv1alpha1.AppClusterBindingConditionSecretValid)
 		return ok && status == corev1.ConditionTrue
-	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for SecretValid condition to become true")
+	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for SecretValid condition")
+
+	t.Logf("Waiting for APIServiceBinding to be created in binding root namespace")
+	require.Eventually(t, func() bool {
+		_, err := bindClient.KlutchBindV1alpha1().APIServiceBindings(expectedRootNamespace).Get(ctx, "mangodbs.mangodb.com", metav1.GetOptions{})
+		return err == nil
+	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for APIServiceBinding")
+
+	t.Logf("Starting konnector in control plane mode")
+	framework.StartKonnector(t, providerConfig,
+		"--kubeconfig="+providerKubeconfig,
+		"--control-plane-mode",
+		"--app-cluster-kubeconfig-secret-name=app-cluster-kubeconfig",
+		"--app-cluster-kubeconfig-secret-namespace="+expectedRootNamespace,
+		"--app-cluster-kubeconfig-secret-key=kubeconfig",
+		"--binding-root-namespace="+expectedRootNamespace,
+	)
+
+	serviceGVR := schema.GroupVersionResource{Group: "mangodb.com", Version: "v1alpha1", Resource: "mangodbs"}
+	consumerClient := framework.DynamicClient(t, consumerConfig).Resource(serviceGVR)
+	providerClient := framework.DynamicClient(t, providerConfig).Resource(serviceGVR)
+
+	t.Logf("Waiting for MangoDB CRD to be created on consumer side")
+	crdClient := framework.ApiextensionsClient(t, consumerConfig).ApiextensionsV1().CustomResourceDefinitions()
+	require.Eventually(t, func() bool {
+		_, err := crdClient.Get(ctx, "mangodbs.mangodb.com", metav1.GetOptions{})
+		return err == nil
+	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for MangoDB CRD on consumer side")
+
+	mangodbInstance := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "mangodb.com/v1alpha1",
+			"kind":       "MangoDB",
+			"metadata":   map[string]interface{}{"name": "test"},
+			"spec":       map[string]interface{}{"tokenSecret": "credentials"},
+		},
+	}
+
+	t.Logf("Creating MangoDB instance on consumer side")
+	require.Eventually(t, func() bool {
+		_, err := consumerClient.Namespace("default").Create(ctx, mangodbInstance, metav1.CreateOptions{})
+		return err == nil
+	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for MangoDB instance creation on consumer side")
+
+	t.Logf("Waiting for MangoDB instance to be synced to provider side")
+	require.Eventually(t, func() bool {
+		instances, err := providerClient.List(ctx, metav1.ListOptions{})
+		return err == nil && len(instances.Items) == 1
+	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for MangoDB instance on provider side")
 }
 
 func TestControlPlaneModeInvalidKubeconfigCondition(t *testing.T) {
@@ -133,7 +176,6 @@ func TestControlPlaneModeInvalidKubeconfigCondition(t *testing.T) {
 				LocalSecretKeyRef: bindv1alpha1.LocalSecretKeyRef{Name: "invalid-kubeconfig", Key: "kubeconfig"},
 				Namespace:         "default",
 			},
-			Konnector: &bindv1alpha1.KonnectorSpec{Deploy: true},
 		},
 	})
 
@@ -145,18 +187,6 @@ func TestControlPlaneModeInvalidKubeconfigCondition(t *testing.T) {
 		status, ok := conditionStatus(binding.Status.Conditions, bindv1alpha1.AppClusterBindingConditionSecretValid)
 		return ok && status == corev1.ConditionFalse
 	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for SecretValid condition to become false")
-
-	err = wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 10*time.Second, true, func(context.Context) (bool, error) {
-		_, depErr := providerKubeClient.AppsV1().Deployments("default").Get(ctx, "konnector-"+bindingName, metav1.GetOptions{})
-		if apierrors.IsNotFound(depErr) {
-			return true, nil
-		}
-		if depErr != nil {
-			return false, depErr
-		}
-		return false, nil
-	})
-	require.NoError(t, err, "deployment should not be created while kubeconfig secret is invalid")
 }
 
 func createAppClusterBindingEventually(t *testing.T, ctx context.Context, client bindclient.Interface, namespace string, binding *bindv1alpha1.AppClusterBinding) {
@@ -164,13 +194,9 @@ func createAppClusterBindingEventually(t *testing.T, ctx context.Context, client
 
 	require.Eventually(t, func() bool {
 		_, err := client.KlutchBindV1alpha1().AppClusterBindings(namespace).Create(ctx, binding, metav1.CreateOptions{})
-		if err == nil || apierrors.IsAlreadyExists(err) {
+		if err == nil {
 			return true
 		}
-		if apierrors.IsNotFound(err) {
-			return false
-		}
-		require.NoError(t, err)
 		return false
 	}, wait.ForeverTestTimeout, 100*time.Millisecond, "waiting for AppClusterBinding CRD to be available")
 }
