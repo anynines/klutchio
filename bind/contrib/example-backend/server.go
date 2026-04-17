@@ -23,8 +23,8 @@ import (
 	"net"
 
 	"k8s.io/apimachinery/pkg/util/sets"
-	appsinformers "k8s.io/client-go/informers/apps/v1"
 	"k8s.io/client-go/dynamic"
+	appsinformers "k8s.io/client-go/informers/apps/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
