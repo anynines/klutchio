@@ -25,7 +25,7 @@ machine for development and testing purposes.
   - You can deploy a Kubernetes cluster locally using tools such as
     [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) or [minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [Helm](https://helm.sh/docs/intro/install/) version v3.2.0 or later
-- [Crossplane](https://docs.crossplane.io/v1.11/software/install/) version
+- [Crossplane](https://docs.crossplane.io/v1.20) version
 1.17.1 or later.
   - You can deploy the *latest* version of Crossplane using helm by executing
     the following command:
@@ -35,7 +35,7 @@ machine for development and testing purposes.
     ```
 
   - Alternately, you can install a *specific* Crossplane version using helm's
-    [*--version <version>*](https://docs.crossplane.io/v1.11/software/install/)
+    [*--version <version>*](https://docs.crossplane.io/v1.20)
     option, and then deploy the [Crossplane Provider for Kubernetes](https://github.com/anynines/klutchio/blob/main/crossplane-api/deploy/provider-kubernetes.yaml).
 - To build, push, and install Crossplane packages, you need the Crossplane CLI.
   You can install it with the following command:
@@ -190,7 +190,7 @@ below are necessary.
 
 #### Create ssh tunnel for Service Broker and Backup Manager
 
-Follow the steps described [here](https://github.com/anynines/klutchio/blob/main/clients/a9s-backup-manager/README.md#pre-req) to get access to "aws-inception".
+For setups using internal environments like inception (as in this example), an SSH tunnel is required to access the Service Broker and Backup Manager APIs.
 
 #### Start Service Broker tunnel
 
@@ -521,7 +521,7 @@ kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore-claim.yaml
 
 In case of a Service or Plan is changed or a new one is added, it is essential
 to update both the [composition](api/a8s/postgresql/composition.yaml)
-and [definition](api/a8s/postgresql/definition.yaml) yaml files.
+and [definition](api/common/postgresql_definition.yaml) yaml files.
 In our current approach, we validate the user-defined Service and Plan and
 translate Service and Plan names from the Composite Resource (XR) to data
 service version, CPU, memory and volume sizes in the Managed Resource (MR). If a

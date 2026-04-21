@@ -4,7 +4,7 @@ This document outlines the steps to release Klutch, which involves releasing its
 
 1. **Release Bind Component:**
    Follow the release instructions in the `bind` directory:
-   [bind/RELEASE.md](./bind/RELEASE.md)
+   [bind/RELEASE.MD](./bind/RELEASE.MD)
 
 2. **Sync a9s Services and Plans:**
    Ensure that the supported a9s Data Services and their plans, as defined in the Crossplane configuration packages, are aligned with the latest available a9s services and plans.
@@ -13,10 +13,10 @@ This document outlines the steps to release Klutch, which involves releasing its
 
 3. **Release Crossplane API Component:**
    Follow the release instructions in the `crossplane-api` directory:
-   [crossplane-api/RELEASE.MD](./crossplane-api/RELEASE.md)
+   [crossplane-api/RELEASE.MD](./crossplane-api/RELEASE.MD)
 
 4. **Update Documentation:**
-   Update the [`docs`](./docs) folder with the new image tags (versions) for all released components.
+   Update the Klutchio docs with the new image tags (versions) for all released components.
    **Important:** Ensure all providers and functions are also synced and use consistent versions across the release.
 
 5. **Update Changelog:**
