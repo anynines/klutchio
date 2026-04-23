@@ -364,12 +364,11 @@ func (c *external) getBackupDetails(ctx context.Context, rst *v1.Restore) (strin
 
 // getBackupManagedResource tries to retrieve Backup MR using backup claim name and namespace
 func (c *external) getBackupManagedResource(ctx context.Context, rst v1.Restore) (*bkpv1.Backup, error) {
-	// Current assumption is that restore-claim exists in the same namespace as Backup
-	// claim, meaning cross-namespace resource creation is not supported for now.
+	// In Crossplane v2 (Namespaced XRs), composed MRs carry the label
+	// crossplane.io/composite: <xr-name> instead of the v1 claim labels.
 	labelSelector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			constants.LabelKeyClaimName:      rst.Spec.ForProvider.BackupName,
-			constants.LabelKeyClaimNamespace: rst.Labels[constants.LabelKeyClaimNamespace],
+			constants.LabelKeyComposite: rst.Spec.ForProvider.BackupName,
 		},
 	})
 	if err != nil {
