@@ -5,7 +5,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XKeyvalueInstance
+    kind: KeyvalueInstance
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -36,10 +36,8 @@ spec:
                 providerConfigRef:
                   name: keyvalue-service-broker
             patches:
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-                toFieldPath: metadata.labels[crossplane.io/claim-namespace] # changed from spec.forProvider.manifest.metadata.namespace
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-                toFieldPath: metadata.labels[crossplane.io/claim-name] # changed from spec.forProvider.manifest.metadata.name
+              - fromFieldPath: metadata.namespace
+                toFieldPath: metadata.namespace
               - fromFieldPath: spec.service
                 toFieldPath: spec.forProvider.serviceName
               - fromFieldPath: spec.plan

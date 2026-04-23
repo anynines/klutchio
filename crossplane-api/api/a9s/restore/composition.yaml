@@ -5,7 +5,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XRestore
+    kind: Restore
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -20,10 +20,8 @@ spec:
               apiVersion: dataservices.anynines.com/v1
               kind: Restore
             patches:
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-                toFieldPath: metadata.labels[crossplane.io/claim-namespace]
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-                toFieldPath: metadata.labels[crossplane.io/claim-name]
+              - fromFieldPath: metadata.namespace
+                toFieldPath: metadata.namespace
               - fromFieldPath: spec.backupRef
                 toFieldPath: spec.forProvider.backupName
               - fromFieldPath: spec.serviceInstanceType
