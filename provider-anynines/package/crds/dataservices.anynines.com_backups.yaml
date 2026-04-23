@@ -16,7 +16,7 @@ spec:
     listKind: BackupList
     plural: backups
     singular: backup
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=='Ready')].status
