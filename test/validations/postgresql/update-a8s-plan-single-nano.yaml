@@ -7,8 +7,9 @@ base:
   spec:
     service: a9s-postgresql13
     plan: postgresql-single-nano
-    compositionRef:
-      name: a8s-postgresql
+    crossplane:
+      compositionRef:
+        name: a8s-postgresql
 
 valid_patches:
   # from smaller to larger single instances

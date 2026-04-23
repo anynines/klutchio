@@ -6,5 +6,3 @@ metadata:
 spec:
   service: a9s-mariadb1011
   plan: mariadb-single-nano
-  compositionRef:
-    name: a9s-mariadb

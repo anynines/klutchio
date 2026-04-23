@@ -5,8 +5,9 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-single-nano
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -15,8 +16,9 @@ metadata:
 spec:
   service: a9s-postgresql14
   plan: postgresql-single-nano
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -25,8 +27,9 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-single-small
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -35,8 +38,9 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-single-medium
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -45,8 +49,9 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-single-big
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -55,8 +60,9 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-replica-small
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -65,8 +71,9 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-replica-medium
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -75,8 +82,9 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-replica-big
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -87,8 +95,9 @@ spec:
   plan: postgresql-replica-big
   parameters:
     maxConnections: 250
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql
 ---
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
@@ -116,5 +125,6 @@ spec:
     logStatement: ddl
     logErrorVerbosity: TERSE
     maxLocksPerTransaction: 128
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql

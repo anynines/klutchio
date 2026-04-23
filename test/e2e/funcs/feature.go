@@ -512,7 +512,8 @@ func ManagedResourceOfClaimSatisfiesWithin(d time.Duration, dir, pattern string,
 }
 
 // CompositeResourceEstablishedAndOffered ensures that a CompositeResourceDefinition (aka XRD) with the given xrdName
-// exists, and has it's `Established` and `Offered` conditions set to `True`.
+// exists, and has it's `Established` condition set to `True`.
+// Note: In Crossplane v2, the `Offered` condition no longer exists (Claims were removed), so only `Established` is checked.
 func CompositeResourceEstablishedAndOffered(xrdName string) features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		t.Logf("Checking CompositeResourceDefinition %s", xrdName)
@@ -525,7 +526,6 @@ func CompositeResourceEstablishedAndOffered(xrdName string) features.Func {
 
 			cds := []xpv1.Condition{
 				{Type: "Established", Status: "True"},
-				{Type: "Offered", Status: "True"},
 			}
 
 			for _, want := range cds {
