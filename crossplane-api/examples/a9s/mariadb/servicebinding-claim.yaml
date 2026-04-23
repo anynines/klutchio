@@ -4,8 +4,9 @@ metadata:
   name: example-a9s-mariadb
   namespace: default
 spec:
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding
   # instanceRef indicates the DataServiceInstance claim name
   instanceRef: example-a9s-mariadb
   serviceInstanceType: mariadb # Adjust for each Service Instance type
-  compositionRef:
-    name: a9s-servicebinding

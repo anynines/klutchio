@@ -4,11 +4,12 @@ metadata:
   name: example-a9s-postgresql-with-parameters
   namespace: default
 spec:
+  crossplane:
+    compositionRef:
+      name: a9s-postgresql
   # Use a supported postgresql serviceName and planName
   service: a9s-postgresql15
   plan: postgresql-replica-small
-  compositionRef:
-    name: a9s-postgresql
   parameters:
     tempFileLimit: 4096
     trackIoTiming: "on"

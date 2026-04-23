@@ -4,8 +4,9 @@ metadata:
   name: example-a9s-logme2
   namespace: default
 spec:
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding
   # instanceName indicates the DataServiceInstance claim name
   instanceRef: example-a9s-logme2
   serviceInstanceType: logme2 # Adjust for each Service Instance type
-  compositionRef:
-    name: a9s-servicebinding

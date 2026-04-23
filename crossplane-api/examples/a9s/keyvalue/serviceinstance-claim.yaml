@@ -7,5 +7,3 @@ spec:
   # Use a supported keyvalue serviceName and planName
   service: a9s-keyvalue8
   plan: keyvalue-single-small-ssl
-  compositionRef:
-    name: a9s-keyvalue

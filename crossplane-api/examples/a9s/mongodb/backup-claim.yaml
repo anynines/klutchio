@@ -4,8 +4,8 @@ metadata:
   name: example-a9s-mongodb
   namespace: default
 spec:
+  crossplane:
+    compositionRef:
+      name: a9s-backup
   instanceRef: example-a9s-mongodb
   serviceInstanceType: mongodb
-  # If no compositionRef is provided, the default choice will be a8s-backup.
-  compositionRef:
-    name: a9s-backup

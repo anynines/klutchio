@@ -7,8 +7,6 @@ spec:
   # Use a supported logme2 serviceName and planName
   service: a9s-logme2
   plan: logme-single-small-ssl
-  compositionRef:
-    name: a9s-logme2
   parameters:
     javaHeapspace: 512
     javaMaxmetaspace: 256
@@ -28,4 +26,3 @@ spec:
     groks:
       - pattern: "%{WORD:Some} %{WORD:Grok} %{WORD:Pattern}"
       - pattern: "%{WORD:Some2} %{WORD:Grok2} %{WORD:Pattern2}"
-
