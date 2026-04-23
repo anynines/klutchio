@@ -19,6 +19,8 @@ package constants
 const (
 	LabelKeyClaimName      = "crossplane.io/claim-name"
 	LabelKeyClaimNamespace = "crossplane.io/claim-namespace"
+	// LabelKeyComposite is set by Crossplane v2 on composed MRs to reference the owning XR.
+	LabelKeyComposite = "crossplane.io/composite"
 
 	AnnotationKeyInstanceID   = "anynines.crossplane.io/instance-id"
 	AnnotationKeyExternalName = "crossplane.io/external-name"

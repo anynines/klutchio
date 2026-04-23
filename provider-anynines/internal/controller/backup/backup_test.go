@@ -152,8 +152,8 @@ func serviceInstance(modifiers ...serviceInstanceOptions) *dsv1.ServiceInstance 
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "postgres-1-sdjk",
 			Labels: map[string]string{
-				"crossplane.io/claim-name":      "postgres-1",
-				"crossplane.io/claim-namespace": "test",
+				// Crossplane v2 sets crossplane.io/composite on composed MRs (XR name).
+				"crossplane.io/composite": "postgres-1",
 			},
 		},
 		Spec: dsv1.ServiceInstanceSpec{
@@ -558,8 +558,8 @@ func TestObserve(t *testing.T) {
 					)),
 			},
 		},
-		"errorServiceInstanceAndBackupInDifferentNamespaces": {
-			// Observe should fail because backup and ServiceInstance are in a different namespace
+		"errorServiceInstanceLabelMismatch": {
+			// Observe should fail because the ServiceInstance's composite label does not match the Backup's InstanceName
 			args: args{
 				managedResource: newBackup(
 					withLabels(
@@ -573,8 +573,8 @@ func TestObserve(t *testing.T) {
 					)),
 				serviceInstance: *serviceInstance(serviceInstanceWithLabels(
 					map[string]string{
-						"crossplane.io/claim-name":      "postgres",
-						"crossplane.io/claim-namespace": "test-1",
+						// crossplane.io/composite does not match InstanceName "postgres-1"
+						"crossplane.io/composite": "postgres",
 					},
 				),
 					serviceInstanceWithStatus(
