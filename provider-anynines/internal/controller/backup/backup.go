@@ -398,6 +398,7 @@ func (c External) GetServiceInstanceManagedResource(ctx context.Context, bkp v1.
 
 	err = c.Kube.List(ctx, instances, &k8sclient.ListOptions{
 		LabelSelector: labelSelector,
+		Namespace:     bkp.Namespace,
 	})
 	if err != nil {
 		return nil, fmt.Errorf(

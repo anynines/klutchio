@@ -384,6 +384,7 @@ func (c *external) getBackupManagedResource(ctx context.Context, rst v1.Restore)
 	backupList := &bkpv1.BackupList{}
 	err = c.kube.List(ctx, backupList, &k8sclient.ListOptions{
 		LabelSelector: labelSelector,
+		Namespace:     rst.Namespace,
 	})
 	if err != nil {
 		return nil, fmt.Errorf(
