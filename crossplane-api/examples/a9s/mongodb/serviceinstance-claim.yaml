@@ -7,5 +7,3 @@ spec:
   # Use a supported mongodb serviceName and planName
   service: a9s-mongodb50
   plan: mongodbsspl-single-nano-ssl
-  compositionRef:
-    name: a9s-mongodb

@@ -7,8 +7,6 @@ spec:
   # Use a supported mongodb serviceName and planName
   service: a9s-mongodb70
   plan: mongodbsspl-replica-small-ssl
-  compositionRef:
-    name: a9s-mongodb
   parameters:
     setClusterParameter:
       changeStreamOptions:

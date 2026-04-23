@@ -7,5 +7,3 @@ spec:
   # Use a supported search serviceName and planName
   service: a9s-search2
   plan: search-single-small-ssl
-  compositionRef:
-    name: a9s-search

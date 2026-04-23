@@ -7,12 +7,9 @@ spec:
   # Use a supported search serviceName and planName
   service: a9s-search2
   plan: search-single-small-ssl
-  compositionRef:
-    name: a9s-search
   parameters:
     javaHeapspace: 512
     javaMaxmetaspace: 256
     javaGarbageCollector: "UseParallelGC"
     tlsProtocols: ["TLSv1.2", "TLSv1.3"]
     tlsCiphers: ["TLS_DHE_RSA_WITH_AES_256_CBC_SHA"]
-

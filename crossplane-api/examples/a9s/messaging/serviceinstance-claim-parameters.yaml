@@ -7,8 +7,6 @@ spec:
   # Use a supported messaging service and plan
   service: a9s-messaging4
   plan: messaging-single-small-ssl
-  compositionRef:
-    name: a9s-messaging
   parameters:
     consumerTimeout: 1800001
     tlsProtocols: ["tlsv1.2", "tlsv1.3"]
