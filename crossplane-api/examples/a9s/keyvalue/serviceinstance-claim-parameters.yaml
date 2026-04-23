@@ -7,8 +7,6 @@ spec:
   # Use a supported keyvalue serviceName and planName
   service: a9s-keyvalue8
   plan: keyvalue-single-small-ssl
-  compositionRef:
-    name: a9s-keyvalue
   parameters:
     snapshot: "['save 900 1','save 300 10','save 60 10000']"
     replBacklogSize: "10mb"

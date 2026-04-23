@@ -3,8 +3,8 @@ kind: Restore
 metadata:
   name: example-a9s-keyvalue
 spec:
-    backupRef: example-a9s-keyvalue
-    serviceInstanceType: keyvalue
-    # If no compositionRef is provided, the default choice will be a8s-restore.
+  crossplane:
     compositionRef:
       name: a9s-restore
+    backupRef: example-a9s-keyvalue
+    serviceInstanceType: keyvalue

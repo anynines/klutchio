@@ -7,5 +7,3 @@ spec:
   # Use a supported prometheus serviceName and planName
   service: a9s-prometheus
   plan: prometheus-single-small
-  compositionRef:
-    name: a9s-prometheus

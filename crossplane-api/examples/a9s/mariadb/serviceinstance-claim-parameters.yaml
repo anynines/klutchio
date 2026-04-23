@@ -7,10 +7,7 @@ spec:
   # Use a supported mariadb serviceName and planName
   service: a9s-mariadb106
   plan: mariadb-single-nano-ssl
-  compositionRef:
-    name: a9s-mariadb
   parameters:
     binlogExpireDays: 1
     databases: ["db1", "db2"]
     grantPerformanceSchemaPermissions: true
-

@@ -7,5 +7,6 @@ spec:
   # instanceRef indicates the DataServiceInstance claim name
   instanceRef: example-a9s-postgresql
   serviceInstanceType: postgresql # Adjust for each Service Instance type
-  compositionRef:
-    name: a9s-servicebinding
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding
