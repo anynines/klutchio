@@ -521,14 +521,14 @@ func TestObserve(t *testing.T) {
 			},
 			reconcileError: utilerr.ErrInternal,
 		},
-		"crossNamespace": {
+		"instance_label_mismatch": {
 			sb: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 			),
 			serviceInstance: *serviceInstance(serviceInstanceWithLabels(
 				map[string]string{
-					"crossplane.io/claim-name":      "postgres-1",
-					"crossplane.io/claim-namespace": "test-1",
+					// crossplane.io/composite does not match instanceName "postgres-1"
+					"crossplane.io/composite": "other-postgres",
 				},
 			),
 				serviceInstanceWithStatus(
@@ -2355,6 +2355,14 @@ func serviceBinding(instanceName string, opts ...func(*v1.ServiceBinding)) *v1.S
 			},
 			UID: "1a6a6b3e-254e-11ee-be56-0242ac120002",
 		},
+		Spec: v1.ServiceBindingSpec{
+			ResourceSpec: xpv1.ResourceSpec{
+				WriteConnectionSecretToReference: &xpv1.SecretReference{
+					Name:      "test-sb-creds",
+					Namespace: "test",
+				},
+			},
+		},
 	}
 
 	for _, opt := range opts {
@@ -2508,8 +2516,9 @@ func serviceInstance(modifiers ...ServiceInstanceOption) *dsv1.ServiceInstance {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "postgres-1-sdjk",
 			Labels: map[string]string{
-				"crossplane.io/claim-name":      "postgres-1",
-				"crossplane.io/claim-namespace": "test",
+				// Crossplane v2 sets crossplane.io/composite on composed MRs (XR name).
+				// Crossplane v1 set crossplane.io/claim-name (claim name).
+				"crossplane.io/composite": "postgres-1",
 			},
 		},
 		Spec: dsv1.ServiceInstanceSpec{

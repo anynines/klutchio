@@ -244,13 +244,11 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 	// Get ServiceInstance Managed Resource
 	instances := &dsv1.ServiceInstanceList{}
 
-	// Current assumption is that serviceBinding-claim exists in the same
-	// namespace as serviceInstance-claim. This allows ServiceBindings to
-	// work in the context of Consumer.
+	// In Crossplane v2 (Namespaced XRs), composed MRs carry the label
+	// crossplane.io/composite: <xr-name> instead of the v1 claim labels.
 	labelSelector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			constants.LabelKeyClaimName:      sb.Spec.ForProvider.InstanceName,
-			constants.LabelKeyClaimNamespace: sb.Labels[constants.LabelKeyClaimNamespace],
+			constants.LabelKeyComposite: sb.Spec.ForProvider.InstanceName,
 		},
 	})
 	if err != nil {
@@ -274,13 +272,18 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 	return instances.ToServiceInstance(sb.Name)
 }
 
-// GetServiceBindingSecret retrieves the servicebinding secret with postfix '-creds'.
+// GetServiceBindingSecret retrieves the servicebinding secret whose location is
+// set by the composition via spec.writeConnectionSecretToRef.
 func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBinding) (*corev1.Secret, error) {
-	secret := &corev1.Secret{}
+	secretRef := sb.Spec.WriteConnectionSecretToReference
+	if secretRef == nil {
+		return nil, fmt.Errorf("ServiceBinding has no writeConnectionSecretToRef set")
+	}
 
+	secret := &corev1.Secret{}
 	err := c.kube.Get(ctx, types.NamespacedName{
-		Name:      sb.Labels[constants.LabelKeyClaimName] + "-creds",
-		Namespace: sb.Labels[constants.LabelKeyClaimNamespace],
+		Name:      secretRef.Name,
+		Namespace: secretRef.Namespace,
 	}, secret)
 	if err != nil {
 		return nil, fmt.Errorf(
