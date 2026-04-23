@@ -1,13 +1,11 @@
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: xmariadbinstances.anynines.com
+  name: mariadbinstances.anynines.com
 spec:
   group: anynines.com
+  scope: Namespaced
   names:
-    kind: XMariadbInstance
-    plural: xmariadbinstances
-  claimNames:
     kind: MariadbInstance
     plural: mariadbinstances
   defaultCompositionRef:

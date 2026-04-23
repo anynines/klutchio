@@ -1,13 +1,11 @@
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: xlogme2instances.anynines.com
+  name: logme2instances.anynines.com
 spec:
   group: anynines.com
+  scope: Namespaced
   names:
-    kind: XLogme2Instance
-    plural: xlogme2instances
-  claimNames:
     kind: Logme2Instance
     plural: logme2instances
   defaultCompositionRef:

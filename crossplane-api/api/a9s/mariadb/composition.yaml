@@ -5,7 +5,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XMariadbInstance
+    kind: MariadbInstance
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -36,10 +36,8 @@ spec:
                 providerConfigRef:
                   name: mariadb-service-broker
             patches:
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-                toFieldPath: metadata.labels[crossplane.io/claim-namespace]
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-                toFieldPath: metadata.labels[crossplane.io/claim-name]
+              - fromFieldPath: metadata.namespace
+                toFieldPath: metadata.namespace
               - fromFieldPath: spec.service
                 toFieldPath: spec.forProvider.serviceName
               - fromFieldPath: spec.plan
