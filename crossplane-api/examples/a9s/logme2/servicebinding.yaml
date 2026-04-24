@@ -7,6 +7,6 @@ spec:
   crossplane:
     compositionRef:
       name: a9s-servicebinding
-  # instanceName indicates the DataServiceInstance claim name
+  # instanceName indicates the name of the DataServiceInstance
   instanceRef: example-a9s-logme2
   serviceInstanceType: logme2 # Adjust for each Service Instance type
