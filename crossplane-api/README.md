@@ -403,7 +403,7 @@ EOF
 
 ### Provision an a8s PostgreSQL instance
 
-Adjust the [Composite Resource Claim](examples/a8s/postgresql-claim.yaml)
+Adjust the [example](examples/a8s/postgresql-claim.yaml)
 to refer to a valid service and plan.
 
 | Service          | Version       |
@@ -427,7 +427,7 @@ kubectl apply -f ./crossplane-api/examples/a8s/postgresql-claim.yaml
 
 ### Create a8s ServiceBinding
 
-The servicebinding claim must target an existing PostgreSQL claim name.
+The ServiceBinding must target an existing PostgreSQL instance name.
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/servicebinding-claim.yaml
@@ -438,7 +438,7 @@ kubectl apply -f ./crossplane-api/examples/a8s/servicebinding-claim.yaml
 
 ### Create Backup
 
-The backup claim must target an existing PostgreSQL claim name.
+The Backup must target an existing PostgreSQL instance name.
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/backup-claim.yaml
@@ -446,7 +446,7 @@ kubectl apply -f ./crossplane-api/examples/a8s/backup-claim.yaml
 
 ### Create a8s Restore
 
-The restore claim must target an existing PostgreSQL claim name.
+The Restore must target an existing PostgreSQL instance name.
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/restore-claim.yaml
@@ -469,10 +469,10 @@ curl http://<user>:<password>@localhost:<port>/v2/catalog -H "X-Broker-API-Versi
 
 Under the `crossplane-api/examples/a9s` folder, you'll find examples for various
 service instances. For instance, you can deploy PostgreSQL by applying the
-PostgreSQL Composite Resource Claim (XRC) using the following command:
+PostgreSQL Composite Resource (XR) using the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/serviceinstance-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/serviceinstance.yaml
 ```
 
 You can check it with:
@@ -491,30 +491,30 @@ kubectl get serviceinstances.dataservices.anynines.com
 
 ### Create a9s ServiceBinding
 
-The servicebinding claim must target an existing service instance. For example,
+The ServiceBinding must target an existing service instance. For example,
 you can create a ServiceBinding to a PostgreSQL instance with the following
 command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding.yaml
 ```
 
 ### Create a9s Backup
 
-The backup claim must target an existing service instance. For example, you can
+The Backup must target an existing service instance. For example, you can
 create a Backup from a PostgreSQL instance with the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/backup-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/backup.yaml
 ```
 
 ### Create a9s Restore
 
-The restore claim must target an existing service instance backup. For example,
+The Restore must target an existing service instance backup. For example,
 you can restore a PostgreSQL Backup with the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore.yaml
 ```
 
 ## Update or Add a Service or Plan in a8s

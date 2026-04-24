@@ -7,6 +7,6 @@ spec:
   crossplane:
     compositionRef:
       name: a9s-servicebinding
-  # instanceRef indicates the DataServiceInstance claim name
+  # instanceRef indicates the name of the DataServiceInstance
   instanceRef: example-a9s-mariadb
   serviceInstanceType: mariadb # Adjust for each Service Instance type
