@@ -239,7 +239,7 @@ provider-build-push:
 	cp package/crossplane.yaml bu.yaml
 	cat package/crossplane.yaml | sed "s/\VERSION/$(IMAGETAG)/g" > package/temp_crossplane.yaml
 	mv package/temp_crossplane.yaml package/crossplane.yaml
-	crossplane xpkg build --package-file package/$(PROJECT_NAME).xpkg --package-root package --embed-runtime-image $(ECR_REPO)/$(PROJECT_NAME)-controller:$(IMAGETAG)
+	crossplane xpkg build --package-file package/$(PROJECT_NAME).xpkg --package-root package
 	$(INFO) "Building provider image"
 	crossplane xpkg push --package-files package/$(PROJECT_NAME).xpkg $(ECR_REPO)/$(PROJECT_NAME):$(IMAGETAG)
 	$(INFO) "image $(PROJECT_NAME):$(IMAGETAG) pushed to ECR"

@@ -36,8 +36,6 @@ spec:
                 providerConfigRef:
                   name: mariadb-service-broker
             patches:
-              - fromFieldPath: metadata.namespace
-                toFieldPath: metadata.namespace
               - fromFieldPath: spec.service
                 toFieldPath: spec.forProvider.serviceName
               - fromFieldPath: spec.plan

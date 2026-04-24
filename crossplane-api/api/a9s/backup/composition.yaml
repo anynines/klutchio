@@ -20,8 +20,6 @@ spec:
               apiVersion: dataservices.anynines.com/v1
               kind: Backup
             patches:
-              - fromFieldPath: metadata.namespace
-                toFieldPath: metadata.namespace
               - fromFieldPath: spec.instanceRef
                 toFieldPath: spec.forProvider.instanceName
               - type: ToCompositeFieldPath
