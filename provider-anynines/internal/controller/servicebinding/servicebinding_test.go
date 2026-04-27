@@ -101,11 +101,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
@@ -157,11 +152,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
@@ -188,11 +178,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
@@ -249,11 +234,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
@@ -355,11 +335,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
@@ -457,11 +432,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
@@ -480,22 +450,12 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
 			otherResources: []client.Object{
 				serviceInstance(
 					serviceInstanceWithName("postgres-1-sdjl"),
-					withAnnotations(
-						map[string]string{
-							"crossplane.io/claim-name":      "postgres-1",
-							"crossplane.io/claim-namespace": "test",
-						}),
 					serviceInstanceWithStatus(
 						dsv1.ServiceInstanceObservation{
 							InstanceID: "23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -580,11 +540,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 			),
 			getBindingReaction: &GetBindReaction{
@@ -622,11 +577,6 @@ func TestObserve(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -680,11 +630,6 @@ func TestObserve(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -723,11 +668,6 @@ func TestObserve(t *testing.T) {
 			serviceInstance: *serviceInstance(
 				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 			),
 			getBindingReaction: &GetBindReaction{
@@ -851,11 +791,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "keyvalue-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -903,11 +838,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "logme-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -953,11 +883,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "mariadb",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -1004,11 +929,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "msg",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -1084,11 +1004,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "mongodb",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -1134,11 +1049,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -1186,11 +1096,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "prometheus",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -1241,11 +1146,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 			),
 			serviceInstance: *serviceInstance(
 				afterInstanceCreation(),
-				withAnnotations(
-					map[string]string{
-						"crossplane.io/claim-name":      "search",
-						"crossplane.io/claim-namespace": "test",
-					}),
 				serviceInstanceWithStatus(
 					dsv1.ServiceInstanceObservation{
 						InstanceID: "6e2c036c-254f-11ee-be56-0242ac120002",
@@ -1340,11 +1240,6 @@ func TestObserveReturnsError(t *testing.T) {
 	serviceInstance := *serviceInstance(
 		withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 		afterInstanceCreation(),
-		withAnnotations(
-			map[string]string{
-				"crossplane.io/claim-name":      "postgres-1",
-				"crossplane.io/claim-namespace": "test",
-			}),
 		withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 		withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 	)
@@ -2300,10 +2195,6 @@ func TestDeleteClientErr(t *testing.T) {
 			kube: newKubeMock(
 				serviceInstance(
 					afterInstanceCreation(),
-					withAnnotations(map[string]string{
-						"crossplane.io/claim-name":      "postgres-1",
-						"crossplane.io/claim-namespace": "test",
-					}),
 					withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 					withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 				), nil,
@@ -2349,9 +2240,8 @@ func serviceBinding(instanceName string, opts ...func(*v1.ServiceBinding)) *v1.S
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-sb-asty",
 			Labels: map[string]string{
-				"crossplane.io/claim-name":      "test-sb",
-				"crossplane.io/claim-namespace": "test",
-				"klutch.io/instance-type":       instanceName,
+				"crossplane.io/composite":  "test-sb",
+				"klutch.io/instance-type":  instanceName,
 			},
 			UID: "1a6a6b3e-254e-11ee-be56-0242ac120002",
 		},

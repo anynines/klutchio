@@ -14,18 +14,23 @@ Use alias for kubectl
 alias k=kubectl
 ```
 
+Install Crossplane v2:
+
+```bash
+helm repo add crossplane-stable https://charts.crossplane.io/stable && helm repo update
+helm install crossplane crossplane-stable/crossplane \
+  --namespace crossplane-system \
+  --create-namespace \
+  --version 2.2.1 \
+  --wait --timeout 5m
+```
+
 Using [provider-anynines](https://github.com/anynines/klutchio/tree/main/provider-anynines) execute the following commands.
 
 Install CRDs
 
 ```bash
 k apply -f package/crds
-```
-
-Create crossplane-system namespace
-
-```bash
-k create ns crossplane-system
 ```
 
 Use [Setup tunnel to service-broker](https://anynines.atlassian.net/browse/A8S-1205) to configure port-forward to anynines service-broker and backup-manager.
@@ -60,16 +65,16 @@ Fetch the catalog from the service-broker so that we can provide the correct UUI
 curl http://<USERNAME>:<PASSWORD>@localhost:8989/v2/catalog -H "X-Broker-API-Version: 2.14" | jq
 ```
 
-Configure the ServiceInstance MR located at `examples/sample/postgresql-example.yaml` to look like this:
+Configure the ServiceInstance MR located at `examples/sample/postgresql/serviceinstance.yaml` to look like this:
 
-```bash
+```yaml
 apiVersion: dataservices.anynines.com/v1
 kind: ServiceInstance
 metadata:
   name: example-pg-instance-jklasd
+  namespace: default
   labels:
-    crossplane.io/claim-name: example-pg-instance
-    crossplane.io/claim-namespace: default
+    crossplane.io/composite: example-pg-instance
 spec:
   forProvider:
     acceptsIncomplete: true
@@ -89,25 +94,25 @@ spec:
 Apply the Managed Resource for anynines PostgreSQL.
 
 ```bash
-kubectl apply -f examples/sample/postgresql-example.yaml  -o yaml
+kubectl apply -f examples/sample/postgresql/serviceinstance.yaml -o yaml
 ```
 
 Wait for the resource to transition from `state: deploying` to `state: provisioned` by looking at the Status field of the resource.
 
 ```bash
-watch kubectl apply -f examples/sample/postgresql-example.yaml  -o yaml
+watch kubectl get serviceinstances.dataservices.anynines.com -n default
 ```
 
 Once the PostgreSQL instance is provisioned we need to create a service-binding.
 
 ```bash
-watch kubectl apply -f examples/sample/sb-example.yaml  -o yaml
+kubectl apply -f examples/sample/postgresql/servicebinding.yaml -o yaml
 ```
 
-provider-anynines will create a secret for you named `example-sb-creds` in the `crossplane-system` namespace which you can use to access the instance. The Inception test environment doesn't expose the instances to the outside so we need to SSH onto Inception to interact with the database.
+provider-anynines will create a secret for you named `example-postgresql-sb-creds` in the `default` namespace which you can use to access the instance. The Inception test environment doesn't expose the instances to the outside so we need to SSH onto Inception to interact with the database.
 
 ```bash
-watch kubectl apply -f examples/sample/sb-example.yaml  -o yaml
+watch kubectl get servicebindings.dataservices.anynines.com -n default
 ```
 
 ssh onto Inception and then onto the service broker. The service-broker can be accessed using `bosh -d <SERVICE-BROKER-NAME> ssh broker`. Then install the postgresql-client using `sudo apt update && sudo apt install -y postgresql-client`.
@@ -118,10 +123,10 @@ Use this script to fetch and decode the ENDPOINT.
 #!/bin/bash
 
 # Set Kubernetes context and namespace
-NAMESPACE="crossplane-system"
+NAMESPACE="default"
 
 # Name of the secret
-SECRET_NAME="example-sb-creds"
+SECRET_NAME="example-postgresql-sb-creds"
 
 # Fetch secret
 SECRET=$(kubectl -n "$NAMESPACE" get secret "$SECRET_NAME" -o json)
@@ -152,7 +157,7 @@ Adjust the backup to target the GUID of the PostgreSQL instance.
 Create a backup.
 
 ```bash
-watch kubectl apply -f examples/sample/backup-example.yaml  -o yaml
+kubectl apply -f examples/sample/postgresql/backup.yaml -o yaml
 ```
 
 Add some more data. We would expect this data to not be in the database after the restore.
@@ -164,7 +169,7 @@ create table nothing_here as select s, md5(random()::text) from generate_Series(
 Restore the database to the previous state.
 
 ```bash
-watch kubectl apply -f examples/sample/restore-example.yaml  -o yaml
+kubectl apply -f examples/sample/postgresql/restore.yaml -o yaml
 ```
 
 Check that the data has been reverted to the state at the time of backup.
