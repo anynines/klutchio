@@ -43,6 +43,7 @@ import (
 	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
 	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
+	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
 	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -1819,4 +1820,47 @@ func expectPendingOperation(t *testing.T, mr resource.Managed, expectedOperation
 		t.Errorf("Delete(...): expected pending operation to be %v, got %v",
 			expectedOperation, *pendingOperation)
 	}
+}
+
+func TestGenAndCheckUID(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns a UID when the first attempt is unique", func(t *testing.T) {
+		t.Parallel()
+		// A 404 "InstanceNotFound" response means the generated UID is not in use.
+		notFound := osbclient.HTTPStatusCodeError{
+			StatusCode:   http.StatusNotFound,
+			ErrorMessage: ptr.To(client.InstanceNotFound),
+		}
+		osb := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
+			GetInstanceReaction: &fakeosb.GetInstanceReaction{Error: notFound},
+		})
+
+		uid, err := genAndCheckUID(osb, 1)
+		if err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+		if uid == "" {
+			t.Fatal("expected a non-empty UID")
+		}
+	})
+
+	t.Run("wraps the cause when all attempts fail", func(t *testing.T) {
+		t.Parallel()
+		// Simulate GetInstance always succeeding (UID already in use) or returning
+		// an unexpected error. Either way IsNotFound is false and all retries are exhausted.
+		cause := errors.New("connection refused")
+		osb := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
+			GetInstanceReaction: &fakeosb.GetInstanceReaction{Error: cause},
+		})
+
+		_, err := genAndCheckUID(osb, 3)
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+		// With the Unwrap() fix on userError, errors.Is must be able to find cause.
+		if !errors.Is(err, cause) {
+			t.Errorf("expected errors.Is(err, cause) to be true; err = %v", err)
+		}
+	})
 }
