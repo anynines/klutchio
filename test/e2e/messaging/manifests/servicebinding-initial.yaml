@@ -6,5 +6,6 @@ metadata:
 spec:
   instanceRef: sample-messaging
   serviceInstanceType: messaging
-  compositionRef:
-    name: a9s-servicebinding
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding

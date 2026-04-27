@@ -6,5 +6,6 @@ metadata:
 spec:
   instanceRef: sample-mongodb
   serviceInstanceType: mongodb
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup

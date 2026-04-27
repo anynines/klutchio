@@ -7,5 +7,6 @@ spec:
   plan: postgresql-single-nano
   parameters:
     dataChecksums: enabled
-  compositionRef:
-    name: a8s-postgresql
+  crossplane:
+    compositionRef:
+      name: a8s-postgresql

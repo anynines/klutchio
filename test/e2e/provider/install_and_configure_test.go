@@ -36,17 +36,17 @@ func TestProviderInstallAndConfigure(t *testing.T) {
 	manifests := "./manifests"
 
 	expectedXRDs := []string{
-		"xbackups.anynines.com",
-		"xlogme2instances.anynines.com",
-		"xmariadbinstances.anynines.com",
-		"xmessaginginstances.anynines.com",
-		"xmongodbinstances.anynines.com",
-		"xpostgresqlinstances.anynines.com",
-		"xprometheusinstances.anynines.com",
-		"xkeyvalueinstances.anynines.com",
-		"xrestores.anynines.com",
-		"xsearchinstances.anynines.com",
-		"xservicebindings.anynines.com",
+		"backups.anynines.com",
+		"logme2instances.anynines.com",
+		"mariadbinstances.anynines.com",
+		"messaginginstances.anynines.com",
+		"mongodbinstances.anynines.com",
+		"postgresqlinstances.anynines.com",
+		"prometheusinstances.anynines.com",
+		"keyvalueinstances.anynines.com",
+		"restores.anynines.com",
+		"searchinstances.anynines.com",
+		"servicebindings.anynines.com",
 	}
 
 	installProvider := features.New("Install anynines Provider").

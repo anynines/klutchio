@@ -6,5 +6,6 @@ metadata:
 spec:
   instanceRef: example-keyvalue-instance
   serviceInstanceType: keyvalue
-  compositionRef:
-    name: a9s-servicebinding
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding

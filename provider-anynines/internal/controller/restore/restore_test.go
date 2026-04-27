@@ -66,8 +66,7 @@ func newRestore(opts ...RestoreOption) *v1.Restore {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-6sf265",
 			Labels: map[string]string{
-				"crossplane.io/claim-name":      "test",
-				"crossplane.io/claim-namespace": "test-1",
+				"crossplane.io/composite": "test",
 			},
 		},
 		Spec: v1.RestoreSpec{
@@ -133,8 +132,8 @@ func newBackup(modifiers ...BackupOption) *bkpv1.Backup {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-bkp-56sa4d",
 			Labels: map[string]string{
-				"crossplane.io/claim-name":      "test-bkp",
-				"crossplane.io/claim-namespace": "test-1",
+				// Crossplane v2 sets crossplane.io/composite on composed MRs (XR name).
+				"crossplane.io/composite": "test-bkp",
 			},
 		},
 		Spec: bkpv1.BackupSpec{
@@ -553,13 +552,13 @@ func TestObserve(t *testing.T) {
 				),
 			},
 		},
-		"errorRestoreAndBackupObjectsInDifferentNamespaces": {
+		"errorRestoreAndBackupLabelMismatch": {
 			args: args{
 				managedResource: newRestore(),
 				backup: *newBackup(
 					backupWithLabels(map[string]string{
-						"crossplane.io/claim-name":      "test-bkp",
-						"crossplane.io/claim-namespace": "test-2",
+						// crossplane.io/composite does not match BackupName "test-bkp"
+						"crossplane.io/composite": "other-bkp",
 					}),
 					backupWithStatus(
 						bkpv1.BackupObservation{
@@ -606,8 +605,8 @@ func TestObserve(t *testing.T) {
 						backupWithName("test-bkp-56sa5d"),
 						backupWithLabels(
 							map[string]string{
-								"crossplane.io/claim-name":      "test-bkp",
-								"crossplane.io/claim-namespace": "test-1",
+								// crossplane.io/composite matches BackupName "test-bkp"
+								"crossplane.io/composite": "test-bkp",
 							}),
 						backupWithStatus(
 							bkpv1.BackupObservation{

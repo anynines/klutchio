@@ -4,4 +4,4 @@ metadata:
   name: anynines-dataservices
 spec:
   crossplane:
-    version: ">=v1.17.1"
+    version: ">=v2.0.0"

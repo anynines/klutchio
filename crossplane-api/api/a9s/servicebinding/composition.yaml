@@ -5,7 +5,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XServiceBinding
+    kind: ServiceBinding
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -27,12 +27,10 @@ spec:
                   # not specified by the user, it will default to 'true'.
                   acceptsIncomplete: true
             patches:
+              - fromFieldPath: metadata.namespace
+                toFieldPath: metadata.namespace
               - fromFieldPath: spec.serviceInstanceType
                 toFieldPath: metadata.labels[klutch.io/instance-type]
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-                toFieldPath: metadata.labels[crossplane.io/claim-namespace]
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
-                toFieldPath: metadata.labels[crossplane.io/claim-name]
               - fromFieldPath: spec.instanceRef
                 toFieldPath: spec.forProvider.instanceName
               - fromFieldPath: spec.serviceInstanceType
@@ -42,9 +40,9 @@ spec:
                     string:
                       type: Format
                       fmt: "%s-service-broker"
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              - fromFieldPath: metadata.namespace
                 toFieldPath: spec.writeConnectionSecretToRef.namespace
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+              - fromFieldPath: metadata.name
                 toFieldPath: spec.writeConnectionSecretToRef.name
                 transforms:
                   - type: string

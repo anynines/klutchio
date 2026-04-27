@@ -1,0 +1,12 @@
+apiVersion: anynines.com/v1
+kind: ServiceBinding
+metadata:
+  name: example-a9s-keyvalue
+  namespace: default
+spec:
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding
+  # instanceRef indicates the name of the DataServiceInstance
+  instanceRef: example-a9s-keyvalue
+  serviceInstanceType: keyvalue # Adjust for each Service Instance type

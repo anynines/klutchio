@@ -1,14 +1,12 @@
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 # This is a short-term solution. The a9s and a8s will soon share a common XRD.
 metadata:
-  name: xprometheusinstances.anynines.com
+  name: prometheusinstances.anynines.com
 spec:
   group: anynines.com
+  scope: Namespaced
   names:
-    kind: XPrometheusInstance
-    plural: xprometheusinstances
-  claimNames:
     kind: PrometheusInstance
     plural: prometheusinstances
   defaultCompositionRef:

@@ -25,48 +25,38 @@ machine for development and testing purposes.
   - You can deploy a Kubernetes cluster locally using tools such as
     [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) or [minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [Helm](https://helm.sh/docs/intro/install/) version v3.2.0 or later
-- [Crossplane](https://docs.crossplane.io/v1.20) version
-1.17.1 or later.
-  - You can deploy the *latest* version of Crossplane using helm by executing
-    the following command:
+- [Crossplane](https://docs.crossplane.io/v2.2) version
+2.2.1 or later.
+  - You can deploy Crossplane using helm by executing the following command:
 
     ```bash
     ./crossplane-api/deploy/deploy-crossplane.sh
     ```
 
   - Alternately, you can install a *specific* Crossplane version using helm's
-    [*--version <version>*](https://docs.crossplane.io/v1.20)
+    [*--version <version>*](https://docs.crossplane.io/v2.2)
     option, and then deploy the [Crossplane Provider for Kubernetes](https://github.com/anynines/klutchio/blob/main/crossplane-api/deploy/provider-kubernetes.yaml).
 - To build, push, and install Crossplane packages, you need the Crossplane CLI.
   You can install it with the following command:
 
     ```bash
-    curl -sL https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh | sh
+    curl -sL https://raw.githubusercontent.com/crossplane/crossplane/v2.2.1/install.sh | sh
     ```
 
 ## Optional: Build and push provider-anynines Package
 
-### Create Provider and Provider Controller images for both amd64 and arm64 systems
-
-```bash
-cd provider-anynines
-make build.all
-```
-
-```bash
-#example
-docker images
-build-ee957d9f/provider-anynines-controller-amd64   latest    17d773ce8f47   8 seconds ago    46.9MB
-build-ee957d9f/provider-anynines-controller-arm64   latest    5c2ea5ca73aa   26 seconds ago   45.7MB
-build-ee957d9f/provider-anynines-amd64              latest    9742ae7e4cc1   32 seconds ago   92kB
-build-ee957d9f/provider-anynines-arm64              latest    9742ae7e4cc1   32 seconds ago   92kB
-
-```
+### Login to ECR
 
 To push the Crossplane Packages to AWS ECR, you need to retrieve an
-authentication token and authenticate your Docker client to the registry. The
-profile part is optional but useful if you have multiple accounts. To add the
-access key on your machine run:
+authentication token and authenticate your Docker client to the registry.
+
+If your organization uses AWS SSO, configure the profile with:
+
+```bash
+aws configure sso --profile ECR
+```
+
+Otherwise, configure it with access keys:
 
 ```bash
 aws configure --profile=ECR
@@ -87,39 +77,30 @@ Then, to give Docker access to the registry, execute:
 aws ecr-public get-login-password --region us-east-1 --profile=ECR | docker login --username AWS --password-stdin public.ecr.aws/w5n9a2g2
 ```
 
-### Push images to ECR
-
-There are two ECR repositories, one is used to store provider images
-(`public.ecr.aws/w5n9a2g2/klutch/provider-anynines`) and the other
-one is used for the provider controller images
-(`public.ecr.aws/w5n9a2g2/klutch/provider-anynines-controller`).
+### Build and push Provider Controller images
 
 > **Important Note!**
-> To make sure you don't overwrite existing images, it's
-important to use a unique image tag before pushing it to the ECR. To maintain
-consistency and organization, it's recommended to follow the following format
-for the image tags:
+> To make sure you don't overwrite existing images, use a unique image tag. The recommended format is a version tag or ticket identifier:
 
 ```bash
-<NameInitials-Version> e.g. IM-v0.0.1
+<version-or-ticket-id> e.g. v2.0.0 or KLT-877
 ```
 
-To push the controller images to ECR you should set the IMAGETAG variable:
+First, build the provider binary and local images for both amd64 and arm64:
 
 ```bash
-make provider-controller-push IMAGETAG=<NameInitials-Version>
+cd provider-anynines
+make build.all
+```
+
+Then push the multi-arch controller image to ECR:
+
+```bash
+make provider-controller-build-push IMAGETAG=<version-or-ticket-id>
 
 #example
-make provider-controller-push IMAGETAG=IM-v0.0.1
+make provider-controller-build-push IMAGETAG=v2.0.0
 ```
-
-While the controller images are built as two separate single-architecture images
-they are both included in a multi-architecture manifest list as part of the
-pushing procedure.
-
-The manifest list is then tagged with with the image tag passed by the user without any modifications
-while for the single-architecture images the tag passed by the user is supplemented with a suffix
-signifying the architecture of the image (i.e. either `arm64` or `amd64`).
 
 ### Build and push provider package
 
@@ -128,10 +109,10 @@ controller image and upload the package to the ECR image repository, you need to
 execute the following command:
 
 ```bash
-make provider-build-push IMAGETAG=<NameInitials-Version>
+make provider-build-push IMAGETAG=<version-or-ticket-id>
 
 #example
-make provider-build-push IMAGETAG=IM-v0.0.1
+make provider-build-push IMAGETAG=v2.0.0
 ```
 
 ## Optional: Build and push anynines-dataservices Package
@@ -139,9 +120,15 @@ make provider-build-push IMAGETAG=IM-v0.0.1
 ### Login to ECR
 
 To push the Crossplane Packages to AWS ECR, you need to retrieve an
-authentication token and authenticate your Docker client to the registry. The
-profile part is optional but useful if you have multiple accounts. To add the
-access key on your machine run:
+authentication token and authenticate your Docker client to the registry.
+
+If your organization uses AWS SSO, configure the profile with:
+
+```bash
+aws configure sso --profile ECR
+```
+
+Otherwise, configure it with access keys:
 
 ```bash
 aws configure --profile=ECR
@@ -171,7 +158,7 @@ configuration package we want to set.
 make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=<image version>
 
 # example
-make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=v1.0.2
+make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=v2.0.0
 ```
 
 ## Installation
@@ -283,7 +270,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.4.1
+crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v2.0.0
 ```
 
 1. Install files directly:
@@ -318,7 +305,7 @@ Expected output:
 
 ```text
 NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
-function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.8.2   3m
+function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.9.2   3m
 ```
 
 The whole package can either installed via kustomize or by manually applying each yaml file.
@@ -347,9 +334,12 @@ make -C crossplane-api/ providerconfig postgresInstanceName=<postgres_instance_n
 ```
 
 The providerConfigs applied this way assume that you are running the provider-anynines in a local
-kind cluster and have set up SSH tunneling to have access to an a9s Service Broker. Therefore they
-have their `spec.url` field set to `http://dockerhost:[port number for their service]` (see
-[Port selection](#port-selection) for a table detailing which data service is mapped to which port).
+kind cluster and have set up SSH tunneling to have access to an a9s Service Broker.
+
+- **Out-of-cluster provider** (running the binary locally): use `http://localhost:[port]` in `spec.url`.
+- **In-cluster provider** (provider deployed as a pod): use `http://dockerhost:[port]` in `spec.url` — requires the dockerhost service described below.
+
+See [Port selection](#port-selection) for a table detailing which data service is mapped to which port.
 
 If you want to deploy the provider-anynines in an EKS cluster that is either in the same network as
 the a9s Service Brokers of the inception staging environment or that has a VPC peering to that
@@ -403,7 +393,7 @@ EOF
 
 ### Provision an a8s PostgreSQL instance
 
-Adjust the [Composite Resource Claim](examples/a8s/postgresql-claim.yaml)
+Adjust the [example](examples/a8s/postgresql-claim.yaml)
 to refer to a valid service and plan.
 
 | Service          | Version       |
@@ -427,7 +417,7 @@ kubectl apply -f ./crossplane-api/examples/a8s/postgresql-claim.yaml
 
 ### Create a8s ServiceBinding
 
-The servicebinding claim must target an existing PostgreSQL claim name.
+The ServiceBinding must target an existing PostgreSQL instance name.
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/servicebinding-claim.yaml
@@ -438,7 +428,7 @@ kubectl apply -f ./crossplane-api/examples/a8s/servicebinding-claim.yaml
 
 ### Create Backup
 
-The backup claim must target an existing PostgreSQL claim name.
+The Backup must target an existing PostgreSQL instance name.
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/backup-claim.yaml
@@ -446,7 +436,7 @@ kubectl apply -f ./crossplane-api/examples/a8s/backup-claim.yaml
 
 ### Create a8s Restore
 
-The restore claim must target an existing PostgreSQL claim name.
+The Restore must target an existing PostgreSQL instance name.
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/restore-claim.yaml
@@ -469,10 +459,10 @@ curl http://<user>:<password>@localhost:<port>/v2/catalog -H "X-Broker-API-Versi
 
 Under the `crossplane-api/examples/a9s` folder, you'll find examples for various
 service instances. For instance, you can deploy PostgreSQL by applying the
-PostgreSQL Composite Resource Claim (XRC) using the following command:
+PostgreSQL Composite Resource (XR) using the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/serviceinstance-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/serviceinstance.yaml
 ```
 
 You can check it with:
@@ -491,30 +481,30 @@ kubectl get serviceinstances.dataservices.anynines.com
 
 ### Create a9s ServiceBinding
 
-The servicebinding claim must target an existing service instance. For example,
+The ServiceBinding must target an existing service instance. For example,
 you can create a ServiceBinding to a PostgreSQL instance with the following
 command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding.yaml
 ```
 
 ### Create a9s Backup
 
-The backup claim must target an existing service instance. For example, you can
+The Backup must target an existing service instance. For example, you can
 create a Backup from a PostgreSQL instance with the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/backup-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/backup.yaml
 ```
 
 ### Create a9s Restore
 
-The restore claim must target an existing service instance backup. For example,
+The Restore must target an existing service instance backup. For example,
 you can restore a PostgreSQL Backup with the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore.yaml
 ```
 
 ## Update or Add a Service or Plan in a8s
