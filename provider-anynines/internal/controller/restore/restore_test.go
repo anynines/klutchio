@@ -66,8 +66,7 @@ func newRestore(opts ...RestoreOption) *v1.Restore {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-6sf265",
 			Labels: map[string]string{
-				"crossplane.io/claim-name":      "test",
-				"crossplane.io/claim-namespace": "test-1",
+				"crossplane.io/composite": "test",
 			},
 		},
 		Spec: v1.RestoreSpec{

@@ -503,8 +503,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -521,8 +520,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -549,8 +547,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -564,8 +561,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -588,8 +584,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -691,8 +686,7 @@ func TestCreate(t *testing.T) {
 				},
 				managedResource: newBackup(withLabels(
 					map[string]string{
-						"crossplane.io/claim-name":      "test",
-						"crossplane.io/claim-namespace": "test",
+						"crossplane.io/composite": "test",
 					}),
 					initializeBackupStatus(
 						"23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -708,8 +702,7 @@ func TestCreate(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					initializeBackupStatus(
 						"23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -734,8 +727,7 @@ func TestCreate(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					initializeBackupStatus(
 						"23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -760,8 +752,7 @@ func TestCreate(t *testing.T) {
 					}),
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						},
 					)),
 

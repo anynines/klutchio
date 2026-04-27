@@ -211,9 +211,10 @@ provider-controller-build-push:
 	fi
 
 	@cp ./cluster/images/provider-anynines/Dockerfile $(IMAGE_TEMP_DIR) || $(FAIL)
-	@cp $(OUTPUT_DIR)/bin/$(OS)_$(ARCH)/provider $(IMAGE_TEMP_DIR) || $(FAIL)
-	@cd $(IMAGE_TEMP_DIR) && $(SED_CMD) 's|BASEIMAGE|$(OSBASEIMAGE)|g' Dockerfile || $(FAIL)
-	docker buildx build -o type=image --builder=$(BUILDER_NAME) \
+	@mkdir -p $(IMAGE_TEMP_DIR)/bin/linux_amd64 $(IMAGE_TEMP_DIR)/bin/linux_arm64
+	@cp $(OUTPUT_DIR)/bin/linux_amd64/provider $(IMAGE_TEMP_DIR)/bin/linux_amd64/provider || $(FAIL)
+	@cp $(OUTPUT_DIR)/bin/linux_arm64/provider $(IMAGE_TEMP_DIR)/bin/linux_arm64/provider || $(FAIL)
+	docker buildx build -o type=image --builder=$(BUILDX_NAME) \
         --platform=$(IMAGE_PLATFORMS) \
         --push -t $(ECR_REPO)/$(PROJECT_NAME)-controller:$(IMAGETAG) \
         $(IMAGE_TEMP_DIR) || $(FAIL)
@@ -237,7 +238,7 @@ provider-build-push:
 	cp package/crossplane.yaml bu.yaml
 	cat package/crossplane.yaml | sed "s/\VERSION/$(IMAGETAG)/g" > package/temp_crossplane.yaml
 	mv package/temp_crossplane.yaml package/crossplane.yaml
-	crossplane xpkg build --package-file package/$(PROJECT_NAME).xpkg --package-root package
+	crossplane xpkg build --package-file package/$(PROJECT_NAME).xpkg --package-root package --embed-runtime-image $(ECR_REPO)/$(PROJECT_NAME)-controller:$(IMAGETAG)
 	$(INFO) "Building provider image"
 	crossplane xpkg push --package-files package/$(PROJECT_NAME).xpkg $(ECR_REPO)/$(PROJECT_NAME):$(IMAGETAG)
 	$(INFO) "image $(PROJECT_NAME):$(IMAGETAG) pushed to ECR"
