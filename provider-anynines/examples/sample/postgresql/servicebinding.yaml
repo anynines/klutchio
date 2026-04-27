@@ -2,16 +2,15 @@ apiVersion: dataservices.anynines.com/v1
 kind: ServiceBinding
 metadata:
   name: example-postgresql-sb-jdkfshjk
+  namespace: default
   labels:
-    crossplane.io/claim-name: example-postgresql-sb
-    crossplane.io/claim-namespace: default
-    crossplane.io/composite: example-postgresql-sb-ajtsd
+    crossplane.io/composite: example-postgresql-sb
 spec:
   forProvider:
     acceptsIncomplete: false
     instanceName: example-postgresql-instance
   writeConnectionSecretToRef:
-    namespace: crossplane-system
+    namespace: default
     name: example-postgresql-sb-creds
   providerConfigRef:
     name: postgresql-service-broker

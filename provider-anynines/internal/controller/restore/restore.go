@@ -362,7 +362,7 @@ func (c *external) getBackupDetails(ctx context.Context, rst *v1.Restore) (strin
 	return backup.Status.AtProvider.InstanceID, backup.Status.AtProvider.BackupID, nil
 }
 
-// getBackupManagedResource tries to retrieve Backup MR using backup claim name and namespace
+// getBackupManagedResource tries to retrieve Backup MR using the composite label of the Restore
 func (c *external) getBackupManagedResource(ctx context.Context, rst v1.Restore) (*bkpv1.Backup, error) {
 	// In Crossplane v2 (Namespaced XRs), composed MRs carry the label
 	// crossplane.io/composite: <xr-name> instead of the v1 claim labels.
