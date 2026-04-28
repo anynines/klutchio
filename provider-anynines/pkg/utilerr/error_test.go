@@ -32,7 +32,7 @@ import (
 func TestWithCause_SurfacesUnderlyingError(t *testing.T) {
 	t.Parallel()
 
-	cause := errors.New("underlying cause")
+	cause := utilerr.PlainErr("underlying cause")
 	wrapped := utilerr.FromStr("user-facing message").WithCause(cause)
 
 	if errors.Unwrap(wrapped) != cause {
@@ -41,5 +41,10 @@ func TestWithCause_SurfacesUnderlyingError(t *testing.T) {
 
 	if !errors.Is(wrapped, cause) {
 		t.Error("expected errors.Is(wrapped, cause) to be true, but it was false")
+	}
+
+	var target utilerr.PlainErr
+	if !errors.As(wrapped, &target) {
+		t.Error("expected errors.As(wrapped, &target) to be true, but it was false")
 	}
 }

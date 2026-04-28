@@ -1845,10 +1845,9 @@ func TestGenAndCheckUID(t *testing.T) {
 		}
 	})
 
-	t.Run("wraps the cause when all attempts fail", func(t *testing.T) {
+	t.Run("returns error when client returns non 404-error", func(t *testing.T) {
 		t.Parallel()
-		// Simulate GetInstance always succeeding (UID already in use) or returning
-		// an unexpected error. Either way IsNotFound is false and all retries are exhausted.
+
 		cause := errors.New("connection refused")
 		osb := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
 			GetInstanceReaction: &fakeosb.GetInstanceReaction{Error: cause},
@@ -1861,6 +1860,28 @@ func TestGenAndCheckUID(t *testing.T) {
 		// With the Unwrap() fix on userError, errors.Is must be able to find cause.
 		if !errors.Is(err, cause) {
 			t.Errorf("expected errors.Is(err, cause) to be true; err = %v", err)
+		}
+	})
+
+	t.Run("returns errInstanceIDNotUnique when all UIDs are already in use", func(t *testing.T) {
+		t.Parallel()
+
+		osb := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
+			GetInstanceReaction: &fakeosb.GetInstanceReaction{
+				Response: newInstanceResponse(),
+			},
+		})
+
+		_, err := genAndCheckUID(osb, 3)
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+		var ud utilerr.Userdisplayer
+		if !errors.As(err, &ud) {
+			t.Fatalf("expected a user-displayable error, got: %T", err)
+		}
+		if !errors.Is(ud.UserDisplay(), errInstanceIDNotUnique.Message) {
+			t.Errorf("expected user-facing error %v, got %v", errInstanceIDNotUnique.Message, ud.UserDisplay())
 		}
 	})
 }
