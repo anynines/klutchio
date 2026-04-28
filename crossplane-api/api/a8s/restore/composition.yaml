@@ -5,7 +5,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XRestore
+    kind: Restore
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -17,7 +17,7 @@ spec:
         resources:
           - name: a8s-restore
             base:
-              apiVersion: kubernetes.crossplane.io/v1alpha1
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
               kind: Object
               spec:
                 forProvider:
@@ -26,10 +26,22 @@ spec:
                     kind: Restore
                 providerConfigRef:
                   name: kubernetes-provider
+                  kind: ClusterProviderConfig
             patches:
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              # Restore CR is created next to the internal Postgresql instance.
+              - fromFieldPath: metadata.namespace
                 toFieldPath: spec.forProvider.manifest.metadata.namespace
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
                 toFieldPath: spec.forProvider.manifest.metadata.name
               - fromFieldPath: spec.serviceInstanceType
                 toFieldPath: spec.forProvider.manifest.spec.serviceInstance.apiGroup
@@ -50,18 +62,30 @@ spec:
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.conditions
                 toFieldPath: status.managed.conditions
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.lastObservationTime
                 toFieldPath: status.managed.lastObservationTime
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.podToPoll.ip
                 toFieldPath: status.managed.podToPoll.ip
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.podToPoll.namespacedName
                 toFieldPath: status.managed.podToPoll.namespacedName
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.podToPoll.uid
                 toFieldPath: status.managed.podToPoll.uid
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.restoreID
                 toFieldPath: status.managed.restoreID
+                policy:
+                  fromFieldPath: Optional

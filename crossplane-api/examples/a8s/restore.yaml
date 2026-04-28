@@ -1,10 +1,9 @@
 apiVersion: anynines.com/v1
-kind: ServiceBinding
+kind: Restore
 metadata:
   name: example-a8s-postgresql
   namespace: default
 spec:
+  backupRef: example-a8s-postgresql
   instanceRef: example-a8s-postgresql
   serviceInstanceType: postgresql
-  compositionRef:
-    name: a8s-servicebinding
