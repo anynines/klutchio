@@ -191,6 +191,9 @@ func genAndCheckUID(osb osbclient.Client, maxAttempts int) (string, error) {
 		if client.IsNotFound(err) {
 			return uid, nil
 		}
+		if err != nil {
+			return "", fmt.Errorf("error checking UID uniqueness: %w", err)
+		}
 	}
 	return "", errInstanceIDNotUnique.WithCause(err)
 }

@@ -43,6 +43,7 @@ import (
 	v1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
 	apisv1 "github.com/anynines/klutchio/provider-anynines/apis/v1"
 	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
+	client "github.com/anynines/klutchio/provider-anynines/pkg/client/osb"
 	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
 
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -1819,4 +1820,68 @@ func expectPendingOperation(t *testing.T, mr resource.Managed, expectedOperation
 		t.Errorf("Delete(...): expected pending operation to be %v, got %v",
 			expectedOperation, *pendingOperation)
 	}
+}
+
+func TestGenAndCheckUID(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns a UID when the first attempt is unique", func(t *testing.T) {
+		t.Parallel()
+		// A 404 "InstanceNotFound" response means the generated UID is not in use.
+		notFound := osbclient.HTTPStatusCodeError{
+			StatusCode:   http.StatusNotFound,
+			ErrorMessage: ptr.To(client.InstanceNotFound),
+		}
+		osb := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
+			GetInstanceReaction: &fakeosb.GetInstanceReaction{Error: notFound},
+		})
+
+		uid, err := genAndCheckUID(osb, 1)
+		if err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+		if uid == "" {
+			t.Fatal("expected a non-empty UID")
+		}
+	})
+
+	t.Run("returns error when client returns non 404-error", func(t *testing.T) {
+		t.Parallel()
+
+		cause := errors.New("connection refused")
+		osb := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
+			GetInstanceReaction: &fakeosb.GetInstanceReaction{Error: cause},
+		})
+
+		_, err := genAndCheckUID(osb, 3)
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+		// With the Unwrap() fix on userError, errors.Is must be able to find cause.
+		if !errors.Is(err, cause) {
+			t.Errorf("expected errors.Is(err, cause) to be true; err = %v", err)
+		}
+	})
+
+	t.Run("returns errInstanceIDNotUnique when all UIDs are already in use", func(t *testing.T) {
+		t.Parallel()
+
+		osb := fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{
+			GetInstanceReaction: &fakeosb.GetInstanceReaction{
+				Response: newInstanceResponse(),
+			},
+		})
+
+		_, err := genAndCheckUID(osb, 3)
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+		var ud utilerr.Userdisplayer
+		if !errors.As(err, &ud) {
+			t.Fatalf("expected a user-displayable error, got: %T", err)
+		}
+		if !errors.Is(ud.UserDisplay(), errInstanceIDNotUnique.Message) {
+			t.Errorf("expected user-facing error %v, got %v", errInstanceIDNotUnique.Message, ud.UserDisplay())
+		}
+	})
 }

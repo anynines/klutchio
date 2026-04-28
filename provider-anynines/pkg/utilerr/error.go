@@ -47,6 +47,10 @@ func (e *userError) UserDisplay() error {
 	return e.message
 }
 
+func (e *userError) Unwrap() error {
+	return e.error
+}
+
 // PlainUserErr are error Messages that can be displayed to the user as is.
 type PlainUserErr string
 
