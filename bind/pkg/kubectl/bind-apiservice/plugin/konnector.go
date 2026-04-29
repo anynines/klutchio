@@ -111,7 +111,7 @@ func (b *BindAPIServiceOptions) deployKonnector(ctx context.Context, config *res
 	}
 	first := true
 	return wait.PollImmediateInfiniteWithContext(ctx, 1*time.Second, func(ctx context.Context) (bool, error) {
-		_, err := bindClient.KlutchBindV1alpha1().APIServiceBindings().List(ctx, metav1.ListOptions{})
+		_, err := bindClient.KlutchBindV1alpha1().APIServiceBindings("").List(ctx, metav1.ListOptions{})
 		if err == nil {
 			if !first {
 				fmt.Fprintln(b.Options.IOStreams.ErrOut) // nolint: errcheck

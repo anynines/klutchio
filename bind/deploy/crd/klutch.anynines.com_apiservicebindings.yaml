@@ -16,7 +16,7 @@ spec:
     shortNames:
     - sb
     singular: apiservicebinding
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.providerPrettyName

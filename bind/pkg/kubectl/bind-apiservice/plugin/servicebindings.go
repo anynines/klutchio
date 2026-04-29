@@ -38,6 +38,8 @@ import (
 	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
 )
 
+const AppClusterBindDefaultNamespace = "klutch-bind"
+
 func (b *BindAPIServiceOptions) createAPIServiceBindings(ctx context.Context, config *rest.Config, request *bindv1alpha1.APIServiceExportRequest, secretName string) ([]*bindv1alpha1.APIServiceBinding, error) {
 	bindClient, err := bindclient.NewForConfig(config)
 	if err != nil {
@@ -51,11 +53,11 @@ func (b *BindAPIServiceOptions) createAPIServiceBindings(ctx context.Context, co
 	var bindings []*bindv1alpha1.APIServiceBinding
 	for _, resource := range request.Spec.Resources {
 		name := resource.Resource + "." + resource.Group
-		existing, err := bindClient.KlutchBindV1alpha1().APIServiceBindings().Get(ctx, name, metav1.GetOptions{})
+		existing, err := bindClient.KlutchBindV1alpha1().APIServiceBindings(AppClusterBindDefaultNamespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		} else if err == nil {
-			if existing.Spec.KubeconfigSecretRef.Namespace != "klutch-bind" || existing.Spec.KubeconfigSecretRef.Name != secretName {
+			if existing.Spec.KubeconfigSecretRef.Namespace != AppClusterBindDefaultNamespace || existing.Spec.KubeconfigSecretRef.Name != secretName {
 				return nil, fmt.Errorf("found existing APIServiceBinding %s not from this service provider", name)
 			}
 			fmt.Fprintf(b.Options.IOStreams.ErrOut, "✅ Updating existing APIServiceBinding %s.\n", existing.Name) // nolint: errcheck
@@ -100,10 +102,10 @@ func (b *BindAPIServiceOptions) createAPIServiceBindings(ctx context.Context, co
 				first = false
 				fmt.Fprint(b.Options.IOStreams.ErrOut, ".") // nolint: errcheck
 			}
-			created, err := bindClient.KlutchBindV1alpha1().APIServiceBindings().Create(ctx, &bindv1alpha1.APIServiceBinding{
+			created, err := bindClient.KlutchBindV1alpha1().APIServiceBindings(AppClusterBindDefaultNamespace).Create(ctx, &bindv1alpha1.APIServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      resource.Resource + "." + resource.Group,
-					Namespace: "klutch-bind",
+					Namespace: AppClusterBindDefaultNamespace,
 				},
 				Spec: bindv1alpha1.APIServiceBindingSpec{
 					KubeconfigSecretRef: bindv1alpha1.ClusterSecretKeyRef{
@@ -111,7 +113,7 @@ func (b *BindAPIServiceOptions) createAPIServiceBindings(ctx context.Context, co
 							Name: secretName,
 							Key:  "kubeconfig",
 						},
-						Namespace: "klutch-bind",
+						Namespace: AppClusterBindDefaultNamespace,
 					},
 					PermissionClaims: permissionClaims,
 				},
@@ -127,7 +129,7 @@ func (b *BindAPIServiceOptions) createAPIServiceBindings(ctx context.Context, co
 				conditionsapi.ConditionSeverityInfo,
 				"Pending",
 			)
-			_, _ = bindClient.KlutchBindV1alpha1().APIServiceBindings().UpdateStatus(ctx, created, metav1.UpdateOptions{}) // nolint:errcheck
+			_, _ = bindClient.KlutchBindV1alpha1().APIServiceBindings(AppClusterBindDefaultNamespace).UpdateStatus(ctx, created, metav1.UpdateOptions{}) // nolint:errcheck
 
 			fmt.Fprintf(b.Options.IOStreams.ErrOut, "✅ Created APIServiceBinding %s.%s\n", resource.Resource, resource.Group) // nolint: errcheck
 			bindings = append(bindings, created)
