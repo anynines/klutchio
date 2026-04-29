@@ -12,51 +12,17 @@ However, it can also be advantageous to run the konnector on the control plane i
 
 ## Architecture
 
-### Default Mode (Konnector on App Cluster)
+### Cluster Roles by Mode
 
-```
-┌─────────────────┐          ┌──────────────────┐
-│   App Cluster   │          │ Control Plane    │
-│                 │          │                  │
-│  ┌──────────┐   │  HTTPS   │  ┌───────────┐   │
-│  │Konnector │◄──┼──────────┼──┤ Provider  │   │
-│  │          │   │          │  │ APIs      │   │
-│  └──────────┘   │          │  └───────────┘   │
-│       │         │          │                  │
-│       ▼         │          │                  │
-│  APIService     │          │                  │
-│  Bindings       │          │                  │
-└─────────────────┘          └──────────────────┘
-```
+The **binding cluster** is a logical role and depends on the mode:
 
-### Control Plane Mode (Konnector on Control Plane)
+- **Default mode**: binding cluster = app cluster
+- **Control plane mode**: binding cluster = control plane cluster
 
-```
-┌─────────────────┐          ┌──────────────────┐
-│   App Cluster   │          │ Control Plane    │
-│                 │          │                  │
-│  Resources      │  HTTPS   │  ┌──────────┐    │
-│                 │◄─────────┼──┤Konnector │    │
-│                 │          │  └──────────┘    │
-│                 │          │       │          │
-│                 │          │       ▼          │
-│                 │          │  APIService      │
-│                 │          │  Bindings        │
-│                 │          │       │          │
-│                 │          │  ┌───┴───────┐   │
-│                 │          │  │ Provider  │   │
-│                 │          │  │ APIs      │   │
-│                 │          │  └───────────┘   │
-└─────────────────┘          └──────────────────┘
-```
+`APIServiceBinding` objects and the `APIServiceBinding` CRD always belong to the **binding cluster**.
+
 
 ## Usage
-
-### Prerequisites
-
-1. A secret containing the app cluster kubeconfig must exist in the control plane cluster
-2. The konnector must have RBAC permissions to read this secret
-3. APIServiceBinding objects should be created in the control plane cluster
 
 ### Command Line Flags
 
@@ -84,8 +50,8 @@ konnector \
 1. **Initialization**: The konnector loads the app cluster kubeconfig (from in-cluster config or --kubeconfig flag)
 
 2. **Resource Location**:
-   - APIServiceBinding CRD: app cluster
-   - APIServiceBinding CRs: app cluster
+   - APIServiceBinding CRD: binding cluster (app cluster in this mode)
+   - APIServiceBinding CRs: binding cluster (app cluster in this mode)
    - Bound service CRDs (e.g. `postgresqlinstances`): app cluster
    - Provider kubeconfig secrets: app cluster
 
@@ -103,8 +69,8 @@ When control plane mode is enabled:
 1. **Initialization**: The konnector loads the control plane kubeconfig (from in-cluster config or --kubeconfig flag) and fetches the app cluster kubeconfig from the specified secret
 
 2. **Resource Location**:
-   - APIServiceBinding CRD: control plane cluster
-   - APIServiceBinding CRs: control plane cluster
+   - APIServiceBinding CRD: binding cluster (control plane cluster in this mode)
+   - APIServiceBinding CRs: binding cluster (control plane cluster in this mode)
    - Bound service CRDs (e.g. `postgresqlinstances`): **app cluster** (always installed where resources are synced)
    - Provider kubeconfig secrets: control plane cluster
 
@@ -124,11 +90,10 @@ When control plane mode is enabled:
 
 ## Troubleshooting
 
-### Konnector fails to start with "failed to fetch app cluster kubeconfig secret"
+### Quick Checklist
 
-- Verify the secret exists in the specified namespace
-- Check that the konnector service account has permission to read the secret
-- Ensure the secret contains the specified key
+- The app cluster kubeconfig secret exists and uses a service account token (no exec plugins)
+- The konnector deployment args reference the correct secret name/namespace/key
 
 ### Resources are not syncing
 

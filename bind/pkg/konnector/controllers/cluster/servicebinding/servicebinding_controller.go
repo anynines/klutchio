@@ -51,7 +51,7 @@ const (
 func NewController(
 	consumerSecretRefKey, providerNamespace string,
 	reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool,
-	bindingConfig, consumerConfig, providerConfig *rest.Config,
+	bindingConfig, appClusterConfig, controlPlaneClusterConfig *rest.Config,
 	serviceBindingInformer dynamic.Informer[bindlisters.APIServiceBindingLister],
 	serviceExportInformer bindinformers.APIServiceExportInformer,
 	crdInformer dynamic.Informer[apiextensionslisters.CustomResourceDefinitionLister],
@@ -60,24 +60,24 @@ func NewController(
 
 	logger := klog.Background().WithValues("controller", controllerName)
 
-	providerConfig = rest.CopyConfig(providerConfig)
-	providerConfig = rest.AddUserAgent(providerConfig, controllerName)
+	controlPlaneClusterConfig = rest.CopyConfig(controlPlaneClusterConfig)
+	controlPlaneClusterConfig = rest.AddUserAgent(controlPlaneClusterConfig, controllerName)
 
 	bindingConfig = rest.CopyConfig(bindingConfig)
 	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
 
-	consumerConfig = rest.CopyConfig(consumerConfig)
-	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
+	appClusterConfig = rest.CopyConfig(appClusterConfig)
+	appClusterConfig = rest.AddUserAgent(appClusterConfig, controllerName)
 
 	bindingBindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
-	apiextensionsClient, err := apiextensionsclient.NewForConfig(consumerConfig)
+	apiextensionsClient, err := apiextensionsclient.NewForConfig(appClusterConfig)
 	if err != nil {
 		return nil, err
 	}
-	providerBindClient, err := bindclient.NewForConfig(providerConfig)
+	controlPlaneBindClient, err := bindclient.NewForConfig(controlPlaneClusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -104,10 +104,10 @@ func NewController(
 				return serviceBindingInformer.Lister().APIServiceBindings(providerNamespace).Get(name)
 			},
 			getClusterBinding: func(ctx context.Context) (*bindv1alpha1.ClusterBinding, error) {
-				return providerBindClient.KlutchBindV1alpha1().ClusterBindings(providerNamespace).Get(ctx, "cluster", metav1.GetOptions{})
+				return controlPlaneBindClient.KlutchBindV1alpha1().ClusterBindings(providerNamespace).Get(ctx, "cluster", metav1.GetOptions{})
 			},
 			updateServiceExportStatus: func(ctx context.Context, export *bindv1alpha1.APIServiceExport) (*bindv1alpha1.APIServiceExport, error) {
-				return providerBindClient.KlutchBindV1alpha1().APIServiceExports(providerNamespace).UpdateStatus(ctx, export, metav1.UpdateOptions{})
+				return controlPlaneBindClient.KlutchBindV1alpha1().APIServiceExports(providerNamespace).UpdateStatus(ctx, export, metav1.UpdateOptions{})
 			},
 			getCRD: func(name string) (*apiextensionsv1.CustomResourceDefinition, error) {
 				return crdInformer.Lister().Get(name)
