@@ -52,7 +52,7 @@ const (
 
 // New returns a konnector controller.
 func New(
-	consumerConfig *rest.Config,
+	appClusterConfig *rest.Config,
 	bindingConfig *rest.Config,
 	bindingRootNamespace string,
 	controlPlaneMode bool,
@@ -65,8 +65,8 @@ func New(
 
 	logger := klog.Background().WithValues("Controller", controllerName)
 
-	consumerConfig = rest.CopyConfig(consumerConfig)
-	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
+	appClusterConfig = rest.CopyConfig(appClusterConfig)
+	appClusterConfig = rest.AddUserAgent(appClusterConfig, controllerName)
 
 	bindingConfig = rest.CopyConfig(bindingConfig)
 	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
@@ -87,7 +87,7 @@ func New(
 	c := &Controller{
 		queue: queue,
 
-		consumerConfig: consumerConfig,
+		consumerConfig: appClusterConfig,
 		bindClient:     bindClient,
 
 		serviceBindingLister:  serviceBindingInformer.Lister(),
@@ -106,20 +106,25 @@ func New(
 			getSecret: func(ns, name string) (*corev1.Secret, error) {
 				return secretInformer.Lister().Secrets(ns).Get(name)
 			},
-			newClusterController: func(consumerSecretRefKey, bindingRootNamespace, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error) {
-				providerConfig = rest.CopyConfig(providerConfig)
-				providerConfig = rest.AddUserAgent(providerConfig, controllerName)
+			newClusterController: func(consumerSecretRefKey, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, controlPlaneClusterConfig *rest.Config) (startable, error) {
+				controlPlaneClusterConfig = rest.CopyConfig(controlPlaneClusterConfig)
+				controlPlaneClusterConfig = rest.AddUserAgent(controlPlaneClusterConfig, controllerName)
+
+				bindingRootNS := bindingRootNamespace
+				if !controlPlaneMode {
+					bindingRootNS = providerNamespace
+				}
 
 				return cluster.NewController(
 					consumerSecretRefKey,
-					bindingRootNamespace,
+					bindingRootNS,
 					providerNamespace,
 					providerSecretNamespace,
 					controlPlaneMode,
 					reconcileServiceBinding,
 					bindingConfig,
-					consumerConfig,
-					providerConfig,
+					appClusterConfig,
+					controlPlaneClusterConfig,
 					namespaceDynamicInformer,
 					serviceBindingDynamicInformer,
 					crdDynamicInformer,

@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
+	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/appclusterbinding"
 	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/clusterbinding"
 	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/serviceexport"
 	"github.com/anynines/klutchio/bind/contrib/example-backend/controllers/serviceexportrequest"
@@ -48,6 +49,7 @@ type Server struct {
 }
 
 type Controllers struct {
+	AppClusterBinding    *appclusterbinding.Controller
 	ClusterBinding       *clusterbinding.Controller
 	ServiceNamespace     *servicenamespace.Controller
 	ServiceExport        *serviceexport.Controller
@@ -65,65 +67,68 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, fmt.Errorf("error setting up HTTP Server: %w", err)
 	}
 
-	// setup oidc backend
-	callback := config.Options.OIDC.CallbackURL
-	if callback == "" {
-		callback = fmt.Sprintf("http://%s/callback", s.WebServer.Addr().String())
-	}
-	s.OIDC, err = examplehttp.NewOIDCServiceProvider(
-		config.Options.OIDC.IssuerClientID,
-		config.Options.OIDC.IssuerClientSecret,
-		callback,
-		config.Options.OIDC.IssuerURL,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error setting up OIDC: %w", err)
-	}
-	s.Kubernetes, err = examplekube.NewKubernetesManager(
-		config.Options.NamespacePrefix,
-		config.Options.PrettyName,
-		config.ClientConfig,
-		config.Options.ExternalAddress,
-		config.Options.ExternalCA,
-		config.Options.TLSExternalServerName,
-		config.KubeInformers.Core().V1().Namespaces(),
-		config.BindInformers.KlutchBind().V1alpha1().APIServiceExports(),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error setting up Kubernetes Manager: %w", err)
-	}
-
-	signingKey, err := base64.StdEncoding.DecodeString(config.Options.Cookie.SigningKey)
-	if err != nil {
-		return nil, fmt.Errorf("error creating signing key: %w", err)
-	}
-
-	var encryptionKey []byte
-	if config.Options.Cookie.EncryptionKey != "" {
-		var err error
-		encryptionKey, err = base64.StdEncoding.DecodeString(config.Options.Cookie.EncryptionKey)
-		if err != nil {
-			return nil, fmt.Errorf("error creating encryption key: %w", err)
+	// setup oidc backend and web server components when enabled
+	if config.Options.OIDCEnabled() {
+		callback := config.Options.OIDC.CallbackURL
+		if callback == "" {
+			callback = fmt.Sprintf("http://%s/callback", s.WebServer.Addr().String())
 		}
-	}
+		s.OIDC, err = examplehttp.NewOIDCServiceProvider(
+			config.Options.OIDC.IssuerClientID,
+			config.Options.OIDC.IssuerClientSecret,
+			callback,
+			config.Options.OIDC.IssuerURL,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error setting up OIDC: %w", err)
+		}
 
-	ind := exporttemplate.NewCatalogue(config.ClientConfig)
-	handler, err := examplehttp.NewHandler(
-		s.OIDC,
-		config.Options.OIDC.AuthorizeURL,
-		callback,
-		config.Options.PrettyName,
-		config.Options.TestingAutoSelect,
-		signingKey,
-		encryptionKey,
-		bindv1alpha1.Scope(config.Options.ConsumerScope),
-		s.Kubernetes,
-		ind,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error setting up HTTP Handler: %w", err)
+		s.Kubernetes, err = examplekube.NewKubernetesManager(
+			config.Options.NamespacePrefix,
+			config.Options.PrettyName,
+			config.ClientConfig,
+			config.Options.ExternalAddress,
+			config.Options.ExternalCA,
+			config.Options.TLSExternalServerName,
+			config.KubeInformers.Core().V1().Namespaces(),
+			config.BindInformers.KlutchBind().V1alpha1().APIServiceExports(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error setting up Kubernetes Manager: %w", err)
+		}
+
+		signingKey, err := base64.StdEncoding.DecodeString(config.Options.Cookie.SigningKey)
+		if err != nil {
+			return nil, fmt.Errorf("error creating signing key: %w", err)
+		}
+
+		var encryptionKey []byte
+		if config.Options.Cookie.EncryptionKey != "" {
+			var err error
+			encryptionKey, err = base64.StdEncoding.DecodeString(config.Options.Cookie.EncryptionKey)
+			if err != nil {
+				return nil, fmt.Errorf("error creating encryption key: %w", err)
+			}
+		}
+
+		ind := exporttemplate.NewCatalogue(config.ClientConfig)
+		handler, err := examplehttp.NewHandler(
+			s.OIDC,
+			config.Options.OIDC.AuthorizeURL,
+			callback,
+			config.Options.PrettyName,
+			config.Options.TestingAutoSelect,
+			signingKey,
+			encryptionKey,
+			bindv1alpha1.Scope(config.Options.ConsumerScope),
+			s.Kubernetes,
+			ind,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error setting up HTTP Handler: %w", err)
+		}
+		handler.AddRoutes(s.WebServer.Router)
 	}
-	handler.AddRoutes(s.WebServer.Router)
 
 	// construct controllers
 	s.ClusterBinding, err = clusterbinding.NewController(
@@ -171,6 +176,19 @@ func NewServer(config *Config) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error setting up ServiceExportRequest Controller: %w", err)
 	}
+	if config.Options.ControlPlaneMode {
+		s.AppClusterBinding, err = appclusterbinding.NewController(
+			config.ClientConfig,
+			config.KubeInformers.Core().V1().Secrets(),
+			config.KubeInformers.Rbac().V1().Roles(),
+			config.KubeInformers.Rbac().V1().RoleBindings(),
+			config.KubeInformers.Apps().V1().Deployments(),
+			config.BindInformers.KlutchBind().V1alpha1().APIServiceBindings(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error setting up AppClusterBinding Controller: %w", err)
+		}
+	}
 
 	return s, nil
 }
@@ -213,6 +231,9 @@ func (s *Server) Run(ctx context.Context) error {
 	go s.Controllers.ServiceNamespace.Start(ctx, 1)
 	go s.Controllers.ClusterBinding.Start(ctx, 1)
 	go s.Controllers.ServiceExportRequest.Start(ctx, 1)
+	if s.Controllers.AppClusterBinding != nil {
+		go s.Controllers.AppClusterBinding.Start(ctx, 1)
+	}
 
 	go func() {
 		<-ctx.Done()

@@ -35,8 +35,8 @@ import (
 )
 
 type Config struct {
-	ControlPlaneMode      bool
-	BindingRootNamespace  string
+	ControlPlaneMode     bool
+	BindingRootNamespace string
 
 	// App Cluster: where resources are synced to (the "consumer")
 	AppClusterConfig                 *rest.Config
@@ -48,12 +48,12 @@ type Config struct {
 	// Binding Cluster: where APIServiceBindings and provider kubeconfig secrets are stored
 	// - In default mode: same as app cluster
 	// - In control plane mode: the control plane cluster
-	BindingClusterConfig                *rest.Config
-	BindingClusterBindClient            *bindclient.Clientset
-	BindingClusterKubeClient            *kubernetesclient.Clientset
-	BindingClusterApiextensionsClient   *apiextensionsclient.Clientset
-	BindingClusterBindInformers         bindinformers.SharedInformerFactory
-	BindingClusterKubeInformers         kubeinformers.SharedInformerFactory
+	BindingClusterConfig              *rest.Config
+	BindingClusterBindClient          *bindclient.Clientset
+	BindingClusterKubeClient          *kubernetesclient.Clientset
+	BindingClusterApiextensionsClient *apiextensionsclient.Clientset
+	BindingClusterBindInformers       bindinformers.SharedInformerFactory
+	BindingClusterKubeInformers       kubeinformers.SharedInformerFactory
 
 	// Control Plane: only used in control plane mode
 	// In default mode, these are nil
@@ -86,7 +86,7 @@ func (c *Config) initAppCluster(cfg *rest.Config) error {
 	return nil
 }
 
-func (c *Config) initBindingCluster(cfg *rest.Config) error {
+func (c *Config) initBindingCluster(cfg *rest.Config, namespace string) error {
 	c.BindingClusterConfig = cfg
 	var err error
 	if c.BindingClusterBindClient, err = bindclient.NewForConfig(cfg); err != nil {
@@ -98,8 +98,22 @@ func (c *Config) initBindingCluster(cfg *rest.Config) error {
 	if c.BindingClusterApiextensionsClient, err = apiextensionsclient.NewForConfig(cfg); err != nil {
 		return err
 	}
-	c.BindingClusterBindInformers = bindinformers.NewSharedInformerFactory(c.BindingClusterBindClient, time.Minute*30)
-	c.BindingClusterKubeInformers = kubeinformers.NewSharedInformerFactory(c.BindingClusterKubeClient, time.Minute*30)
+	// In control plane mode, scope informers to the binding root namespace
+	if namespace != "" {
+		c.BindingClusterBindInformers = bindinformers.NewSharedInformerFactoryWithOptions(
+			c.BindingClusterBindClient,
+			time.Minute*30,
+			bindinformers.WithNamespace(namespace),
+		)
+		c.BindingClusterKubeInformers = kubeinformers.NewSharedInformerFactoryWithOptions(
+			c.BindingClusterKubeClient,
+			time.Minute*30,
+			kubeinformers.WithNamespace(namespace),
+		)
+	} else {
+		c.BindingClusterBindInformers = bindinformers.NewSharedInformerFactory(c.BindingClusterBindClient, time.Minute*30)
+		c.BindingClusterKubeInformers = kubeinformers.NewSharedInformerFactory(c.BindingClusterKubeClient, time.Minute*30)
+	}
 	return nil
 }
 
@@ -150,8 +164,8 @@ func NewConfig(options *options.CompletedOptions) (*Config, error) {
 		if err := config.initAppCluster(appConfig); err != nil {
 			return nil, err
 		}
-		// Binding cluster = control plane
-		if err := config.initBindingCluster(cpConfig); err != nil {
+		// Binding cluster = control plane with namespace scoping
+		if err := config.initBindingCluster(cpConfig, options.BindingRootNamespace); err != nil {
 			return nil, err
 		}
 	} else {
@@ -163,7 +177,8 @@ func NewConfig(options *options.CompletedOptions) (*Config, error) {
 		if err := config.initAppCluster(appConfig); err != nil {
 			return nil, err
 		}
-		if err := config.initBindingCluster(appConfig); err != nil {
+		// No namespace scoping in default mode
+		if err := config.initBindingCluster(appConfig, ""); err != nil {
 			return nil, err
 		}
 	}

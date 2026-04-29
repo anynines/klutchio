@@ -30,11 +30,6 @@ import (
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 )
 
-const (
-	providerNamespaceLabel          = "klutch.anynines.com/provider-namespace"
-	appClusterBindingNamespaceLabel = "klutch.anynines.com/appclusterbinding-namespace"
-)
-
 type startable interface {
 	Start(ctx context.Context)
 }
@@ -47,7 +42,7 @@ type reconciler struct {
 	bindingRootNamespace string
 	bindingConfig        *rest.Config
 
-	newClusterController func(consumerSecretRefKey, bindingRootNamespace, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error)
+	newClusterController func(consumerSecretRefKey, providerNamespace, providerSecretNamespace string, reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool, providerConfig *rest.Config) (startable, error)
 	getSecret            func(ns, name string) (*corev1.Secret, error)
 }
 
@@ -102,14 +97,12 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 		}
 	}
 
-	bindingRootNamespace := ""
 	providerNamespace := ""
 	providerSecretNamespace := ""
 	var providerConfig *rest.Config
 	if r.controlPlaneMode {
-		bindingRootNamespace = r.bindingRootNamespace
-		providerNamespace = providerExportNamespaceForBinding(binding)
-		providerSecretNamespace = providerSecretNamespaceForBinding(binding)
+		providerNamespace = r.bindingRootNamespace
+		providerSecretNamespace = r.bindingRootNamespace
 		providerConfig = r.bindingConfig
 	} else {
 		// extract which namespace this kubeconfig points to
@@ -127,7 +120,6 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 			logger.Error(err, "kubeconfig in secret does not have a namespace set for the current context", "namespace", ref.Namespace, "name", ref.Name)
 			return nil // nothing we can do here. The APIServiceBinding Controller will set a condition
 		}
-		bindingRootNamespace = kubeContext.Namespace
 		providerNamespace = kubeContext.Namespace
 		providerSecretNamespace = kubeContext.Namespace
 		providerConfig, err = clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
@@ -148,7 +140,6 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 	logger.V(2).Info("starting new Controller", "secret", ref.Namespace+"/"+ref.Name)
 	ctrl, err := r.newClusterController(
 		binding.Spec.KubeconfigSecretRef.Namespace+"/"+binding.Spec.KubeconfigSecretRef.Name,
-		bindingRootNamespace,
 		providerNamespace,
 		providerSecretNamespace,
 		func(svcBinding *bindv1alpha1.APIServiceBinding) bool {
@@ -166,27 +157,4 @@ func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.APISer
 	go ctrl.Start(ctrlCtx)
 
 	return nil
-}
-
-func providerExportNamespaceForBinding(binding *bindv1alpha1.APIServiceBinding) string {
-	if binding == nil {
-		return ""
-	}
-
-	if ns := binding.Labels[providerNamespaceLabel]; ns != "" {
-		return ns
-	}
-	if ns := binding.Labels[appClusterBindingNamespaceLabel]; ns != "" {
-		return ns
-	}
-
-	return binding.Spec.KubeconfigSecretRef.Namespace
-}
-
-func providerSecretNamespaceForBinding(binding *bindv1alpha1.APIServiceBinding) string {
-	if binding == nil {
-		return ""
-	}
-
-	return binding.Spec.KubeconfigSecretRef.Namespace
 }
