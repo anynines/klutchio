@@ -489,6 +489,35 @@ command:
 kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding.yaml
 ```
 
+#### Connection credentials secret
+
+Once the `ServiceBinding` is ready, a Kubernetes `Secret` containing the connection credentials
+returned by the service broker is created in the same namespace as the `ServiceBinding`.
+
+**Default secret name:** `<servicebinding-name>-creds`
+
+```bash
+kubectl get secret example-a9s-postgresql-creds -o yaml
+```
+
+Expected output:
+
+```yaml
+apiVersion: v1
+data:
+  host: <base64 encoded value>
+  hosts: <base64 encoded value>
+  name: <base64 encoded value>
+  password: <base64 encoded value>
+  port: <base64 encoded value>
+  uri: <base64 encoded value>
+  username: <base64 encoded value>
+```
+
+> **Note** The exact keys depend on the service type. For example, `messaging` returns
+> protocol-specific keys such as `protocols.amqp_ssl.uri`, while `keyvalue` returns
+> `valkey.password` instead of `password`.
+
 ### Create a9s Backup
 
 The Backup must target an existing service instance. For example, you can
