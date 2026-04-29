@@ -31,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -42,6 +41,7 @@ import (
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
 	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/util/conditions"
+	konnectorpkg "github.com/anynines/klutchio/bind/pkg/konnector"
 )
 
 const (
@@ -884,17 +884,26 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 }
 
 func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBinding) *appsv1.Deployment {
-	replicas := int32(1)
-	//TODO: change source of the image to a stable location - for now we hardcode a specific digest to ensure immutability
-	image := "ghcr.io/lhaendler/konnector-1c3773bcc98f06a77d017340f46f82e4@sha256:7fa40d94dcc58fdee883ada75db6ae53844edc92ec0d90d5b515430b45c884f8"
-
+	image := konnectorpkg.ImageRepository
 	if binding.Spec.Konnector.Overrides != nil && binding.Spec.Konnector.Overrides.Image != "" {
 		image = binding.Spec.Konnector.Overrides.Image
 	}
 
-	// Build args for control plane mode
+	deployment := konnectorpkg.BaseDeployment(image)
+
+	// Override for control-plane mode
 	bindingRootNamespace := r.getBindingRootNamespace(binding)
-	args := []string{
+	deployment.Name = fmt.Sprintf("konnector-%s", binding.Name)
+	deployment.Namespace = bindingRootNamespace
+
+	// Add binding-specific labels
+	ensureBindingLabels(deployment.Labels, binding)
+
+	// Override service account for control-plane mode
+	deployment.Spec.Template.Spec.ServiceAccountName = konnectorServiceAccountName
+
+	// Add control-plane mode args
+	deployment.Spec.Template.Spec.Containers[0].Args = []string{
 		"--control-plane-mode",
 		fmt.Sprintf("--app-cluster-kubeconfig-secret-name=%s", binding.Spec.KubeconfigSecretRef.Name),
 		fmt.Sprintf("--app-cluster-kubeconfig-secret-namespace=%s", bindingRootNamespace),
@@ -903,72 +912,15 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 		"--lease-namespace=$(POD_NAMESPACE)",
 	}
 
-	container := corev1.Container{
-		Name:  "konnector",
-		Image: image,
-		Args:  args,
-		Env: []corev1.EnvVar{
-			{
-				Name: "POD_NAME",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.name",
-					},
-				},
-			},
-			{
-				Name: "POD_NAMESPACE",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.namespace",
-					},
-				},
-			},
-		},
-		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/healthz",
-					Port: intstr.FromInt(8080),
-				},
-			},
-		},
-	}
-
+	// Apply container overrides if specified
 	if binding.Spec.Konnector.Overrides != nil && len(binding.Spec.Konnector.Overrides.ContainerSettings.Raw) > 0 {
-		container = r.applyContainerOverrides(container, binding.Spec.Konnector.Overrides.ContainerSettings.Raw)
+		deployment.Spec.Template.Spec.Containers[0] = r.applyContainerOverrides(
+			deployment.Spec.Template.Spec.Containers[0],
+			binding.Spec.Konnector.Overrides.ContainerSettings.Raw,
+		)
 	}
 
-	labels := map[string]string{
-		"app": "konnector",
-	}
-	labels = ensureBindingLabels(labels, binding)
-
-	deploymentName := fmt.Sprintf("konnector-%s", binding.Name)
-
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      deploymentName,
-			Namespace: bindingRootNamespace,
-			Labels:    labels,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					RestartPolicy:      corev1.RestartPolicyAlways,
-					ServiceAccountName: konnectorServiceAccountName,
-					Containers:         []corev1.Container{container},
-				},
-			},
-		},
-	}
+	return deployment
 }
 
 func (r *reconciler) applyContainerOverrides(base corev1.Container, overrides []byte) corev1.Container {

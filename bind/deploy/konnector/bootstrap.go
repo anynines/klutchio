@@ -29,6 +29,8 @@ import (
 	"github.com/anynines/klutchio/bind/pkg/bootstrap"
 )
 
+//go:generate go run ./gen
+
 //go:embed *.yaml
 var raw embed.FS
 
