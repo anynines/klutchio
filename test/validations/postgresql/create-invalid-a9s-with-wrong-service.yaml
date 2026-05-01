@@ -6,5 +6,6 @@ spec:
   # only supported in a8s
   service: a9s-postgresql14
   plan: postgresql-single-nano
-  compositionRef:
-    name: a9s-postgresql
+  crossplane:
+    compositionRef:
+      name: a9s-postgresql

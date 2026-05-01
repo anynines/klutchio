@@ -379,12 +379,11 @@ func (c External) GetServiceInstanceManagedResource(ctx context.Context, bkp v1.
 	// Get Service Instance Managed Resource
 	instances := &dsv1.ServiceInstanceList{}
 
-	// Current assumption is that backup-claim exists in the same namespace as ServiceInstance
-	// claim, hence cross-namespace resource creation is not supported.
+	// In Crossplane v2 (Namespaced XRs), composed MRs carry the label
+	// crossplane.io/composite: <xr-name> instead of the v1 claim labels.
 	labelSelector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			constants.LabelKeyClaimName:      bkp.Spec.ForProvider.InstanceName,
-			constants.LabelKeyClaimNamespace: bkp.Labels[constants.LabelKeyClaimNamespace],
+			constants.LabelKeyComposite: bkp.Spec.ForProvider.InstanceName,
 		},
 	})
 	if err != nil {
@@ -398,6 +397,7 @@ func (c External) GetServiceInstanceManagedResource(ctx context.Context, bkp v1.
 
 	err = c.Kube.List(ctx, instances, &k8sclient.ListOptions{
 		LabelSelector: labelSelector,
+		Namespace:     bkp.Namespace,
 	})
 	if err != nil {
 		return nil, fmt.Errorf(

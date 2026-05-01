@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: example-a9s-logme2
+spec:
+  crossplane:
+    compositionRef:
+      name: a9s-restore
+    backupRef: example-a9s-logme2
+    serviceInstanceType: logme2

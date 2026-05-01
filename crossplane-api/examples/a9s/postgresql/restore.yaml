@@ -1,0 +1,11 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: example-a9s-postgresql
+  namespace: default  
+spec:
+  crossplane:
+    compositionRef:
+      name: a9s-restore
+  backupRef: example-a9s-postgresql
+  serviceInstanceType: postgresql

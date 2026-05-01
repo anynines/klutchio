@@ -1,57 +1,65 @@
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
-# This is a short-term solution. The a9s and a8s will soon share a common XRD.
 metadata:
-  name: xservicebindings.anynines.com
+  name: servicebindings.anynines.com
 spec:
   group: anynines.com
+  scope: Namespaced
   names:
-    kind: XServiceBinding
-    plural: xservicebindings
-  claimNames:
     kind: ServiceBinding
     plural: servicebindings
   defaultCompositionRef:
     name: a8s-servicebinding
   versions:
-  - name: v1
-    served: true
-    referenceable: true
-    schema:
-      openAPIV3Schema:
-        supported:
-          - region: &region ["eu-central-1", "us-east-1"]
-          - types: &serviceInstanceTypes ["keyvalue","postgresql", "mongodb",
-              "search", "logme2", "prometheus", "messaging", "mariadb"]
-        properties:
-          spec:
-            x-kubernetes-validations:
-                # Validation for compositionRef and serviceInstanceType combination.
-                - rule: "(!(self.compositionRef.name == '') && 
-                    !(self.compositionRef.name == 'a8s-servicebinding')) ||
-                    self.serviceInstanceType == 'postgresql'"
+    - name: v1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          supported:
+            - types:
+                &serviceInstanceTypes [
+                  "keyvalue",
+                  "postgresql",
+                  "mongodb",
+                  "search",
+                  "logme2",
+                  "prometheus",
+                  "messaging",
+                  "mariadb",
+                  "messaging",
+                ]
+          properties:
+            spec:
+              x-kubernetes-validations:
+                # Validation for crossplane.compositionRef and serviceInstanceType combination.
+                - rule: "((has(self.crossplane) && has(self.crossplane.compositionRef) && has(self.crossplane.compositionRef.name) &&
+                    self.crossplane.compositionRef.name != '' &&
+                    self.crossplane.compositionRef.name != 'a8s-servicebinding') ||
+                    self.serviceInstanceType == 'postgresql')"
                   message: "Selected service instance type is not supported."
-            properties:
-              acceptsIncomplete:
-                type: boolean
-              instanceRef:
-                type: string
-              serviceInstanceType:
-                type: string
-                enum: *serviceInstanceTypes
-              region:
-                description: |
-                    The region the object store will be deployed to
-                type: string
-                enum: *region
-              policy:
-                type: string
-            required:
-              - instanceRef
-              - serviceInstanceType
-          status:
-            type: object
-            properties:
-              managed:
-                type: object
-                x-kubernetes-preserve-unknown-fields: true
+              properties:
+                acceptsIncomplete:
+                  type: boolean
+                instanceRef:
+                  type: string
+                writeConnectionSecretToRef:
+                  description: Optional connection secret target requested by callers. Some compositions may ignore this value and generate their own secret names.
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                  required:
+                    - name
+                serviceInstanceType:
+                  type: string
+                  enum: *serviceInstanceTypes
+              required:
+                - instanceRef
+                - serviceInstanceType
+            status:
+              type: object
+              properties:
+                managed:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true

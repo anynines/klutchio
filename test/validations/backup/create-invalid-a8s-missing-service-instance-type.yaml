@@ -4,5 +4,6 @@ metadata:
   name: sample-backup
 spec:
   instanceRef: sample-instance
-  compositionRef:
-    name: a8s-backup
+  crossplane:
+    compositionRef:
+      name: a8s-backup

@@ -152,8 +152,8 @@ func serviceInstance(modifiers ...serviceInstanceOptions) *dsv1.ServiceInstance 
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "postgres-1-sdjk",
 			Labels: map[string]string{
-				"crossplane.io/claim-name":      "postgres-1",
-				"crossplane.io/claim-namespace": "test",
+				// Crossplane v2 sets crossplane.io/composite on composed MRs (XR name).
+				"crossplane.io/composite": "postgres-1",
 			},
 		},
 		Spec: dsv1.ServiceInstanceSpec{
@@ -503,8 +503,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -521,8 +520,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -549,8 +547,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -558,14 +555,13 @@ func TestObserve(t *testing.T) {
 					)),
 			},
 		},
-		"errorServiceInstanceAndBackupInDifferentNamespaces": {
-			// Observe should fail because backup and ServiceInstance are in a different namespace
+		"errorServiceInstanceLabelMismatch": {
+			// Observe should fail because the ServiceInstance's composite label does not match the Backup's InstanceName
 			args: args{
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -573,8 +569,8 @@ func TestObserve(t *testing.T) {
 					)),
 				serviceInstance: *serviceInstance(serviceInstanceWithLabels(
 					map[string]string{
-						"crossplane.io/claim-name":      "postgres",
-						"crossplane.io/claim-namespace": "test-1",
+						// crossplane.io/composite does not match InstanceName "postgres-1"
+						"crossplane.io/composite": "postgres",
 					},
 				),
 					serviceInstanceWithStatus(
@@ -588,8 +584,7 @@ func TestObserve(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					withSpec(v1.BackupParameters{
 						InstanceName: "postgres-1",
@@ -691,8 +686,7 @@ func TestCreate(t *testing.T) {
 				},
 				managedResource: newBackup(withLabels(
 					map[string]string{
-						"crossplane.io/claim-name":      "test",
-						"crossplane.io/claim-namespace": "test",
+						"crossplane.io/composite": "test",
 					}),
 					initializeBackupStatus(
 						"23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -708,8 +702,7 @@ func TestCreate(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					initializeBackupStatus(
 						"23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -734,8 +727,7 @@ func TestCreate(t *testing.T) {
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						}),
 					initializeBackupStatus(
 						"23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -760,8 +752,7 @@ func TestCreate(t *testing.T) {
 					}),
 					withLabels(
 						map[string]string{
-							"crossplane.io/claim-name":      "test",
-							"crossplane.io/claim-namespace": "test",
+							"crossplane.io/composite": "test",
 						},
 					)),
 
