@@ -268,7 +268,10 @@ func NewController(
 	if deploymentInformer != nil {
 		if _, err := deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 			UpdateFunc: func(_, newObj interface{}) {
-				c.enqueueRBACResourceOwner(logger, newObj)
+				c.enqueueDeploymentOwner(logger, newObj)
+			},
+			DeleteFunc: func(obj interface{}) {
+				c.enqueueDeploymentOwner(logger, obj)
 			},
 		}); err != nil {
 			return nil, err
@@ -362,6 +365,25 @@ func (c *Controller) enqueueRBACResourceOwner(logger klog.Logger, obj interface{
 			return
 		}
 	}
+}
+
+func (c *Controller) enqueueDeploymentOwner(logger klog.Logger, obj interface{}) {
+	meta, ok := obj.(metav1.Object)
+	if !ok {
+		utilruntime.HandleError(fmt.Errorf("expected metav1.Object but got %T", obj))
+		return
+	}
+
+	labels := meta.GetLabels()
+	bindingName := labels[appClusterBindingNameLabel]
+	bindingNamespace := labels[appClusterBindingNamespaceLabel]
+	if bindingName == "" || bindingNamespace == "" {
+		return
+	}
+
+	key := bindingNamespace + "/" + bindingName
+	logger.V(2).Info("queueing AppClusterBinding due to Deployment change", "key", key, "deployment", meta.GetName())
+	c.queue.Add(key)
 }
 
 func (c *Controller) enqueueAPIServiceBinding(logger klog.Logger, obj interface{}) {
