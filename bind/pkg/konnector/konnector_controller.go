@@ -76,7 +76,7 @@ func New(
 		return nil, err
 	}
 
-	servicebindingCtrl, err := servicebinding.NewController(bindingConfig, serviceBindingInformer, secretInformer)
+	servicebindingCtrl, err := servicebinding.NewController(bindingConfig, serviceBindingInformer, secretInformer, controlPlaneMode)
 	if err != nil {
 		return nil, err
 	}

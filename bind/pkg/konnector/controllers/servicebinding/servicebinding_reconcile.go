@@ -30,6 +30,7 @@ import (
 )
 
 type reconciler struct {
+	controlPlaneMode  bool
 	getConsumerSecret func(ns, name string) (*corev1.Secret, error)
 }
 
@@ -104,7 +105,7 @@ func (r *reconciler) ensureValidKubeconfigSecret(ctx context.Context, binding *b
 		)
 		return nil
 	}
-	if kubeContext.Namespace == "" {
+	if !r.controlPlaneMode && kubeContext.Namespace == "" {
 		conditions.MarkFalse(
 			binding,
 			bindv1alpha1.APIServiceBindingConditionSecretValid,

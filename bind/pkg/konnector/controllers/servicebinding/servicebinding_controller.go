@@ -50,6 +50,7 @@ func NewController(
 	consumerConfig *rest.Config,
 	serviceBindingInformer bindinformers.APIServiceBindingInformer,
 	consumerSecretInformer coreinformers.SecretInformer,
+	controlPlaneMode bool,
 ) (*controller, error) {
 	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), controllerName)
 
@@ -72,6 +73,7 @@ func NewController(
 		consumerSecretLister: consumerSecretInformer.Lister(),
 
 		reconciler: reconciler{
+			controlPlaneMode: controlPlaneMode,
 			getConsumerSecret: func(ns, name string) (*corev1.Secret, error) {
 				return consumerSecretInformer.Lister().Secrets(ns).Get(name)
 			},
