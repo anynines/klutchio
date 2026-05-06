@@ -27,11 +27,165 @@ spec:
                 providerConfigRef:
                   name: kubernetes-provider
                   kind: ClusterProviderConfig
+                # Credential Secret written to the ServiceBinding namespace and populated
+                # from the a8s ServiceBinding secret (<name>-service-binding in
+                # <namespace>-dsi). Name defaults to <name>-pg-creds; can be
+                # overridden by spec.writeConnectionSecretToRef.name.
+                writeConnectionSecretToRef:
+                  name: placeholder
+                connectionDetails:
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.password
+                  toConnectionSecretKey: password
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.username
+                  toConnectionSecretKey: username
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.database
+                  toConnectionSecretKey: database
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.instance_service
+                  toConnectionSecretKey: instance_service
+            connectionDetails:
+              - type: FromConnectionSecretKey
+                name: password
+                fromConnectionSecretKey: password
+              - type: FromConnectionSecretKey
+                name: username
+                fromConnectionSecretKey: username
+              - type: FromConnectionSecretKey
+                name: database
+                fromConnectionSecretKey: database
+              - type: FromConnectionSecretKey
+                name: instance_service
+                fromConnectionSecretKey: instance_service
             patches:
+              # ServiceBinding CR must be in the same namespace as the PostgreSQL
+              # instance (<namespace>-dsi) to satisfy the a8s controller's requirement
+              # that owner references cannot cross namespaces.
               - fromFieldPath: metadata.namespace
                 toFieldPath: spec.forProvider.manifest.metadata.namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
               - fromFieldPath: metadata.name
                 toFieldPath: spec.forProvider.manifest.metadata.name
+
+              # Read connection details from the a8s generated secret
+              # (<name>-service-binding in <namespace>-dsi).
+              # This location must be updated if the servicebinding controller
+              # changes its namespace or naming scheme.
+              # It is currently necessary to patch the location once per key
+              # because of the way provider-kubernetes handles ConnectionDetail
+              # sources.
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[0].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[0].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[1].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[1].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[2].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[2].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[3].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[3].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+
+              # Default credential Secret name; user can override via spec.writeConnectionSecretToRef.name.
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.writeConnectionSecretToRef.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-pg-creds"
+              - fromFieldPath: spec.writeConnectionSecretToRef.name
+                toFieldPath: spec.writeConnectionSecretToRef.name
+                policy:
+                  fromFieldPath: Optional
               - fromFieldPath: spec.serviceInstanceType
                 toFieldPath: spec.forProvider.manifest.spec.instance.apiVersion
                 transforms:
@@ -44,8 +198,6 @@ spec:
                   - type: map
                     map:
                       postgresql: Postgresql
-              # ServiceBinding stays in tenant namespace, but the referenced
-              # Postgresql instance now lives in the internal <tenant>-dsi namespace.
               - fromFieldPath: metadata.namespace
                 toFieldPath: spec.forProvider.manifest.spec.instance.namespace
                 transforms:
@@ -75,3 +227,30 @@ spec:
                 toFieldPath: status.managed.secret.namespace
                 policy:
                   fromFieldPath: Optional
+    - step: create-connection-configmap
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $xr := getCompositeResource . -}}
+            {{- $ns := $xr.metadata.namespace -}}
+            {{- with $.observed.resources }}
+            {{- if ne (index $.observed.resources "a8s-servicebinding") nil }}
+            {{- $sb := (index $.observed.resources "a8s-servicebinding") }}
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: {{ printf "%s-connection" $xr.metadata.name | quote }}
+              namespace: {{ $ns | quote }}
+              annotations:
+                {{ setResourceNameAnnotation "connection-configmap" }}
+                gotemplating.fn.crossplane.io/ready: "True"
+            data:
+              primary: {{ printf "%s-master.%s" $sb.resource.spec.forProvider.manifest.spec.instance.name $sb.resource.spec.forProvider.manifest.spec.instance.namespace | quote }}
+              port: "5432"
+            {{- end }}
+            {{- end }}

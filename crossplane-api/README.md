@@ -270,7 +270,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v2.0.0-a8s
+crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:v2.0.0-KLT-881
 ```
 
 1. Install files directly:
@@ -422,6 +422,21 @@ The ServiceBinding must target an existing PostgreSQL instance name.
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/servicebinding.yaml
 ```
+
+The `a8s-servicebinding` composition produces two outputs in the ServiceBinding's namespace: a **Secret** with credentials and a **ConfigMap** named `{servicebinding-name}-connection` with connection details.
+
+#### Connection Secret name
+
+The Secret is named `{servicebinding-name}-pg-creds` by default. To use a custom name, set
+`spec.writeConnectionSecretToRef.name`:
+
+```yaml
+spec:
+  writeConnectionSecretToRef:
+    name: my-custom-secret
+```
+
+If the field is omitted the Secret name falls back to `{servicebinding-name}-pg-creds`.
 
 > **Note**
 > `ServiceBindings` are not designed to target a data services within arbitrary `Namespaces`. This design restriction enables `ServiceBindings` to work within the `kube-bind` context, where `Namespaces` are dynamically allocated.

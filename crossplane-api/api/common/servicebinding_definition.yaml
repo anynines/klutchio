@@ -44,10 +44,17 @@ spec:
                 instanceRef:
                   type: string
                 writeConnectionSecretToRef:
-                  description: Optional connection secret target requested by callers. Some compositions may ignore this value and generate their own secret names.
+                  description: >-
+                    Optional. Controls the name of the Secret written to the ServiceBinding's namespace
+                    containing connection credentials. If set, the value of `name` is used as the Secret
+                    name. If omitted, the composition falls back to a default name of the form
+                    `{servicebinding-name}-pg-creds`.
                   type: object
                   properties:
                     name:
+                      description: >-
+                        Name of the Secret to write connection credentials into. If not specified,
+                        the composition defaults to `{servicebinding-name}-pg-creds`.
                       type: string
                   required:
                     - name
