@@ -1,4 +1,4 @@
-# This XR contains all possible parameters, with values *different* from their defaults.
+# This data service instance example contains all possible parameters, with values *different* from their defaults.
 # (excluding parameters not supported by a8s)
 apiVersion: anynines.com/v1
 kind: PostgresqlInstance
