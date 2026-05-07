@@ -174,18 +174,15 @@ spec:
                       type: Format
                       fmt: "%s-service-binding"
 
-              # Default credential Secret name; user can override via spec.writeConnectionSecretToRef.name.
+              # Raw relay Secret used to flow credentials through the pipeline.
+              # Name is fixed; the user-facing complete Secret is created by create-connection-secret.
               - fromFieldPath: metadata.name
                 toFieldPath: spec.writeConnectionSecretToRef.name
                 transforms:
                   - type: string
                     string:
                       type: Format
-                      fmt: "%s-pg-creds"
-              - fromFieldPath: spec.writeConnectionSecretToRef.name
-                toFieldPath: spec.writeConnectionSecretToRef.name
-                policy:
-                  fromFieldPath: Optional
+                      fmt: "%s-pg-creds-raw"
               - fromFieldPath: spec.serviceInstanceType
                 toFieldPath: spec.forProvider.manifest.spec.instance.apiVersion
                 transforms:
@@ -227,7 +224,7 @@ spec:
                 toFieldPath: status.managed.secret.namespace
                 policy:
                   fromFieldPath: Optional
-    - step: create-connection-configmap
+    - step: create-connection-secret
       functionRef:
         name: function-go-templating
       input:
@@ -241,16 +238,30 @@ spec:
             {{- with $.observed.resources }}
             {{- if ne (index $.observed.resources "a8s-servicebinding") nil }}
             {{- $sb := (index $.observed.resources "a8s-servicebinding") }}
+            {{- $connectionDetails := $sb.connectionDetails | default dict }}
+            {{- $username := index $connectionDetails "username" | default "" }}
+            {{- if $username }}
+            {{- $password := index $connectionDetails "password" | default "" }}
+            {{- $database := index $connectionDetails "database" | default "" }}
+            {{- $instanceService := index $connectionDetails "instance_service" | default "" }}
+            {{- $host := printf "%s-master.%s" $sb.resource.spec.forProvider.manifest.spec.instance.name $sb.resource.spec.forProvider.manifest.spec.instance.namespace }}
+            {{- $secretName := dig "spec" "writeConnectionSecretToRef" "name" (printf "%s-pg-creds" $xr.metadata.name) $xr }}
             apiVersion: v1
-            kind: ConfigMap
+            kind: Secret
             metadata:
-              name: {{ printf "%s-connection" $xr.metadata.name | quote }}
+              name: {{ $secretName | quote }}
               namespace: {{ $ns | quote }}
               annotations:
-                {{ setResourceNameAnnotation "connection-configmap" }}
+                {{ setResourceNameAnnotation "connection-secret" }}
                 gotemplating.fn.crossplane.io/ready: "True"
+            type: connection.crossplane.io/v1alpha1
             data:
-              primary: {{ printf "%s-master.%s" $sb.resource.spec.forProvider.manifest.spec.instance.name $sb.resource.spec.forProvider.manifest.spec.instance.namespace | quote }}
-              port: "5432"
+              username: {{ $username }}
+              password: {{ $password }}
+              database: {{ $database }}
+              instance_service: {{ $instanceService }}
+              host: {{ $host | b64enc }}
+              port: {{ "5432" | b64enc }}
+            {{- end }}
             {{- end }}
             {{- end }}

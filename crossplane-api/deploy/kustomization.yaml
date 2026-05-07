@@ -13,3 +13,4 @@ resources:
 
   # Install composition functions
   - functions/function-patch-and-transform.yaml
+  - functions/function-go-templating.yaml

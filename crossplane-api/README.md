@@ -270,7 +270,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:v2.0.0-KLT-881
+crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:KLT-881
 ```
 
 1. Install files directly:
@@ -295,7 +295,7 @@ authorization issues.
 
 #### Install Crossplane Functions
 
-Additionally, we install composition functions. Composition functions (or simply “functions”) are Crossplane extensions that template Crossplane resources. Crossplane uses these functions to determine which resources to create when a composite resource (XR) is created. To verify that the composition functions are correctly installed, use the following command:
+Additionally, we install composition functions. Composition functions (or simply "functions") are Crossplane extensions that template Crossplane resources. Crossplane uses these functions to determine which resources to create when a data service instance is created. To verify that the composition functions are correctly installed, use the following command:
 
 ```bash
 kubectl get function
@@ -306,6 +306,7 @@ Expected output:
 ```text
 NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
 function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.9.2   3m
+function-go-templating         True        True      xpkg.upbound.io/crossplane-contrib/function-go-templating:v0.9.2         3m
 ```
 
 The whole package can either installed via kustomize or by manually applying each yaml file.
@@ -314,6 +315,7 @@ The whole package can either installed via kustomize or by manually applying eac
 
 ```bash
 kubectl create -f ./crossplane-api/deploy/functions/function-patch-and-transform.yaml
+kubectl create -f ./crossplane-api/deploy/functions/function-go-templating.yaml
 ```
 
 #### Install ProviderConfig for provider-anynines
@@ -423,7 +425,9 @@ The ServiceBinding must target an existing PostgreSQL instance name.
 kubectl apply -f ./crossplane-api/examples/a8s/servicebinding.yaml
 ```
 
-The `a8s-servicebinding` composition produces two outputs in the ServiceBinding's namespace: a **Secret** with credentials and a **ConfigMap** named `{servicebinding-name}-connection` with connection details.
+The `a8s-servicebinding` composition produces a complete **Secret** in the ServiceBinding's namespace
+with 6 connection keys: `username`, `password`, `database`, `instance_service`, `host` (internal
+DNS of the PostgreSQL primary), and `port`.
 
 #### Connection Secret name
 
@@ -437,6 +441,10 @@ spec:
 ```
 
 If the field is omitted the Secret name falls back to `{servicebinding-name}-pg-creds`.
+
+> **Note:** The composition also creates an internal Secret named
+> `{servicebinding-name}-pg-creds-raw` used to surface credentials inside the pipeline.
+> It is not intended for application use.
 
 > **Note**
 > `ServiceBindings` are not designed to target a data services within arbitrary `Namespaces`. This design restriction enables `ServiceBindings` to work within the `kube-bind` context, where `Namespaces` are dynamically allocated.
@@ -528,10 +536,10 @@ In case of a Service or Plan is changed or a new one is added, it is essential
 to update both the [composition](api/a8s/postgresql/composition.yaml)
 and [definition](api/common/postgresql_definition.yaml) yaml files.
 In our current approach, we validate the user-defined Service and Plan and
-translate Service and Plan names from the Composite Resource (XR) to data
-service version, CPU, memory and volume sizes in the Managed Resource (MR). If a
+translate Service and Plan names from the data service instance to the
+underlying service version, CPU, memory and volume sizes. If a
 new Service or Plan is added, it is necessary to update the corresponding
-composition and definition files to enable XR to MR translation and validation.
+composition and definition files to enable this translation and validation.
 In case of any modifications to values for CPU, memory, and volume size of an
 existing Plan, the corresponding hard-coded values in composition file should
 also be updated accordingly. Please ensure you update these 2 files to
@@ -707,23 +715,23 @@ Within this field you can see a list with the supported Services:
 
 ### **Important note!**
 
-By default, when a Composition is updated or created, all XRs that use said
+By default, when a Composition is updated or created, all data service instances that use said
 Composition will be updated instantaneously. This means that any changes
 made to the Composition, even minor ones like label and annotation
-modifications, by the platform team would instantly affect the XRs provisioned
+modifications, by the platform team would instantly affect the data service instances provisioned
 and owned by app teams.
 
 Each time a Composition is updated, a CompositionRevision is automatically
 created by a controller. The schema of the CompositionRevision encompasses the
-schema of the Composition itself. This mechanism allows an XR instance to be
+schema of the Composition itself. This mechanism allows a data service instance to be
 associated with a particular revision of a Composition, effectively "pinning" it
 to that specific version. As a result, updates made to the Composition will not
-inherently impact the XR instances that (indirectly) use it.
+inherently impact the data service instances that (indirectly) use it.
 
-By default, an XR instance will have the optional filed "compositionUpdatePolicy"
+By default, a data service instance will have the optional field "compositionUpdatePolicy"
 set to "Automatic" causing it to always select the latest revision of the
 desired Composition. Only when the compositionUpdatePolicy of a previously
-created XR(C) is set to "Manual" its behavior deviates from the default and
+created instance is set to "Manual" its behavior deviates from the default and
 requires manual updates.
 
 Therefore, It is important to carefully consider the approach that minimizes
