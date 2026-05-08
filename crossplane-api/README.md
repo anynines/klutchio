@@ -25,38 +25,110 @@ machine for development and testing purposes.
   - You can deploy a Kubernetes cluster locally using tools such as
     [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) or [minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [Helm](https://helm.sh/docs/intro/install/) version v3.2.0 or later
-- [Crossplane](https://docs.crossplane.io/v1.20) version
-1.17.1 or later.
-  - You can deploy the *latest* version of Crossplane using helm by executing
-    the following command:
+- [Crossplane](https://docs.crossplane.io/v2.2) version
+2.2.1 or later.
+  - You can deploy Crossplane using helm by executing the following command:
 
     ```bash
     ./crossplane-api/deploy/deploy-crossplane.sh
     ```
 
   - Alternately, you can install a *specific* Crossplane version using helm's
-    [*--version <version>*](https://docs.crossplane.io/v1.20)
+    [*--version <version>*](https://docs.crossplane.io/v2.2)
     option, and then deploy the [Crossplane Provider for Kubernetes](https://github.com/anynines/klutchio/blob/main/crossplane-api/deploy/provider-kubernetes.yaml).
 - To build, push, and install Crossplane packages, you need the Crossplane CLI.
   You can install it with the following command:
 
     ```bash
-    curl -sL https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh | sh
+    curl -sL https://raw.githubusercontent.com/crossplane/crossplane/v2.2.1/install.sh | sh
     ```
 
 ## Optional: Build and push provider-anynines Package
 
-Provider build and push instructions are maintained in
-[provider-anynines/README.md](../provider-anynines/README.md).
+### Login to ECR
+
+To push the Crossplane Packages to AWS ECR, you need to retrieve an
+authentication token and authenticate your Docker client to the registry.
+
+If your organization uses AWS SSO, configure the profile with:
+
+```bash
+aws configure sso --profile ECR
+```
+
+Otherwise, configure it with access keys:
+
+```bash
+aws configure --profile=ECR
+```
+
+This step has to be performed only
+once on each machine, after that, the aws cli will store your configuration.
+
+If you have already configured an ECR profile, run:
+
+```bash
+export AWS_PROFILE=ECR
+```
+
+Then, to give Docker access to the registry, execute:
+
+```bash
+aws ecr-public get-login-password --region us-east-1 --profile=ECR | docker login --username AWS --password-stdin public.ecr.aws/w5n9a2g2
+```
+
+### Build and push Provider Controller images
+
+> **Important Note!**
+> To make sure you don't overwrite existing images, use a unique image tag. The recommended format is a version tag or ticket identifier:
+
+```bash
+<version-or-ticket-id> e.g. v2.0.0 or KLT-877
+```
+
+First, build the provider binary and local images for both amd64 and arm64:
+
+```bash
+cd provider-anynines
+make build.all
+```
+
+Then push the multi-arch controller image to ECR:
+
+```bash
+make provider-controller-build-push IMAGETAG=<version-or-ticket-id>
+
+#example
+make provider-controller-build-push IMAGETAG=v2.0.0
+```
+
+### Build and push provider package
+
+To create a provider package using the existing provider
+controller image and upload the package to the ECR image repository, you need to
+execute the following command:
+
+```bash
+make provider-build-push IMAGETAG=<version-or-ticket-id>
+
+#example
+make provider-build-push IMAGETAG=v2.0.0
+```
 
 ## Optional: Build and push anynines-dataservices Package
 
 ### Login to ECR
 
 To push the Crossplane Packages to AWS ECR, you need to retrieve an
-authentication token and authenticate your Docker client to the registry. The
-profile part is optional but useful if you have multiple accounts. To add the
-access key on your machine run:
+authentication token and authenticate your Docker client to the registry.
+
+If your organization uses AWS SSO, configure the profile with:
+
+```bash
+aws configure sso --profile ECR
+```
+
+Otherwise, configure it with access keys:
 
 ```bash
 aws configure --profile=ECR
@@ -86,7 +158,7 @@ configuration package we want to set.
 make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=<image version>
 
 # example
-make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=v1.0.2
+make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=v2.0.0
 ```
 
 ## Installation
@@ -198,7 +270,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/w5n9a2g2/klutch/dataservices:v1.5.0
+crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:KLT-881
 ```
 
 1. Install files directly:
@@ -223,7 +295,7 @@ authorization issues.
 
 #### Install Crossplane Functions
 
-Additionally, we install composition functions. Composition functions (or simply “functions”) are Crossplane extensions that template Crossplane resources. Crossplane uses these functions to determine which resources to create when a composite resource (XR) is created. To verify that the composition functions are correctly installed, use the following command:
+Additionally, we install composition functions. Composition functions (or simply "functions") are Crossplane extensions that template Crossplane resources. Crossplane uses these functions to determine which resources to create when a data service instance is created. To verify that the composition functions are correctly installed, use the following command:
 
 ```bash
 kubectl get function
@@ -233,7 +305,8 @@ Expected output:
 
 ```text
 NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
-function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.8.2   3m
+function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.9.2   3m
+function-go-templating         True        True      xpkg.upbound.io/crossplane-contrib/function-go-templating:v0.9.2         3m
 ```
 
 The whole package can either installed via kustomize or by manually applying each yaml file.
@@ -242,6 +315,7 @@ The whole package can either installed via kustomize or by manually applying eac
 
 ```bash
 kubectl create -f ./crossplane-api/deploy/functions/function-patch-and-transform.yaml
+kubectl create -f ./crossplane-api/deploy/functions/function-go-templating.yaml
 ```
 
 #### Install ProviderConfig for provider-anynines
@@ -262,9 +336,12 @@ make -C crossplane-api/ providerconfig postgresInstanceName=<postgres_instance_n
 ```
 
 The providerConfigs applied this way assume that you are running the provider-anynines in a local
-kind cluster and have set up SSH tunneling to have access to an a9s Service Broker. Therefore they
-have their `spec.url` field set to `http://dockerhost:[port number for their service]` (see
-[Port selection](#port-selection) for a table detailing which data service is mapped to which port).
+kind cluster and have set up SSH tunneling to have access to an a9s Service Broker.
+
+- **Out-of-cluster provider** (running the binary locally): use `http://localhost:[port]` in `spec.url`.
+- **In-cluster provider** (provider deployed as a pod): use `http://dockerhost:[port]` in `spec.url` — requires the dockerhost service described below.
+
+See [Port selection](#port-selection) for a table detailing which data service is mapped to which port.
 
 If you want to deploy the provider-anynines in an EKS cluster that is either in the same network as
 the a9s Service Brokers of the inception staging environment or that has a VPC peering to that
@@ -318,7 +395,7 @@ EOF
 
 ### Provision an a8s PostgreSQL instance
 
-Adjust the [Composite Resource Claim](examples/a8s/postgresql-claim.yaml)
+Adjust the [example](examples/a8s/postgresql.yaml)
 to refer to a valid service and plan.
 
 | Service          | Version       |
@@ -331,40 +408,61 @@ to refer to a valid service and plan.
 | postgresql-single-nano    | 1       | 3Gi         | 2   | 1 Gi   |
 | postgresql-single-small   | 1       | 10Gi        | 2   | 2 Gi   |
 | postgresql-single-medium  | 1       | 50Gi        | 2   | 4 Gi   |
-| postgresql-single-big   | 1       | 200Gi       | 4   | 16 Gi  |
+| postgresql-single-big     | 1       | 200Gi       | 4   | 16 Gi  |
 | postgresql-replicas-small  | 3       | 10Gi        | 2   | 2 Gi   |
 | postgresql-replicas-medium | 3       | 50Gi        | 2   | 4 Gi   |
-| postgresql-replicas-big  | 3       | 200Gi       | 4   | 16 Gi  |
+| postgresql-replicas-big    | 3       | 200Gi       | 4   | 16 Gi  |
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a8s/postgresql-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a8s/postgresql.yaml
 ```
 
 ### Create a8s ServiceBinding
 
-The servicebinding claim must target an existing PostgreSQL claim name.
+The ServiceBinding must target an existing PostgreSQL instance name.
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a8s/servicebinding-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a8s/servicebinding.yaml
 ```
+
+The `a8s-servicebinding` composition produces a complete **Secret** in the ServiceBinding's namespace
+with 6 connection keys: `username`, `password`, `database`, `instance_service`, `host` (internal
+DNS of the PostgreSQL primary), and `port`.
+
+#### Connection Secret name
+
+The Secret is named `{servicebinding-name}-pg-creds` by default. To use a custom name, set
+`spec.writeConnectionSecretToRef.name`:
+
+```yaml
+spec:
+  writeConnectionSecretToRef:
+    name: my-custom-secret
+```
+
+If the field is omitted the Secret name falls back to `{servicebinding-name}-pg-creds`.
+
+> **Note:** The composition also creates an internal Secret named
+> `{servicebinding-name}-pg-creds-raw` used to surface credentials inside the pipeline.
+> It is not intended for application use.
 
 > **Note**
 > `ServiceBindings` are not designed to target a data services within arbitrary `Namespaces`. This design restriction enables `ServiceBindings` to work within the `kube-bind` context, where `Namespaces` are dynamically allocated.
 
 ### Create Backup
 
-The backup claim must target an existing PostgreSQL claim name.
+The Backup must target an existing PostgreSQL instance name.
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a8s/backup-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a8s/backup.yaml
 ```
 
 ### Create a8s Restore
 
-The restore claim must target an existing PostgreSQL claim name.
+The Restore must target an existing PostgreSQL instance name.
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a8s/restore-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a8s/restore.yaml
 ```
 
 ## Usage - a9s
@@ -384,10 +482,10 @@ curl http://<user>:<password>@localhost:<port>/v2/catalog -H "X-Broker-API-Versi
 
 Under the `crossplane-api/examples/a9s` folder, you'll find examples for various
 service instances. For instance, you can deploy PostgreSQL by applying the
-PostgreSQL Composite Resource Claim (XRC) using the following command:
+PostgreSQL Composite Resource (XR) using the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/serviceinstance-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/serviceinstance.yaml
 ```
 
 You can check it with:
@@ -406,30 +504,30 @@ kubectl get serviceinstances.dataservices.anynines.com
 
 ### Create a9s ServiceBinding
 
-The servicebinding claim must target an existing service instance. For example,
+The ServiceBinding must target an existing service instance. For example,
 you can create a ServiceBinding to a PostgreSQL instance with the following
 command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding.yaml
 ```
 
 ### Create a9s Backup
 
-The backup claim must target an existing service instance. For example, you can
+The Backup must target an existing service instance. For example, you can
 create a Backup from a PostgreSQL instance with the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/backup-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/backup.yaml
 ```
 
 ### Create a9s Restore
 
-The restore claim must target an existing service instance backup. For example,
+The Restore must target an existing service instance backup. For example,
 you can restore a PostgreSQL Backup with the following command:
 
 ```bash
-kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore-claim.yaml
+kubectl apply -f ./crossplane-api/examples/a9s/postgresql/restore.yaml
 ```
 
 ## Update or Add a Service or Plan in a8s
@@ -438,10 +536,10 @@ In case of a Service or Plan is changed or a new one is added, it is essential
 to update both the [composition](api/a8s/postgresql/composition.yaml)
 and [definition](api/common/postgresql_definition.yaml) yaml files.
 In our current approach, we validate the user-defined Service and Plan and
-translate Service and Plan names from the Composite Resource (XR) to data
-service version, CPU, memory and volume sizes in the Managed Resource (MR). If a
+translate Service and Plan names from the data service instance to the
+underlying service version, CPU, memory and volume sizes. If a
 new Service or Plan is added, it is necessary to update the corresponding
-composition and definition files to enable XR to MR translation and validation.
+composition and definition files to enable this translation and validation.
 In case of any modifications to values for CPU, memory, and volume size of an
 existing Plan, the corresponding hard-coded values in composition file should
 also be updated accordingly. Please ensure you update these 2 files to
@@ -617,23 +715,23 @@ Within this field you can see a list with the supported Services:
 
 ### **Important note!**
 
-By default, when a Composition is updated or created, all XRs that use said
+By default, when a Composition is updated or created, all data service instances that use said
 Composition will be updated instantaneously. This means that any changes
 made to the Composition, even minor ones like label and annotation
-modifications, by the platform team would instantly affect the XRs provisioned
+modifications, by the platform team would instantly affect the data service instances provisioned
 and owned by app teams.
 
 Each time a Composition is updated, a CompositionRevision is automatically
 created by a controller. The schema of the CompositionRevision encompasses the
-schema of the Composition itself. This mechanism allows an XR instance to be
+schema of the Composition itself. This mechanism allows a data service instance to be
 associated with a particular revision of a Composition, effectively "pinning" it
 to that specific version. As a result, updates made to the Composition will not
-inherently impact the XR instances that (indirectly) use it.
+inherently impact the data service instances that (indirectly) use it.
 
-By default, an XR instance will have the optional filed "compositionUpdatePolicy"
+By default, a data service instance will have the optional field "compositionUpdatePolicy"
 set to "Automatic" causing it to always select the latest revision of the
 desired Composition. Only when the compositionUpdatePolicy of a previously
-created XR(C) is set to "Manual" its behavior deviates from the default and
+created instance is set to "Manual" its behavior deviates from the default and
 requires manual updates.
 
 Therefore, It is important to carefully consider the approach that minimizes

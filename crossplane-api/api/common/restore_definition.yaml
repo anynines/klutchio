@@ -1,14 +1,11 @@
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
-# This is a short-term solution. The a9s and a8s will soon share a common XRD. 
 metadata:
-  name: xrestores.anynines.com
+  name: restores.anynines.com
 spec:
   group: anynines.com
+  scope: Namespaced
   names:
-    kind: XRestore
-    plural: xrestores
-  claimNames:
     kind: Restore
     plural: restores
   defaultCompositionRef:
@@ -26,12 +23,16 @@ spec:
         properties:
           spec:
             x-kubernetes-validations:
-                # Validation for compositionRef and serviceInstanceType combination.
-                - rule: "self.compositionRef.name != 'a8s-restore' || ( has(self.instanceRef) && self.instanceRef != '')"
+                # Validation for crossplane.compositionRef and serviceInstanceType combination.
+                - rule: "((has(self.crossplane) && has(self.crossplane.compositionRef) && has(self.crossplane.compositionRef.name) &&
+                    self.crossplane.compositionRef.name != '' &&
+                    self.crossplane.compositionRef.name != 'a8s-restore') ||
+                    ( has(self.instanceRef) && self.instanceRef != ''))"
                   message: "restores without instance ref are not supported for a8s"
-                - rule: "(!(self.compositionRef.name == '') &&
-                    !(self.compositionRef.name == 'a8s-restore')) ||
-                    self.serviceInstanceType == 'postgresql'"
+                - rule: "((has(self.crossplane) && has(self.crossplane.compositionRef) && has(self.crossplane.compositionRef.name) &&
+                    self.crossplane.compositionRef.name != '' &&
+                    self.crossplane.compositionRef.name != 'a8s-restore') ||
+                    self.serviceInstanceType == 'postgresql')"
                   message: "Selected service instance type is not supported."
             properties:
               backupRef:
