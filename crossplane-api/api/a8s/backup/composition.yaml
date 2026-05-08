@@ -5,7 +5,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XBackup
+    kind: Backup
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -17,7 +17,7 @@ spec:
         resources:
           - name: a8s-backup
             base:
-              apiVersion: kubernetes.crossplane.io/v1alpha1
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
               kind: Object
               spec:
                 forProvider:
@@ -26,10 +26,22 @@ spec:
                     kind: Backup
                 providerConfigRef:
                   name: kubernetes-provider
+                  kind: ClusterProviderConfig
             patches:
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              # Backup CR is created next to the internal Postgresql instance.
+              - fromFieldPath: metadata.namespace
                 toFieldPath: spec.forProvider.manifest.metadata.namespace
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
                 toFieldPath: spec.forProvider.manifest.metadata.name
               - fromFieldPath: spec.serviceInstanceType
                 toFieldPath: spec.forProvider.manifest.spec.serviceInstance.apiGroup
@@ -48,18 +60,30 @@ spec:
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.backupID
                 toFieldPath: status.managed.backupID
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.conditions
                 toFieldPath: status.managed.conditions
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.lastObservationTime
                 toFieldPath: status.managed.lastObservationTime
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.podUsedNamespacedName
                 toFieldPath: status.managed.podUsedNamespacedName
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.podUsedUID
                 toFieldPath: status.managed.podUsedUID
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.retries
                 toFieldPath: status.managed.retries
+                policy:
+                  fromFieldPath: Optional

@@ -5,7 +5,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XServiceBinding
+    kind: ServiceBinding
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -17,7 +17,7 @@ spec:
         resources:
           - name: a8s-servicebinding
             base:
-              apiVersion: kubernetes.crossplane.io/v1alpha1
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
               kind: Object
               spec:
                 forProvider:
@@ -26,11 +26,163 @@ spec:
                     kind: ServiceBinding
                 providerConfigRef:
                   name: kubernetes-provider
+                  kind: ClusterProviderConfig
+                # Credential Secret written to the ServiceBinding namespace and populated
+                # from the a8s ServiceBinding secret (<name>-service-binding in
+                # <namespace>-dsi). Name defaults to <name>-pg-creds; can be
+                # overridden by spec.writeConnectionSecretToRef.name.
+                writeConnectionSecretToRef:
+                  name: placeholder
+                connectionDetails:
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.password
+                  toConnectionSecretKey: password
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.username
+                  toConnectionSecretKey: username
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.database
+                  toConnectionSecretKey: database
+                - apiVersion: v1
+                  kind: Secret
+                  name: placeholder
+                  namespace: placeholder
+                  fieldPath: data.instance_service
+                  toConnectionSecretKey: instance_service
+            connectionDetails:
+              - type: FromConnectionSecretKey
+                name: password
+                fromConnectionSecretKey: password
+              - type: FromConnectionSecretKey
+                name: username
+                fromConnectionSecretKey: username
+              - type: FromConnectionSecretKey
+                name: database
+                fromConnectionSecretKey: database
+              - type: FromConnectionSecretKey
+                name: instance_service
+                fromConnectionSecretKey: instance_service
             patches:
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              # ServiceBinding CR must be in the same namespace as the PostgreSQL
+              # instance (<namespace>-dsi) to satisfy the a8s controller's requirement
+              # that owner references cannot cross namespaces.
+              - fromFieldPath: metadata.namespace
                 toFieldPath: spec.forProvider.manifest.metadata.namespace
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
                 toFieldPath: spec.forProvider.manifest.metadata.name
+
+              # Read connection details from the a8s generated secret
+              # (<name>-service-binding in <namespace>-dsi).
+              # This location must be updated if the servicebinding controller
+              # changes its namespace or naming scheme.
+              # It is currently necessary to patch the location once per key
+              # because of the way provider-kubernetes handles ConnectionDetail
+              # sources.
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[0].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[0].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[1].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[1].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[2].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[2].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.connectionDetails[3].namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.connectionDetails[3].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-service-binding"
+
+              # Raw relay Secret used to flow credentials through the pipeline.
+              # Name is fixed; the user-facing complete Secret is created by create-connection-secret.
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.writeConnectionSecretToRef.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-pg-creds-raw"
               - fromFieldPath: spec.serviceInstanceType
                 toFieldPath: spec.forProvider.manifest.spec.instance.apiVersion
                 transforms:
@@ -43,16 +195,73 @@ spec:
                   - type: map
                     map:
                       postgresql: Postgresql
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              - fromFieldPath: metadata.namespace
                 toFieldPath: spec.forProvider.manifest.spec.instance.namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
               - fromFieldPath: spec.instanceRef
                 toFieldPath: spec.forProvider.manifest.spec.instance.name
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.implemented
                 toFieldPath: status.managed.implemented
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.secret.name
                 toFieldPath: status.managed.secret.name
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.secret.namespace
                 toFieldPath: status.managed.secret.namespace
+                policy:
+                  fromFieldPath: Optional
+    - step: create-connection-secret
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $xr := getCompositeResource . -}}
+            {{- $ns := $xr.metadata.namespace -}}
+            {{- with $.observed.resources }}
+            {{- if ne (index $.observed.resources "a8s-servicebinding") nil }}
+            {{- $sb := (index $.observed.resources "a8s-servicebinding") }}
+            {{- $connectionDetails := $sb.connectionDetails | default dict }}
+            {{- $username := index $connectionDetails "username" | default "" }}
+            {{- if $username }}
+            {{- $password := index $connectionDetails "password" | default "" }}
+            {{- $database := index $connectionDetails "database" | default "" }}
+            {{- $instanceService := index $connectionDetails "instance_service" | default "" }}
+            {{- $host := printf "%s-master.%s" $sb.resource.spec.forProvider.manifest.spec.instance.name $sb.resource.spec.forProvider.manifest.spec.instance.namespace }}
+            {{- $secretName := dig "spec" "writeConnectionSecretToRef" "name" (printf "%s-pg-creds" $xr.metadata.name) $xr }}
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: {{ $secretName | quote }}
+              namespace: {{ $ns | quote }}
+              annotations:
+                {{ setResourceNameAnnotation "connection-secret" }}
+                gotemplating.fn.crossplane.io/ready: "True"
+            type: connection.crossplane.io/v1alpha1
+            data:
+              username: {{ $username }}
+              password: {{ $password }}
+              database: {{ $database }}
+              instance_service: {{ $instanceService }}
+              host: {{ $host | b64enc }}
+              port: {{ "5432" | b64enc }}
+            {{- end }}
+            {{- end }}
+            {{- end }}

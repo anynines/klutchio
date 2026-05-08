@@ -1,13 +1,11 @@
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: xpostgresqlinstances.anynines.com
+  name: postgresqlinstances.anynines.com
 spec:
   group: anynines.com
+  scope: Namespaced
   names:
-    kind: XPostgresqlInstance
-    plural: xpostgresqlinstances
-  claimNames:
     kind: PostgresqlInstance
     plural: postgresqlinstances
   defaultCompositionRef:
@@ -29,14 +27,14 @@ spec:
             spec:
               x-kubernetes-validations:
                 # Validation for postgresql services.
-                - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
+                - rule: "((has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql') &&
                     (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql15' ||
                     self.service == 'a9s-postgresql17'))
-                    || (self.compositionRef.name == 'a8s-postgresql' &&
+                    || ((!has(self.crossplane) || !has(self.crossplane.compositionRef) || self.crossplane.compositionRef.name == '' || self.crossplane.compositionRef.name == 'a8s-postgresql') &&
                     (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql14'))"
                   message: "Unsupported service used for postgresql"
                 # Validation for postgresql plans.
-                - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
+                - rule: "((has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql') &&
                     (self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-nano-bionic' ||
                     self.plan == 'postgresql-single-nano-ssl' || self.plan == 'postgresql-single-nano-ssl-bionic' ||
                     self.plan == 'postgresql-single-small' || self.plan == 'postgresql-single-small-bionic' ||
@@ -47,62 +45,62 @@ spec:
                     self.plan == 'postgresql-replica-small-ssl' || self.plan == 'postgresql-replica-small-ssl-bionic' ||
                     self.plan == 'postgresql-replica-big' || self.plan == 'postgresql-replica-big-bionic' ||
                     self.plan == 'postgresql-replica-big-ssl' || self.plan == 'postgresql-replica-big-ssl-bionic' )) ||
-                    (self.compositionRef.name == 'a8s-postgresql' &&
+                    ((!has(self.crossplane) || !has(self.crossplane.compositionRef) || self.crossplane.compositionRef.name == '' || self.crossplane.compositionRef.name == 'a8s-postgresql') &&
                     (self.plan == 'postgresql-replica-nano' || self.plan == 'postgresql-replica-small'||
                     self.plan == 'postgresql-replica-medium' || self.plan == 'postgresql-replica-big' ||
                     self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-small'||
                     self.plan == 'postgresql-single-medium' || self.plan == 'postgresql-single-big'))"
                   message: "Unsupported plan used for postgresql"
                 # Bionic plans are only supported by a9s PostgreSQL 13.
-                - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
+                - rule: "((has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql') &&
                     !(self.service == 'a9s-postgresql13') &&
                     !(self.plan.contains('bionic'))) ||
                     (self.service == 'a9s-postgresql13') ||
-                    (self.compositionRef.name == 'a8s-postgresql')"
+                    (!has(self.crossplane) || !has(self.crossplane.compositionRef) || self.crossplane.compositionRef.name == '' || self.crossplane.compositionRef.name == 'a8s-postgresql')"
                   message: "Bionic plans are only supported by a9s PostgreSQL 13"
 
                 # Validation for parameters ONLY supported by a8s
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.maxLocksPerTransaction)) ||
-                    self.compositionRef.name == 'a8s-postgresql'"
+                    !has(self.crossplane) || !has(self.crossplane.compositionRef) || self.crossplane.compositionRef.name == '' || self.crossplane.compositionRef.name == 'a8s-postgresql'"
                   message: "parameters.maxLocksPerTransaction is not supported for a9s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.sslCiphers)) ||
-                    self.compositionRef.name == 'a8s-postgresql'"
+                    !has(self.crossplane) || !has(self.crossplane.compositionRef) || self.crossplane.compositionRef.name == '' || self.crossplane.compositionRef.name == 'a8s-postgresql'"
                   message: "parameters.sslCiphers is not supported for a9s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.sslMinProtocolVersion)) ||
-                    self.compositionRef.name == 'a8s-postgresql'"
+                    !has(self.crossplane) || !has(self.crossplane.compositionRef) || self.crossplane.compositionRef.name == '' || self.crossplane.compositionRef.name == 'a8s-postgresql'"
                   message: "parameters.sslMinProtocolVersion is not supported for a9s-postgresql"
 
                 # Validation for parameters ONLY supported by a9s
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.dataChecksums)) ||
-                    self.compositionRef.name == 'a9s-postgresql'"
+                    (has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql')"
                   message: "parameters.dataChecksums is not supported for a8s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.effectiveCacheSize)) ||
-                    self.compositionRef.name == 'a9s-postgresql'"
+                    (has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql')"
                   message: "parameters.effectiveCacheSize is not supported for a8s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.workMem)) ||
-                    self.compositionRef.name == 'a9s-postgresql'"
+                    (has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql')"
                   message: "parameters.workMem is not supported for a8s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.maintenanceWorkMem)) ||
-                    self.compositionRef.name == 'a9s-postgresql'"
+                    (has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql')"
                   message: "parameters.maintenanceWorkMem is not supported for a8s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.idleInTransactionSessionTimeout)) ||
-                    self.compositionRef.name == 'a9s-postgresql'"
+                    (has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql')"
                   message: "parameters.idleInTransactionSessionTimeout is not supported for a8s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.rolePrivileges)) ||
-                    self.compositionRef.name == 'a9s-postgresql'"
+                    (has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql')"
                   message: "parameters.rolePrivileges is not supported for a8s-postgresql"
                 - rule:
                     "!(has(self.parameters) && has(self.parameters.walLevelLogical)) ||
-                    self.compositionRef.name == 'a9s-postgresql'"
+                    (has(self.crossplane) && has(self.crossplane.compositionRef) && self.crossplane.compositionRef.name == 'a9s-postgresql')"
                   message: "parameters.walLevelLogical is not supported for a8s-postgresql"
 
               properties:

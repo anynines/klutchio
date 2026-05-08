@@ -18,7 +18,7 @@ metadata:
 spec:
   compositeTypeRef:
     apiVersion: anynines.com/v1
-    kind: XPostgresqlInstance
+    kind: PostgresqlInstance
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -28,9 +28,38 @@ spec:
         apiVersion: pt.fn.crossplane.io/v1beta1
         kind: Resources
         resources:
+          # We create a "Data Service Instance" (DSI) namespace to host the actual
+          # database pods and secrets. This keeps sensitive admin credentials
+          # hidden from the user's namespace.
+          - name: postgresql-internal-namespace
+            base:
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
+              kind: Object
+              spec:
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: Namespace
+                providerConfigRef:
+                  name: kubernetes-provider
+                  kind: ClusterProviderConfig
+            patches:
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.name
+                transforms:
+                  # Namespace max length is 63. Keep 58 chars and append "-dsi".
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
           - name: a8s-postgresql
             base:
-              apiVersion: kubernetes.crossplane.io/v1alpha1
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
               kind: Object
               spec:
                 forProvider:
@@ -41,10 +70,22 @@ spec:
                       expose: "LoadBalancer"
                 providerConfigRef:
                   name: kubernetes-provider
+                  kind: ClusterProviderConfig
             patches:
-              - fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+              - fromFieldPath: metadata.namespace
                 toFieldPath: spec.forProvider.manifest.metadata.namespace
-              - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+                transforms:
+                  # Place the a8s Postgresql object in the internal namespace.
+                  - type: string
+                    string:
+                      type: Regexp
+                      regexp:
+                        match: '^(.{1,58}).*$'
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-dsi"
+              - fromFieldPath: metadata.name
                 toFieldPath: spec.forProvider.manifest.metadata.name
               - fromFieldPath: spec.service
                 toFieldPath: spec.forProvider.manifest.spec.version
@@ -195,6 +236,10 @@ spec:
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.clusterStatus
                 toFieldPath: status.managed.clusterStatus
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.readyReplicas
                 toFieldPath: status.managed.readyReplicas
+                policy:
+                  fromFieldPath: Optional

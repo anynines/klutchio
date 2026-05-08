@@ -8,5 +8,3 @@ spec:
   plan: "postgresql-single-small"
   # expose is Optional, with the default value set to 'LoadBalancer'
   expose: "Internal"
-  compositionRef:
-    name: a8s-postgresql
