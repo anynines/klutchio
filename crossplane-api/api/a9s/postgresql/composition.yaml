@@ -58,7 +58,7 @@ spec:
               - fromFieldPath: spec.parameters.maintenanceWorkMem
                 toFieldPath: spec.forProvider.parameters.maintenance_work_mem
               - fromFieldPath: spec.parameters.tempFileLimit
-                toFieldPath: spec.forProvider.parameters.temp_file_Limit
+                toFieldPath: spec.forProvider.parameters.temp_file_limit
               - fromFieldPath: spec.parameters.trackIoTiming
                 toFieldPath: spec.forProvider.parameters.track_io_timing
               - fromFieldPath: spec.parameters.archiveTimeout
