@@ -6,5 +6,6 @@ metadata:
 spec:
   instanceRef: example-a8s-postgresql
   serviceInstanceType: postgresql
-  compositionRef:
-    name: a8s-servicebinding
+  #Optional
+  #writeConnectionSecretToRef:
+  #  name: example-connection
