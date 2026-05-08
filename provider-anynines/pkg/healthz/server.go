@@ -34,7 +34,8 @@ type Server struct {
 }
 
 func NewServer(mgr manager.Manager, listenAddress string) (*Server, error) {
-	listener, err := net.Listen("tcp", listenAddress)
+	var lc net.ListenConfig
+	listener, err := lc.Listen(context.Background(), "tcp", listenAddress)
 	if err != nil {
 		return nil, err
 	}

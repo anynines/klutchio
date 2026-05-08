@@ -44,7 +44,6 @@ func LateInitialize(spec *v1.ServiceInstanceParameters, meta osbclient.Context, 
 	spec.SpaceGUID = LateInitializeString(spec.SpaceGUID, meta.SpaceGUID)
 
 	spec.Parameters = LateInitializeJsonMap(spec.Parameters, params)
-
 }
 
 // LateInitializeString implements late initialization for string type.
@@ -74,7 +73,6 @@ func LateInitializeJsonMap(s map[string]apiextv1.JSON, from map[string]apiextv1.
 // GenerateObservation is used to produce an observation object from a Service Broker
 // GetInstanceResponse
 func GenerateObservation(in osbclient.GetInstanceResponse, params map[string]apiextv1.JSON) v1.ServiceInstanceObservation {
-
 	return v1.ServiceInstanceObservation{
 		State:         in.State,
 		ProvisionedAt: in.ProvisionedAt,

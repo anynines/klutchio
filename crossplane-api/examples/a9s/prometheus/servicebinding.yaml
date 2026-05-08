@@ -4,9 +4,12 @@ metadata:
   name: example-a9s-prometheus
   namespace: default
 spec:
-  crossplane:
-    compositionRef:
-      name: a9s-servicebinding
   # instanceRef indicates the name of the DataServiceInstance
   instanceRef: example-a9s-prometheus
   serviceInstanceType: prometheus # Adjust for each Service Instance type
+  #Optional
+  #writeConnectionSecretToRef:
+  #  name: example-a9s-prometheus-creds
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding

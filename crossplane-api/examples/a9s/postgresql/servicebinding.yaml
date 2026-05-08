@@ -7,6 +7,9 @@ spec:
   # instanceRef indicates the name of the DataServiceInstance
   instanceRef: example-a9s-postgresql
   serviceInstanceType: postgresql # Adjust for each Service Instance type
+  #Optional
+  #writeConnectionSecretToRef:
+  #  name: example-a9s-postgresql-creds
   crossplane:
     compositionRef:
       name: a9s-servicebinding

@@ -15,44 +15,164 @@ spec:
         apiVersion: pt.fn.crossplane.io/v1beta1
         kind: Resources
         resources:
+          # The real ServiceBinding (dataservices.anynines.com/v1 ServiceBinding)
+          # and its raw relay credentials are hosted in an "-internal" namespace
+          # whose name is derived by suffixing the synced namespace (the one shared
+          # between the app cluster and the control plane cluster) with
+          # "-internal". klutch-bind's servicenamespace reconciler owns both
+          # namespaces' lifecycle end-to-end.
           - name: a9s-servicebinding
             base:
-              apiVersion: dataservices.anynines.com/v1
-              kind: ServiceBinding
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
+              kind: Object
+              metadata:
+                labels:
+                  klutch.anynines.com/composition-resource: a9s-servicebinding
               spec:
                 forProvider:
-                  # acceptsIncomplete indicates if the service broker can fulfill a
-                  # request asynchronously. Since the anynines-provider controller
-                  # reconciles the resources asynchronously, if 'acceptsIncomplete' is
-                  # not specified by the user, it will default to 'true'.
-                  acceptsIncomplete: true
+                  manifest:
+                    apiVersion: dataservices.anynines.com/v1
+                    kind: ServiceBinding
+                    spec:
+                      forProvider:
+                        # acceptsIncomplete indicates if the service broker can fulfill a
+                        # request asynchronously. Since the anynines-provider controller
+                        # reconciles the resources asynchronously, if 'acceptsIncomplete' is
+                        # not specified by the user, it will default to 'true'.
+                        acceptsIncomplete: true
+                providerConfigRef:
+                  name: kubernetes-provider
+                  kind: ClusterProviderConfig
             patches:
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-internal"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.metadata.name
               - fromFieldPath: spec.serviceInstanceType
-                toFieldPath: metadata.labels[klutch.io/instance-type]
+                toFieldPath: spec.forProvider.manifest.metadata.labels[klutch.io/instance-type]
               - fromFieldPath: spec.instanceRef
-                toFieldPath: spec.forProvider.instanceName
+                toFieldPath: spec.forProvider.manifest.spec.forProvider.instanceName
               - fromFieldPath: spec.serviceInstanceType
-                toFieldPath: spec.providerConfigRef.name
+                toFieldPath: spec.forProvider.manifest.spec.providerConfigRef.name
                 transforms:
                   - type: string
                     string:
                       type: Format
                       fmt: "%s-service-broker"
+              # Raw relay Secret written by provider-anynines into -internal. Name is
+              # fixed as <name>-creds-raw; the developer-facing Secret is produced by
+              # the create-connection-secret pipeline step using dig-based naming.
               - fromFieldPath: metadata.namespace
-                toFieldPath: spec.writeConnectionSecretToRef.namespace
-              - fromFieldPath: metadata.name
-                toFieldPath: spec.writeConnectionSecretToRef.name
+                toFieldPath: spec.forProvider.manifest.spec.writeConnectionSecretToRef.namespace
                 transforms:
                   - type: string
                     string:
                       type: Format
-                      fmt: "%s-creds"
+                      fmt: "%s-internal"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.spec.writeConnectionSecretToRef.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-creds-raw"
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.serviceBindingID
+                fromFieldPath: status.atProvider.manifest.status.atProvider.serviceBindingID
                 toFieldPath: status.managed.serviceBindingID
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.state
+                fromFieldPath: status.atProvider.manifest.status.atProvider.state
                 toFieldPath: status.managed.state
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.conditions
+                fromFieldPath: status.atProvider.manifest.status.conditions
                 toFieldPath: status.managed.conditions
+                policy:
+                  fromFieldPath: Optional
+    # Requests the provider-written credentials Secret (<binding-name>-creds-raw)
+    # from the -internal namespace via function-go-templating's built-in ExtraResources
+    # requirement, so the create-connection-secret step can forward all fields
+    # without a relay object ever existing outside the -internal namespace.
+    - step: request-credentials-secret
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $xr := $.observed.composite.resource }}
+            apiVersion: meta.gotemplating.fn.crossplane.io/v1alpha1
+            kind: ExtraResources
+            requirements:
+              credentials-secret:
+                apiVersion: v1
+                kind: Secret
+                matchName: {{ printf "%s-creds-raw" $xr.metadata.name }}
+                namespace: {{ printf "%s-internal" $xr.metadata.namespace }}
+    # Creates the final developer-facing connection Secret in the XR namespace.
+    # Default name is <binding-name>-creds; the user may override via
+    # spec.writeConnectionSecretToRef.name. Only fields on the per-type allowlist
+    # are forwarded from the raw Secret, so unexpected broker fields never leak through.
+    - step: create-connection-secret
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $xr := $.observed.composite.resource }}
+            {{- $extraRes := index $.context "apiextensions.crossplane.io/extra-resources" | default dict }}
+            {{- $credEntry := index $extraRes "credentials-secret" | default dict }}
+            {{- $credItems := index $credEntry "items" | default (list) }}
+            {{- $credData := dict }}
+            {{- if gt (len $credItems) 0 }}
+            {{- $credData = (index $credItems 0).resource.data | default dict }}
+            {{- end }}
+            {{- $hasCredentials := gt (len $credItems) 0 }}
+            {{- if $hasCredentials }}
+            {{- $secretName := dig "spec" "writeConnectionSecretToRef" "name" (printf "%s-creds" $xr.metadata.name) $xr }}
+            {{- /* Per-type key allowlist so unexpected broker response fields are never forwarded. */}}
+            {{- $allowLists := dict
+                "postgresql" (dict "host" true "hosts" true "name" true "password" true "port" true "uri" true "username" true)
+                "mariadb" (dict "cacrt" true "host" true "hosts" true "name" true "password" true "port" true "uri" true "username" true)
+                "mongodb" (dict "default_database" true "hosts" true "password" true "uri" true "username" true)
+                "keyvalue" (dict "cacrt" true "host" true "hosts" true "load_balanced_host" true "valkey.password" true "valkey.port" true "valkey.username" true)
+                "search" (dict "cacrt" true "host" true "hosts" true "password" true "port" true "scheme" true "username" true)
+                "logme2" (dict "cacrt" true "host" true "password" true "syslog_drain_url" true "username" true)
+                "prometheus" (dict "alertmanager_urls" true "grafana_urls" true "graphite_exporter_port" true "graphite_exporters" true "password" true "prometheus_urls" true "username" true)
+                "messaging" (dict
+                  "http_api_uri" true "http_api_uris" true
+                  "protocols.amqp_ssl.host" true "protocols.amqp_ssl.hosts" true "protocols.amqp_ssl.password" true
+                  "protocols.amqp_ssl.port" true "protocols.amqp_ssl.ssl" true "protocols.amqp_ssl.uri" true "protocols.amqp_ssl.username" true
+                  "protocols.management.cacrt" true "protocols.management.host" true "protocols.management.hosts" true
+                  "protocols.management.password" true "protocols.management.path" true "protocols.management.port" true
+                  "protocols.management.ssl" true "protocols.management.uri" true "protocols.management.uris" true "protocols.management.username" true)
+            }}
+            {{- $allowedKeys := index $allowLists $xr.spec.serviceInstanceType | default dict }}
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: {{ $secretName | quote }}
+              namespace: {{ $xr.metadata.namespace | quote }}
+              annotations:
+                {{ setResourceNameAnnotation "connection-secret" }}
+                gotemplating.fn.crossplane.io/ready: "True"
+            type: connection.crossplane.io/v1alpha1
+            data:
+              {{- range $k, $v := $credData }}
+              {{- if hasKey $allowedKeys $k }}
+              {{ $k }}: {{ $v }}
+              {{- end }}
+              {{- end }}
+            {{- end }}

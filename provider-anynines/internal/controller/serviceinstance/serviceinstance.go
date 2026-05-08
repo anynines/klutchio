@@ -352,6 +352,20 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		c.logAsyncAction(*response.OperationKey, dsi)
 	}
 
+	// Mark the resource as not-yet-ready immediately after issuing the update.
+	//
+	// crossplane-runtime automatically sets the Creating() condition right
+	// after a successful Create() call, but it does NOT do the equivalent for
+	// Update(). Without this, the Ready condition on this reconcile would
+	// still reflect the state that Observe() reported *before* the update was
+	// issued (i.e. still Ready=True from the previous plan), and the instance
+	// may transition back to ready faster than this controller's poll
+	// interval, so the next Observe() call can miss the transient non-ready
+	// window entirely. Setting Creating() here (matching the reason
+	// setCrossplaneConditions() uses for v1.StateDeploying) guarantees the
+	// transition is always visible, regardless of poll timing.
+	dsi.Status.SetConditions(xpv1.Creating())
+
 	return managed.ExternalUpdate{}, nil
 }
 

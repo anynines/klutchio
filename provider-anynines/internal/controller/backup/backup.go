@@ -375,12 +375,11 @@ func (c *External) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (c External) GetServiceInstanceManagedResource(ctx context.Context, bkp v1.Backup) (*dsv1.ServiceInstance, error) {
-	// Get Service Instance Managed Resource
-	instances := &dsv1.ServiceInstanceList{}
-
+func (c *External) GetServiceInstanceManagedResource(ctx context.Context, bkp v1.Backup) (*dsv1.ServiceInstance, error) {
 	// In Crossplane v2 (Namespaced XRs), composed MRs carry the label
-	// crossplane.io/composite: <xr-name> instead of the v1 claim labels.
+	// crossplane.io/composite: <xr-name> instead of the v1 claim labels. The
+	// Backup and ServiceInstance MRs are composed into the same "-internal"
+	// namespace, so no cross-namespace lookup is needed here.
 	labelSelector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			constants.LabelKeyComposite: bkp.Spec.ForProvider.InstanceName,
@@ -388,13 +387,13 @@ func (c External) GetServiceInstanceManagedResource(ctx context.Context, bkp v1.
 	})
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%s, failed to create label selector for "+
-				"ServiceInstance managed resources: %w",
+			"%s, failed to create label selector for ServiceInstance managed resources: %w",
 			errNewBackup,
 			err,
 		)
 	}
 
+	instances := &dsv1.ServiceInstanceList{}
 	err = c.Kube.List(ctx, instances, &k8sclient.ListOptions{
 		LabelSelector: labelSelector,
 		Namespace:     bkp.Namespace,

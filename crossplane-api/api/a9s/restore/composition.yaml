@@ -15,32 +15,72 @@ spec:
         apiVersion: pt.fn.crossplane.io/v1beta1
         kind: Resources
         resources:
+          # The real Restore (dataservices.anynines.com/v1 Restore) is hosted in an
+          # "-internal" namespace whose name is derived by suffixing the synced
+          # namespace (the one shared between the app cluster and the control
+          # plane cluster) with "-internal", next to the Backup it references.
+          # klutch-bind's servicenamespace reconciler owns both namespaces'
+          # lifecycle end-to-end.
           - name: a9s-restore
             base:
-              apiVersion: dataservices.anynines.com/v1
-              kind: Restore
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
+              kind: Object
+              metadata:
+                labels:
+                  klutch.anynines.com/composition-resource: a9s-restore
+              spec:
+                forProvider:
+                  manifest:
+                    apiVersion: dataservices.anynines.com/v1
+                    kind: Restore
+                providerConfigRef:
+                  name: kubernetes-provider
+                  kind: ClusterProviderConfig
+                readiness:
+                  policy: DeriveFromObject
             patches:
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-internal"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[crossplane.io/composite]
               - fromFieldPath: spec.backupRef
-                toFieldPath: spec.forProvider.backupName
+                toFieldPath: spec.forProvider.manifest.spec.forProvider.backupName
               - fromFieldPath: spec.serviceInstanceType
-                toFieldPath: spec.providerConfigRef.name
+                toFieldPath: spec.forProvider.manifest.spec.providerConfigRef.name
                 transforms:
                   - type: string
                     string:
                       type: Format
                       fmt: "%s-backup-manager"
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.finishedAt
+                fromFieldPath: status.atProvider.manifest.status.atProvider.finishedAt
                 toFieldPath: status.managed.finishedAt
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.restoreId
+                fromFieldPath: status.atProvider.manifest.status.atProvider.restoreId
                 toFieldPath: status.managed.restoreId
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.state
+                fromFieldPath: status.atProvider.manifest.status.atProvider.state
                 toFieldPath: status.managed.state
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.triggeredAt
+                fromFieldPath: status.atProvider.manifest.status.atProvider.triggeredAt
                 toFieldPath: status.managed.triggeredAt
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.conditions
+                fromFieldPath: status.atProvider.manifest.status.conditions
                 toFieldPath: status.managed.conditions
+                policy:
+                  fromFieldPath: Optional

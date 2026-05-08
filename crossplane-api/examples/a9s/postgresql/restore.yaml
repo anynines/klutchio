@@ -4,8 +4,8 @@ metadata:
   name: example-a9s-postgresql
   namespace: default  
 spec:
+  backupRef: example-a9s-postgresql
+  serviceInstanceType: postgresql
   crossplane:
     compositionRef:
       name: a9s-restore
-  backupRef: example-a9s-postgresql
-  serviceInstanceType: postgresql

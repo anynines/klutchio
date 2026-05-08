@@ -3,8 +3,8 @@ kind: Restore
 metadata:
   name: example-a9s-logme2
 spec:
+  backupRef: example-a9s-logme2
+  serviceInstanceType: logme2
   crossplane:
     compositionRef:
       name: a9s-restore
-    backupRef: example-a9s-logme2
-    serviceInstanceType: logme2

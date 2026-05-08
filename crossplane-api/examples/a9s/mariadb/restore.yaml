@@ -4,8 +4,8 @@ metadata:
   name: example-a9s-mariadb
   namespace: default
 spec:
+  backupRef: example-a9s-mariadb
+  serviceInstanceType: mariadb
   crossplane:
     compositionRef:
       name: a9s-restore
-    backupRef: example-a9s-mariadb
-    serviceInstanceType: mariadb

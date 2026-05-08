@@ -32,7 +32,9 @@ spec:
           properties:
             spec:
               x-kubernetes-validations:
-                # Validation for crossplane.compositionRef and serviceInstanceType combination.
+                # Prevents non-postgresql service types from silently using the default composition
+                # (a8s-servicebinding), which only supports postgresql. Non-postgresql bindings must
+                # explicitly set crossplane.compositionRef.name to an appropriate composition.
                 - rule: "((has(self.crossplane) && has(self.crossplane.compositionRef) && has(self.crossplane.compositionRef.name) &&
                     self.crossplane.compositionRef.name != '' &&
                     self.crossplane.compositionRef.name != 'a8s-servicebinding') ||
@@ -48,13 +50,13 @@ spec:
                     Optional. Controls the name of the Secret written to the ServiceBinding's namespace
                     containing connection credentials. If set, the value of `name` is used as the Secret
                     name. If omitted, the composition falls back to a default name of the form
-                    `{servicebinding-name}-pg-creds`.
+                    `{servicebinding-name}-creds`.
                   type: object
                   properties:
                     name:
                       description: >-
                         Name of the Secret to write connection credentials into. If not specified,
-                        the composition defaults to `{servicebinding-name}-pg-creds`.
+                        the composition defaults to `{servicebinding-name}-creds`.
                       type: string
                   required:
                     - name

@@ -17,6 +17,7 @@ limitations under the License.
 package healthz
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -42,7 +43,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestHandleHealthz(t *testing.T) {
-	req := httptest.NewRequest("GET", "/healthz", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/healthz", nil)
 	w := httptest.NewRecorder()
 
 	handleHealthz(w, req)
@@ -138,7 +139,7 @@ func TestBackendHealthHandler(t *testing.T) {
 					Build(),
 			}
 
-			req := httptest.NewRequest("GET", "/backend-health", nil)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/backend-health", nil)
 			w := httptest.NewRecorder()
 
 			handler.ServeHTTP(w, req)

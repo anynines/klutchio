@@ -28,39 +28,19 @@ spec:
         apiVersion: pt.fn.crossplane.io/v1beta1
         kind: Resources
         resources:
-          # We create a "Data Service Instance" (DSI) namespace to host the actual
-          # database pods and secrets. This keeps sensitive admin credentials
-          # hidden from the user's namespace.
-          - name: postgresql-internal-namespace
-            base:
-              apiVersion: kubernetes.m.crossplane.io/v1alpha1
-              kind: Object
-              spec:
-                forProvider:
-                  manifest:
-                    apiVersion: v1
-                    kind: Namespace
-                providerConfigRef:
-                  name: kubernetes-provider
-                  kind: ClusterProviderConfig
-            patches:
-              - fromFieldPath: metadata.namespace
-                toFieldPath: spec.forProvider.manifest.metadata.name
-                transforms:
-                  # Namespace max length is 63. Keep 58 chars and append "-dsi".
-                  - type: string
-                    string:
-                      type: Regexp
-                      regexp:
-                        match: '^(.{1,58}).*$'
-                  - type: string
-                    string:
-                      type: Format
-                      fmt: "%s-dsi"
+          # The Postgresql operator (postgresql.anynines.com/v1beta3 Postgresql) and
+          # its pods/secrets/admin credentials are hosted in an "-internal"
+          # namespace whose name is derived by suffixing the synced namespace (the
+          # one shared between the app cluster and the control plane cluster) with
+          # "-internal". klutch-bind's servicenamespace reconciler owns both
+          # namespaces' lifecycle end-to-end.
           - name: a8s-postgresql
             base:
               apiVersion: kubernetes.m.crossplane.io/v1alpha1
               kind: Object
+              metadata:
+                labels:
+                  klutch.anynines.com/composition-resource: a8s-postgresql
               spec:
                 forProvider:
                   manifest:
@@ -78,13 +58,8 @@ spec:
                   # Place the a8s Postgresql object in the internal namespace.
                   - type: string
                     string:
-                      type: Regexp
-                      regexp:
-                        match: '^(.{1,58}).*$'
-                  - type: string
-                    string:
                       type: Format
-                      fmt: "%s-dsi"
+                      fmt: "%s-internal"
               - fromFieldPath: metadata.name
                 toFieldPath: spec.forProvider.manifest.metadata.name
               - fromFieldPath: spec.service

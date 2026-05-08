@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+
+	"github.com/anynines/klutchio/test/e2e/funcs"
 )
 
 // fieldManager is the server-side apply field manager used when applying
@@ -52,9 +54,11 @@ func TestMain(m *testing.M) {
 
 	testenv.Setup(
 		envfuncs.CreateNamespace("mongodb-lifecycle"),
+		funcs.CreateInternalNamespace("mongodb-lifecycle"),
 	)
 
 	testenv.Finish(
+		envfuncs.DeleteNamespace("mongodb-lifecycle-internal"),
 		envfuncs.DeleteNamespace("mongodb-lifecycle"),
 	)
 

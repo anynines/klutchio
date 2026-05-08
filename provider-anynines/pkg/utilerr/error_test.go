@@ -35,7 +35,7 @@ func TestWithCause_SurfacesUnderlyingError(t *testing.T) {
 	cause := utilerr.PlainErr("underlying cause")
 	wrapped := utilerr.FromStr("user-facing message").WithCause(cause)
 
-	if errors.Unwrap(wrapped) != cause {
+	if !errors.Is(errors.Unwrap(wrapped), cause) {
 		t.Error("expected errors.Unwrap to return the cause, but it did not")
 	}
 

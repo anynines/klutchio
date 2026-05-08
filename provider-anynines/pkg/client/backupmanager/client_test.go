@@ -198,7 +198,6 @@ func TestNewBackupManagerServiceDelegation(t *testing.T) {
 	if client == nil {
 		t.Fatal("expected client but got nil")
 	}
-
 }
 
 // TestNewBackupManagerServiceWithTLSProperSignature tests that the TLS function has the correct signature

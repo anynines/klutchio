@@ -34,13 +34,8 @@ spec:
                 transforms:
                   - type: string
                     string:
-                      type: Regexp
-                      regexp:
-                        match: '^(.{1,58}).*$'
-                  - type: string
-                    string:
                       type: Format
-                      fmt: "%s-dsi"
+                      fmt: "%s-internal"
               - fromFieldPath: metadata.name
                 toFieldPath: spec.forProvider.manifest.metadata.name
               - fromFieldPath: spec.serviceInstanceType
@@ -70,11 +65,6 @@ spec:
               - type: ToCompositeFieldPath
                 fromFieldPath: status.atProvider.manifest.status.lastObservationTime
                 toFieldPath: status.managed.lastObservationTime
-                policy:
-                  fromFieldPath: Optional
-              - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.manifest.status.podUsedNamespacedName
-                toFieldPath: status.managed.podUsedNamespacedName
                 policy:
                   fromFieldPath: Optional
               - type: ToCompositeFieldPath

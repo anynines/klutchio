@@ -4,9 +4,12 @@ metadata:
   name: example-a9s-messaging
   namespace: default
 spec:
-  crossplane:
-    compositionRef:
-      name: a9s-servicebinding
   # instanceName indicates the name of the DataServiceInstance
   instanceRef: example-a9s-messaging
   serviceInstanceType: messaging # Adjust for each Service Instance type
+  #Optional
+  #writeConnectionSecretToRef:
+  #  name: example-a9s-messaging-creds
+  crossplane:
+    compositionRef:
+      name: a9s-servicebinding
