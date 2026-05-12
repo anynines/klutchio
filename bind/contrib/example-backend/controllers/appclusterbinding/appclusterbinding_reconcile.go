@@ -827,7 +827,18 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 
 	// Deploy konnector to control plane cluster in the binding root namespace
 	bindingRootNamespace := r.getBindingRootNamespace(binding)
-	deployment := r.buildKonnectorDeployment(binding)
+	deployment, err := r.buildKonnectorDeployment(binding)
+	if err != nil {
+		conditions.MarkFalse(
+			binding,
+			bindv1alpha1.AppClusterBindingConditionKonnectorDeployed,
+			"KonnectorDeploymentFailed",
+			conditionsapi.ConditionSeverityError,
+			"Failed to build konnector deployment: %v",
+			err,
+		)
+		return err
+	}
 	deploymentName := fmt.Sprintf("konnector-%s", binding.Name)
 
 	existing, err := r.getDeployment(ctx, bindingRootNamespace, deploymentName)
@@ -883,7 +894,7 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 	return nil
 }
 
-func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBinding) *appsv1.Deployment {
+func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBinding) (*appsv1.Deployment, error) {
 	image := konnectorpkg.ImageRepository
 	if binding.Spec.Konnector.Overrides != nil && binding.Spec.Konnector.Overrides.Image != "" {
 		image = binding.Spec.Konnector.Overrides.Image
@@ -914,30 +925,34 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 
 	// Apply container overrides if specified
 	if binding.Spec.Konnector.Overrides != nil && len(binding.Spec.Konnector.Overrides.ContainerSettings.Raw) > 0 {
-		deployment.Spec.Template.Spec.Containers[0] = r.applyContainerOverrides(
+		container, err := r.applyContainerOverrides(
 			deployment.Spec.Template.Spec.Containers[0],
 			binding.Spec.Konnector.Overrides.ContainerSettings.Raw,
 		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply container overrides: %w", err)
+		}
+		deployment.Spec.Template.Spec.Containers[0] = container
 	}
 
-	return deployment
+	return deployment, nil
 }
 
-func (r *reconciler) applyContainerOverrides(base corev1.Container, overrides []byte) corev1.Container {
+func (r *reconciler) applyContainerOverrides(base corev1.Container, overrides []byte) (corev1.Container, error) {
 	baseJSON, err := json.Marshal(base)
 	if err != nil {
-		return base
+		return base, fmt.Errorf("failed to marshal base container: %w", err)
 	}
 
 	merged, err := strategicpatch.StrategicMergePatch(baseJSON, overrides, corev1.Container{})
 	if err != nil {
-		return base
+		return base, fmt.Errorf("failed to apply strategic merge patch: %w", err)
 	}
 
 	var result corev1.Container
 	if err := json.Unmarshal(merged, &result); err != nil {
-		return base
+		return base, fmt.Errorf("failed to unmarshal merged container: %w", err)
 	}
 
-	return result
+	return result, nil
 }
