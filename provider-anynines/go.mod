@@ -1,8 +1,6 @@
 module github.com/anynines/klutchio/provider-anynines
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.26.3
 
 require (
 	github.com/anynines/klutchio/clients/a9s-backup-manager v0.0.1
