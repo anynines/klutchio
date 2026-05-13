@@ -66,11 +66,12 @@ type reconciler struct {
 	listAPIServiceExportRequests  func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error)
 	createAPIServiceExportRequest func(ctx context.Context, namespace string, req *bindv1alpha1.APIServiceExportRequest) (*bindv1alpha1.APIServiceExportRequest, error)
 	deleteAPIServiceExportRequest func(ctx context.Context, namespace, name string) error
+	listAPIServiceExports         func(ctx context.Context, namespace string) (*bindv1alpha1.APIServiceExportList, error)
+	deleteAPIServiceExport        func(ctx context.Context, namespace, name string) error
 
 	getRole                  func(ctx context.Context, namespace, name string) (*rbacv1.Role, error)
 	createRole               func(ctx context.Context, namespace string, role *rbacv1.Role) (*rbacv1.Role, error)
 	updateRole               func(ctx context.Context, namespace string, role *rbacv1.Role) (*rbacv1.Role, error)
-	deleteRole               func(ctx context.Context, namespace, name string) error
 	getClusterRole           func(ctx context.Context, name string) (*rbacv1.ClusterRole, error)
 	deleteClusterRole        func(ctx context.Context, name string) error
 	getClusterRoleBinding    func(ctx context.Context, name string) (*rbacv1.ClusterRoleBinding, error)
@@ -78,7 +79,6 @@ type reconciler struct {
 	getRoleBinding           func(ctx context.Context, namespace, name string) (*rbacv1.RoleBinding, error)
 	createRoleBinding        func(ctx context.Context, namespace string, rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
 	updateRoleBinding        func(ctx context.Context, namespace string, rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
-	deleteRoleBinding        func(ctx context.Context, namespace, name string) error
 
 	getNamespace         func(ctx context.Context, name string) (*corev1.Namespace, error)
 	deleteNamespace      func(ctx context.Context, name string) error
@@ -152,25 +152,10 @@ func (r *reconciler) ensureDeleted(ctx context.Context, binding *bindv1alpha1.Ap
 		}
 	}
 
-	serviceExportRequests, err := r.listAPIServiceExportRequests(ctx, binding.Namespace, selector)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to list apiserviceexportrequests for cleanup: %w", err))
-	} else {
-		for i := range serviceExportRequests.Items {
-			name := serviceExportRequests.Items[i].Name
-			if err := r.deleteAPIServiceExportRequest(ctx, binding.Namespace, name); err != nil && !errors.IsNotFound(err) {
-				errs = append(errs, fmt.Errorf("failed to delete apiserviceexportrequest %s/%q: %w", binding.Namespace, name, err))
-			}
-		}
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
 
-		remaining, err := r.listAPIServiceExportRequests(ctx, binding.Namespace, selector)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to verify apiserviceexportrequest cleanup: %w", err))
-		} else if len(remaining.Items) > 0 {
-			errs = append(errs, fmt.Errorf("waiting for %d apiserviceexportrequest resources to be deleted", len(remaining.Items)))
-		}
-	}
-
+	// Clean up cluster-scoped resources that won't be garbage-collected
+	// when the binding root namespace is deleted.
 	clusterRoleName := fmt.Sprintf("klutch-konnector-%s-%s", binding.Namespace, binding.Name)
 	clusterRoleBindingName := clusterRoleName
 	if err := r.deleteClusterRoleBinding(ctx, clusterRoleBindingName); err != nil && !errors.IsNotFound(err) {
@@ -195,41 +180,9 @@ func (r *reconciler) ensureDeleted(ctx context.Context, binding *bindv1alpha1.Ap
 		errs = append(errs, fmt.Errorf("clusterrole %q still exists", clusterRoleName))
 	}
 
-	deploymentName := fmt.Sprintf("konnector-%s", binding.Name)
-	bindingRootNamespace := r.getBindingRootNamespace(binding)
-	if err := r.deleteDeployment(ctx, bindingRootNamespace, deploymentName); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete deployment %s/%s: %w", bindingRootNamespace, deploymentName, err))
-	}
-	if _, err := r.getDeployment(ctx, bindingRootNamespace, deploymentName); err != nil {
-		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify deployment cleanup %s/%s: %w", bindingRootNamespace, deploymentName, err))
-		}
-	} else {
-		errs = append(errs, fmt.Errorf("deployment %s/%s still exists", bindingRootNamespace, deploymentName))
-	}
-
-	if err := r.deleteRoleBinding(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete rolebinding %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
-	}
-	if _, err := r.getRoleBinding(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil {
-		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify rolebinding cleanup %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
-		}
-	} else {
-		errs = append(errs, fmt.Errorf("rolebinding %s/%s still exists", bindingRootNamespace, controlPlaneConnectorRoleName))
-	}
-
-	if err := r.deleteRole(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil && !errors.IsNotFound(err) {
-		errs = append(errs, fmt.Errorf("failed to delete role %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
-	}
-	if _, err := r.getRole(ctx, bindingRootNamespace, controlPlaneConnectorRoleName); err != nil {
-		if !errors.IsNotFound(err) {
-			errs = append(errs, fmt.Errorf("failed to verify role cleanup %s/%s: %w", bindingRootNamespace, controlPlaneConnectorRoleName, err))
-		}
-	} else {
-		errs = append(errs, fmt.Errorf("role %s/%s still exists", bindingRootNamespace, controlPlaneConnectorRoleName))
-	}
-
+	// Delete the binding root namespace. All namespaced resources (deployments,
+	// roles, rolebindings, secrets, service exports, export requests, etc.)
+	// are garbage-collected automatically by Kubernetes.
 	if err := r.deleteNamespace(ctx, bindingRootNamespace); err != nil && !errors.IsNotFound(err) {
 		errs = append(errs, fmt.Errorf("failed to delete binding root namespace %q: %w", bindingRootNamespace, err))
 	}
@@ -607,8 +560,11 @@ func (r *reconciler) ensureServiceBindings(ctx context.Context, binding *bindv1a
 }
 
 func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
-	desired := map[string]*bindv1alpha1.APIServiceExportRequest{}
 	var errs []error
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
+
+	// Build the set of desired export names from the spec.
+	desiredExports := map[string]*examplebackendv1alpha1.APIServiceExportTemplate{}
 	for _, apiExport := range binding.Spec.APIExports {
 		templateRef, template, err := r.resolveTemplate(ctx, apiExport)
 		if err != nil {
@@ -618,51 +574,84 @@ func (r *reconciler) ensureServiceExportRequests(ctx context.Context, binding *b
 		if template == nil {
 			continue
 		}
-
-		req := r.newAPIServiceExportRequest(binding, template)
-		if req == nil {
+		exportName := apiServiceExportName(template)
+		if exportName == "" {
 			continue
 		}
-		desired[req.Name] = req
+		desiredExports[exportName] = template
 	}
 
+	// List existing service exports in the binding root namespace.
+	existingExports, err := r.listAPIServiceExports(ctx, bindingRootNamespace)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to list apiserviceexports: %w", err))
+		return utilerrors.NewAggregate(errs)
+	}
+
+	// Track which desired exports are already satisfied.
+	satisfied := map[string]bool{}
+	for i := range existingExports.Items {
+		export := existingExports.Items[i]
+		if _, needed := desiredExports[export.Name]; needed {
+			satisfied[export.Name] = true
+		} else {
+			// Export exists but is no longer required — remove it.
+			if err := r.deleteAPIServiceExport(ctx, bindingRootNamespace, export.Name); err != nil && !errors.IsNotFound(err) {
+				errs = append(errs, fmt.Errorf("failed to delete apiserviceexport %s: %w", export.Name, err))
+			}
+		}
+	}
+
+	// List existing export requests.
 	selector := labels.Set{
 		appClusterBindingNameLabel:      binding.Name,
 		appClusterBindingNamespaceLabel: binding.Namespace,
 	}.AsSelector().String()
 
-	bindingRootNamespace := r.getBindingRootNamespace(binding)
-	existingList, err := r.listAPIServiceExportRequests(ctx, bindingRootNamespace, selector)
+	existingRequests, err := r.listAPIServiceExportRequests(ctx, bindingRootNamespace, selector)
 	if err != nil {
-		errs = append(errs, err)
+		errs = append(errs, fmt.Errorf("failed to list apiserviceexportrequests: %w", err))
 		return utilerrors.NewAggregate(errs)
 	}
 
-	for i := range existingList.Items {
-		existing := existingList.Items[i]
-		desiredReq, shouldExist := desired[existing.Name]
-		if !shouldExist {
-			if err := r.deleteAPIServiceExportRequest(ctx, bindingRootNamespace, existing.Name); err != nil && !errors.IsNotFound(err) {
-				errs = append(errs, err)
+	// Map each existing request to its export name.
+	requestExportNames := map[string]string{} // export name -> request name
+	for i := range existingRequests.Items {
+		req := existingRequests.Items[i]
+		if len(req.Spec.Resources) > 0 {
+			res := req.Spec.Resources[0]
+			name := res.Resource
+			if res.Group != "" {
+				name = res.Resource + "." + res.Group
 			}
-			continue
+			requestExportNames[name] = req.Name
 		}
+	}
 
-		delete(desired, existing.Name)
-		if !reflect.DeepEqual(existing.Spec.Resources, desiredReq.Spec.Resources) {
-			if err := r.deleteAPIServiceExportRequest(ctx, bindingRootNamespace, existing.Name); err != nil && !errors.IsNotFound(err) {
-				errs = append(errs, err)
-				continue
-			}
-			if _, err := r.createAPIServiceExportRequest(ctx, bindingRootNamespace, desiredReq); err != nil && !errors.IsAlreadyExists(err) {
-				errs = append(errs, err)
+	// Delete export requests that are no longer needed.
+	for exportName, reqName := range requestExportNames {
+		if _, needed := desiredExports[exportName]; !needed {
+			if err := r.deleteAPIServiceExportRequest(ctx, bindingRootNamespace, reqName); err != nil && !errors.IsNotFound(err) {
+				errs = append(errs, fmt.Errorf("failed to delete apiserviceexportrequest %s: %w", reqName, err))
 			}
 		}
 	}
 
-	for _, desiredReq := range desired {
-		if _, err := r.createAPIServiceExportRequest(ctx, bindingRootNamespace, desiredReq); err != nil && !errors.IsAlreadyExists(err) {
-			errs = append(errs, err)
+	// Create export requests for desired exports that don't yet exist
+	// and don't already have a pending request.
+	for exportName, template := range desiredExports {
+		if satisfied[exportName] {
+			continue
+		}
+		if _, hasPending := requestExportNames[exportName]; hasPending {
+			continue
+		}
+		req := r.newAPIServiceExportRequest(binding, template)
+		if req == nil {
+			continue
+		}
+		if _, err := r.createAPIServiceExportRequest(ctx, bindingRootNamespace, req); err != nil && !errors.IsAlreadyExists(err) {
+			errs = append(errs, fmt.Errorf("failed to create apiserviceexportrequest for %s: %w", exportName, err))
 		}
 	}
 
@@ -807,6 +796,12 @@ func apiServiceBindingName(template *examplebackendv1alpha1.APIServiceExportTemp
 	return resource + "." + group
 }
 
+// apiServiceExportName returns the expected name of the APIServiceExport for a
+// given template. Exports are named by their CRD name: resource.group.
+func apiServiceExportName(template *examplebackendv1alpha1.APIServiceExportTemplate) string {
+	return apiServiceBindingName(template)
+}
+
 func ensureBindingLabels(target map[string]string, binding *bindv1alpha1.AppClusterBinding) map[string]string {
 	if target == nil {
 		target = map[string]string{}
@@ -817,7 +812,22 @@ func ensureBindingLabels(target map[string]string, binding *bindv1alpha1.AppClus
 }
 
 func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bindv1alpha1.AppClusterBinding) error {
+	bindingRootNamespace := r.getBindingRootNamespace(binding)
+	deploymentName := fmt.Sprintf("konnector-%s", binding.Name)
+
 	if binding.Spec.Konnector == nil || !binding.Spec.Konnector.Deploy {
+		// Delete existing deployment if deploy was turned off.
+		if err := r.deleteDeployment(ctx, bindingRootNamespace, deploymentName); err != nil && !errors.IsNotFound(err) {
+			conditions.MarkFalse(
+				binding,
+				bindv1alpha1.AppClusterBindingConditionKonnectorDeployed,
+				"KonnectorDeploymentFailed",
+				conditionsapi.ConditionSeverityError,
+				"Failed to delete konnector deployment: %v",
+				err,
+			)
+			return err
+		}
 		conditions.MarkTrue(
 			binding,
 			bindv1alpha1.AppClusterBindingConditionKonnectorDeployed,
@@ -826,7 +836,6 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 	}
 
 	// Deploy konnector to control plane cluster in the binding root namespace
-	bindingRootNamespace := r.getBindingRootNamespace(binding)
 	deployment, err := r.buildKonnectorDeployment(binding)
 	if err != nil {
 		conditions.MarkFalse(
@@ -839,7 +848,6 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 		)
 		return err
 	}
-	deploymentName := fmt.Sprintf("konnector-%s", binding.Name)
 
 	existing, err := r.getDeployment(ctx, bindingRootNamespace, deploymentName)
 	if err != nil && !errors.IsNotFound(err) {

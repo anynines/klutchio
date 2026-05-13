@@ -147,6 +147,12 @@ func NewController(
 			deleteAPIServiceExportRequest: func(ctx context.Context, namespace, name string) error {
 				return bindClient.KlutchBindV1alpha1().APIServiceExportRequests(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 			},
+			listAPIServiceExports: func(ctx context.Context, namespace string) (*bindv1alpha1.APIServiceExportList, error) {
+				return bindClient.KlutchBindV1alpha1().APIServiceExports(namespace).List(ctx, metav1.ListOptions{})
+			},
+			deleteAPIServiceExport: func(ctx context.Context, namespace, name string) error {
+				return bindClient.KlutchBindV1alpha1().APIServiceExports(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+			},
 			getRole: func(ctx context.Context, namespace, name string) (*rbacv1.Role, error) {
 				return kubeClient.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
 			},
@@ -155,9 +161,6 @@ func NewController(
 			},
 			updateRole: func(ctx context.Context, namespace string, role *rbacv1.Role) (*rbacv1.Role, error) {
 				return kubeClient.RbacV1().Roles(namespace).Update(ctx, role, metav1.UpdateOptions{})
-			},
-			deleteRole: func(ctx context.Context, namespace, name string) error {
-				return kubeClient.RbacV1().Roles(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 			},
 			getClusterRole: func(ctx context.Context, name string) (*rbacv1.ClusterRole, error) {
 				return kubeClient.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
@@ -179,9 +182,6 @@ func NewController(
 			},
 			updateRoleBinding: func(ctx context.Context, namespace string, rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 				return kubeClient.RbacV1().RoleBindings(namespace).Update(ctx, rb, metav1.UpdateOptions{})
-			},
-			deleteRoleBinding: func(ctx context.Context, namespace, name string) error {
-				return kubeClient.RbacV1().RoleBindings(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 			},
 			getNamespace: func(ctx context.Context, name string) (*corev1.Namespace, error) {
 				return kubeClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
