@@ -21,7 +21,6 @@ import (
 	"strings"
 	"testing"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -166,6 +165,12 @@ func TestEnsureServiceExportRequestsUsesTemplateLookup(t *testing.T) {
 				},
 			}, nil
 		},
+		listAPIServiceExports: func(ctx context.Context, namespace string) (*bindv1alpha1.APIServiceExportList, error) {
+			return &bindv1alpha1.APIServiceExportList{}, nil
+		},
+		deleteAPIServiceExport: func(ctx context.Context, namespace, name string) error {
+			return nil
+		},
 		listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
 			return &bindv1alpha1.APIServiceExportRequestList{}, nil
 		},
@@ -189,6 +194,196 @@ func TestEnsureServiceExportRequestsUsesTemplateLookup(t *testing.T) {
 	}
 }
 
+func TestRemovingAPIDeletesServiceBindingAndExportRequest(t *testing.T) {
+	bindingRootNamespace := "klutch-bind-my-ns-my-binding"
+
+	binding := &bindv1alpha1.AppClusterBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-binding",
+			Namespace: "my-ns",
+		},
+		Spec: bindv1alpha1.AppClusterBindingSpec{
+			// APIExports is empty — the postgresql API has been removed.
+			APIExports: []bindv1alpha1.GroupResource{},
+		},
+	}
+
+	var deletedBindings []string
+	var deletedExportRequests []string
+	var deletedExports []string
+
+	r := &reconciler{
+		templateFor: func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error) {
+			t.Fatalf("unexpected template lookup for removed API %s/%s", group, resource)
+			return examplebackendv1alpha1.APIServiceExportTemplate{}, nil
+		},
+		// Return an existing APIServiceBinding for the removed API.
+		listServiceBindings: func(ctx context.Context, labelSelector string) (*bindv1alpha1.APIServiceBindingList, error) {
+			return &bindv1alpha1.APIServiceBindingList{
+				Items: []bindv1alpha1.APIServiceBinding{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "postgresqls.db.example.com",
+							Namespace: bindingRootNamespace,
+							Labels: map[string]string{
+								appClusterBindingNameLabel:      binding.Name,
+								appClusterBindingNamespaceLabel: binding.Namespace,
+							},
+						},
+					},
+				},
+			}, nil
+		},
+		deleteServiceBinding: func(ctx context.Context, namespace, name string) error {
+			deletedBindings = append(deletedBindings, namespace+"/"+name)
+			return nil
+		},
+		updateServiceBinding: func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error) {
+			t.Fatal("unexpected update call on service binding")
+			return binding, nil
+		},
+		createServiceBinding: func(ctx context.Context, binding *bindv1alpha1.APIServiceBinding) (*bindv1alpha1.APIServiceBinding, error) {
+			t.Fatal("unexpected create call on service binding")
+			return binding, nil
+		},
+		// Return an existing APIServiceExport for the removed API.
+		listAPIServiceExports: func(ctx context.Context, namespace string) (*bindv1alpha1.APIServiceExportList, error) {
+			return &bindv1alpha1.APIServiceExportList{
+				Items: []bindv1alpha1.APIServiceExport{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "postgresqls.db.example.com",
+							Namespace: bindingRootNamespace,
+						},
+					},
+				},
+			}, nil
+		},
+		deleteAPIServiceExport: func(ctx context.Context, namespace, name string) error {
+			deletedExports = append(deletedExports, namespace+"/"+name)
+			return nil
+		},
+		// Return an existing APIServiceExportRequest for the removed API.
+		listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
+			return &bindv1alpha1.APIServiceExportRequestList{
+				Items: []bindv1alpha1.APIServiceExportRequest{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "appclusterbinding-my-binding-postgresql-abcd1234",
+							Namespace: bindingRootNamespace,
+							Labels: map[string]string{
+								appClusterBindingNameLabel:      binding.Name,
+								appClusterBindingNamespaceLabel: binding.Namespace,
+							},
+						},
+						Spec: bindv1alpha1.APIServiceExportRequestSpec{
+							Resources: []bindv1alpha1.APIServiceExportRequestResource{
+								{
+									GroupResource: bindv1alpha1.GroupResource{
+										Group:    "db.example.com",
+										Resource: "postgresqls",
+									},
+								},
+							},
+						},
+					},
+				},
+			}, nil
+		},
+		deleteAPIServiceExportRequest: func(ctx context.Context, namespace, name string) error {
+			deletedExportRequests = append(deletedExportRequests, namespace+"/"+name)
+			return nil
+		},
+		createAPIServiceExportRequest: func(ctx context.Context, namespace string, req *bindv1alpha1.APIServiceExportRequest) (*bindv1alpha1.APIServiceExportRequest, error) {
+			t.Fatal("unexpected create call on export request")
+			return req, nil
+		},
+	}
+
+	if err := r.ensureServiceBindings(context.Background(), binding); err != nil {
+		t.Fatalf("ensureServiceBindings failed: %v", err)
+	}
+	if err := r.ensureServiceExportRequests(context.Background(), binding); err != nil {
+		t.Fatalf("ensureServiceExportRequests failed: %v", err)
+	}
+
+	if len(deletedBindings) != 1 {
+		t.Fatalf("expected 1 deleted service binding, got %d", len(deletedBindings))
+	}
+	expectedBinding := bindingRootNamespace + "/postgresqls.db.example.com"
+	if deletedBindings[0] != expectedBinding {
+		t.Fatalf("expected deleted binding %q, got %q", expectedBinding, deletedBindings[0])
+	}
+
+	if len(deletedExportRequests) != 1 {
+		t.Fatalf("expected 1 deleted export request, got %d", len(deletedExportRequests))
+	}
+	expectedReq := bindingRootNamespace + "/appclusterbinding-my-binding-postgresql-abcd1234"
+	if deletedExportRequests[0] != expectedReq {
+		t.Fatalf("expected deleted export request %q, got %q", expectedReq, deletedExportRequests[0])
+	}
+
+	if len(deletedExports) != 1 {
+		t.Fatalf("expected 1 deleted export, got %d", len(deletedExports))
+	}
+	expectedExport := bindingRootNamespace + "/postgresqls.db.example.com"
+	if deletedExports[0] != expectedExport {
+		t.Fatalf("expected deleted export %q, got %q", expectedExport, deletedExports[0])
+	}
+}
+
+func TestExportExistsSkipsRequestCreation(t *testing.T) {
+	binding := &bindv1alpha1.AppClusterBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-binding",
+			Namespace: "my-ns",
+		},
+		Spec: bindv1alpha1.AppClusterBindingSpec{
+			APIExports: []bindv1alpha1.GroupResource{{Group: "db.example.com", Resource: "postgresqls"}},
+		},
+	}
+
+	r := &reconciler{
+		templateFor: func(ctx context.Context, group, resource string) (examplebackendv1alpha1.APIServiceExportTemplate, error) {
+			return examplebackendv1alpha1.APIServiceExportTemplate{
+				ObjectMeta: metav1.ObjectMeta{Name: "postgresql"},
+				Spec: examplebackendv1alpha1.APIServiceExportTemplateSpec{
+					APIServiceSelector: examplebackendv1alpha1.APIServiceSelector{
+						GroupResource: bindv1alpha1.GroupResource{Group: "db.example.com", Resource: "postgresqls"},
+						Version:       pointer.String("v1alpha1"),
+					},
+				},
+			}, nil
+		},
+		// Export already exists — no request should be created.
+		listAPIServiceExports: func(ctx context.Context, namespace string) (*bindv1alpha1.APIServiceExportList, error) {
+			return &bindv1alpha1.APIServiceExportList{
+				Items: []bindv1alpha1.APIServiceExport{
+					{ObjectMeta: metav1.ObjectMeta{Name: "postgresqls.db.example.com", Namespace: namespace}},
+				},
+			}, nil
+		},
+		deleteAPIServiceExport: func(ctx context.Context, namespace, name string) error {
+			t.Fatalf("unexpected delete of export %s", name)
+			return nil
+		},
+		listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
+			return &bindv1alpha1.APIServiceExportRequestList{}, nil
+		},
+		createAPIServiceExportRequest: func(ctx context.Context, namespace string, req *bindv1alpha1.APIServiceExportRequest) (*bindv1alpha1.APIServiceExportRequest, error) {
+			t.Fatal("unexpected create of export request — export already exists")
+			return req, nil
+		},
+		deleteAPIServiceExportRequest: func(ctx context.Context, namespace, name string) error {
+			return nil
+		},
+	}
+
+	if err := r.ensureServiceExportRequests(context.Background(), binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestEnsureDeletedBlocksUntilNamespaceGone(t *testing.T) {
 	notFound := func(resource, name string) error {
 		return apierrors.NewNotFound(schema.GroupResource{Resource: resource}, name)
@@ -199,12 +394,6 @@ func TestEnsureDeletedBlocksUntilNamespaceGone(t *testing.T) {
 			return &bindv1alpha1.APIServiceBindingList{}, nil
 		},
 		deleteServiceBinding: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
-			return &bindv1alpha1.APIServiceExportRequestList{}, nil
-		},
-		deleteAPIServiceExportRequest: func(ctx context.Context, namespace, name string) error {
 			return nil
 		},
 		deleteClusterRoleBinding: func(ctx context.Context, name string) error {
@@ -218,24 +407,6 @@ func TestEnsureDeletedBlocksUntilNamespaceGone(t *testing.T) {
 		},
 		getClusterRole: func(ctx context.Context, name string) (*rbacv1.ClusterRole, error) {
 			return nil, notFound("clusterroles", name)
-		},
-		deleteDeployment: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		getDeployment: func(ctx context.Context, namespace, name string) (*appsv1.Deployment, error) {
-			return nil, notFound("deployments", name)
-		},
-		deleteRoleBinding: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		getRoleBinding: func(ctx context.Context, namespace, name string) (*rbacv1.RoleBinding, error) {
-			return nil, notFound("rolebindings", name)
-		},
-		deleteRole: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		getRole: func(ctx context.Context, namespace, name string) (*rbacv1.Role, error) {
-			return nil, notFound("roles", name)
 		},
 		deleteNamespace: func(ctx context.Context, name string) error {
 			return nil
@@ -270,7 +441,7 @@ func TestEnsureDeletedBlocksUntilNamespaceGone(t *testing.T) {
 	}
 }
 
-func TestEnsureDeletedBlocksUntilAPIServiceExportRequestsGone(t *testing.T) {
+func TestEnsureDeletedBlocksUntilClusterRoleGone(t *testing.T) {
 	notFound := func(resource, name string) error {
 		return apierrors.NewNotFound(schema.GroupResource{Resource: resource}, name)
 	}
@@ -280,14 +451,6 @@ func TestEnsureDeletedBlocksUntilAPIServiceExportRequestsGone(t *testing.T) {
 			return &bindv1alpha1.APIServiceBindingList{}, nil
 		},
 		deleteServiceBinding: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		listAPIServiceExportRequests: func(ctx context.Context, namespace, labelSelector string) (*bindv1alpha1.APIServiceExportRequestList, error) {
-			return &bindv1alpha1.APIServiceExportRequestList{
-				Items: []bindv1alpha1.APIServiceExportRequest{{ObjectMeta: metav1.ObjectMeta{Name: "req-a", Namespace: namespace}}},
-			}, nil
-		},
-		deleteAPIServiceExportRequest: func(ctx context.Context, namespace, name string) error {
 			return nil
 		},
 		deleteClusterRoleBinding: func(ctx context.Context, name string) error {
@@ -300,25 +463,8 @@ func TestEnsureDeletedBlocksUntilAPIServiceExportRequestsGone(t *testing.T) {
 			return nil
 		},
 		getClusterRole: func(ctx context.Context, name string) (*rbacv1.ClusterRole, error) {
-			return nil, notFound("clusterroles", name)
-		},
-		deleteDeployment: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		getDeployment: func(ctx context.Context, namespace, name string) (*appsv1.Deployment, error) {
-			return nil, notFound("deployments", name)
-		},
-		deleteRoleBinding: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		getRoleBinding: func(ctx context.Context, namespace, name string) (*rbacv1.RoleBinding, error) {
-			return nil, notFound("rolebindings", name)
-		},
-		deleteRole: func(ctx context.Context, namespace, name string) error {
-			return nil
-		},
-		getRole: func(ctx context.Context, namespace, name string) (*rbacv1.Role, error) {
-			return nil, notFound("roles", name)
+			// Simulate the cluster role still existing after delete
+			return &rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: name}}, nil
 		},
 		deleteNamespace: func(ctx context.Context, name string) error {
 			return nil
@@ -346,9 +492,9 @@ func TestEnsureDeletedBlocksUntilAPIServiceExportRequestsGone(t *testing.T) {
 
 	err := r.ensureDeleted(context.Background(), binding)
 	if err == nil {
-		t.Fatal("expected strict cleanup to fail while apiserviceexportrequests still exist")
+		t.Fatal("expected strict cleanup to fail while clusterrole still exists")
 	}
-	if !strings.Contains(err.Error(), "apiserviceexportrequest") {
-		t.Fatalf("expected apiserviceexportrequest cleanup error, got %v", err)
+	if !strings.Contains(err.Error(), "clusterrole") || !strings.Contains(err.Error(), "still exists") {
+		t.Fatalf("expected clusterrole still exists error, got %v", err)
 	}
 }
