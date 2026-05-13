@@ -1,12 +1,37 @@
 # CHANGELOG
 
-## Unreleased
+## [1.5.0] - 2026-05-12
+
+### Added
+
+- Added TLS support for communication with service-broker in provider-anynines. Service-broker URL can now use https.
+- Added Custom Parameter Support for a9s KeyValue
+- **breaking**: Added required field `spec.serviceType` to
+  `providerconfigs.dataservices.anynines.com`, which can either have the value `servicebroker` or
+  `backupmanager`.
 
 ### Changed
 
 - Bumped a9s Data Service integration to 1.4.1: update supported services: add a9s-messaging 4
-- **breaking**: `providerconfigs.dataservices.anynines.com` now expects a field `spec.serviceType`, which can be either `servicebroker` or `backupmanager`.
-- Added TLS support for communication with service-broker in provider-anynines. Service-broker URL can now use https.
+- Improved error handling in UID check
+- made `spec.apiServiceSelector.version` optional in example-backend ApiServiceExportTemplate CRD
+- switched out the retired [ingress-nginx](https://github.com/kubernetes/ingress-nginx/) for [Envoy
+  Gateway](https://github.com/envoyproxy/gateway) in the `bind` example backend manifests
+
+### Fixed
+
+- Fixed `bind` e2e tests
+- Fixed typo in example Provider manifest for `provider-anynines`
+- **breaking** Fixed typo in a9s postgresql composition
+- Updated and fixed `bind` code generation
+
+### Update Dependencies
+
+- Bumped github.com/moby/spdystream in `bind` to close [CVE-2026-35469](https://nvd.nist.gov/vuln/detail/CVE-2026-35469)
+- Bumped go.opentelemetry.io/otel/sdk in `bind` to close [CVE-2026-24051](https://nvd.nist.gov/vuln/detail/CVE-2026-24051) and [CVE-2026-39883](https://nvd.nist.gov/vuln/detail/CVE-2026-39883)
+- Bumped github.com/go-jose/go-jose/v4 in `bind` to close
+[CVE-2026-34986](https://nvd.nist.gov/vuln/detail/CVE-2026-34986)
+- Bumped google.golang.org/grpc in `bind` and `provider-anynines` to close [CVE-2026-33186](https://nvd.nist.gov/vuln/detail/CVE-2026-33186)
 
 ### Chores
 
