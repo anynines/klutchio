@@ -253,7 +253,7 @@ func setConditions(rst *v1.Restore) {
 		conditionValue = xpv1.Unavailable().WithMessage("Restore has been deleted")
 	default:
 		conditionValue = xpv1.ReconcileError(
-			fmt.Errorf(fmt.Sprintf(errUnknownState, rst.Status.AtProvider.State)))
+			fmt.Errorf(errUnknownState, rst.Status.AtProvider.State))
 	}
 
 	rst.Status.SetConditions(conditionValue)
