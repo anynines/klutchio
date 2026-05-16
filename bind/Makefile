@@ -277,6 +277,19 @@ verify-modules: modules  # Verify go modules are up to date
 .PHONY: verify
 verify: verify-modules verify-go-versions verify-imports verify-codegen verify-boilerplate ## verify formal properties of the code
 
+.PHONY: release
+release: require-ko ## Build and publish konnector and example-backend images
+ifndef VERSION
+	$(error VERSION is not set. Please set it to the version you are releasing, e.g. make release VERSION=v1.0.0)
+endif
+ifndef AWS_PROFILE_NAME
+	@echo "AWS_PROFILE_NAME is not set, using active AWS profile $$(aws configure list | grep "profile" | cut -d ':' -f 2 | awk '{$$1=$$1};1')"
+	@echo "You can set the AWS_PROFILE_NAME make variable to use a different profile, e.g. make release VERSION=$(VERSION) AWS_PROFILE_NAME=ECR"
+endif
+	aws ecr-public get-login-password --region us-east-1 $(if $(AWS_PROFILE_NAME),--profile=$(AWS_PROFILE_NAME)) | docker login --username AWS --password-stdin public.ecr.aws/w5n9a2g2
+	KO_DOCKER_REPO=public.ecr.aws/w5n9a2g2/klutch/konnector ko build ./cmd/konnector --bare -t $(VERSION) --platform=linux/amd64,linux/arm64
+	KO_DOCKER_REPO=public.ecr.aws/w5n9a2g2/klutch/example-backend ko build ./cmd/example-backend --bare -t $(VERSION) --platform=linux/amd64,linux/arm64
+
 .PHONY: help
 help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

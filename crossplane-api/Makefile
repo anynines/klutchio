@@ -185,5 +185,42 @@ ifdef dataservicesConfigVersion
 		crossplane xpkg push -f ./api/anynines-dataservices-*.xpkg $(ECR_REPO)/$(IMAGE_NAME):$(dataservicesConfigVersion)
 		rm ./api/anynines-dataservices-*
 endif
-
 .PHONY: providerconfig
+
+.PHONY: check-version-set
+check-version-set:
+ifndef VERSION
+	$(error VERSION is not set. Please set it to the version you are releasing, e.g. make release VERSION=v1.0.0)
+endif
+	@if ! echo "$(VERSION)" | grep -q -E '^v[0-9]+\.[0-9]+\.[0-9]'; then \
+		echo "Error! The value of VERSION must follow SemVer rules."; \
+		exit 1; \
+	fi
+
+
+.PHONY: release
+release: check-version-set require-crossplane ## Build and push data services config and provider-anynines images
+ifndef AWS_PROFILE_NAME
+	@echo "AWS_PROFILE_NAME is not set, using active AWS profile $$(aws configure list | grep "profile" | cut -d ':' -f 2 | awk '{$$1=$$1};1')"
+	@echo "You can set the AWS_PROFILE_NAME make variable to use a different profile, e.g. make release VERSION=$(VERSION) AWS_PROFILE_NAME=ECR"
+endif
+	@aws ecr-public get-login-password --region us-east-1 $(if $(AWS_PROFILE_NAME),--profile=$(AWS_PROFILE_NAME)) | docker login --username AWS --password-stdin public.ecr.aws/w5n9a2g2
+	@$(MAKE) dataservices-config-push dataservicesConfigVersion=$(VERSION)
+	@$(MAKE) -C ../provider-anynines provider-controller-push IMAGETAG=$(VERSION)
+	@$(MAKE) -C ../provider-anynines provider-build-push IMAGETAG=$(VERSION)
+	@echo "Updating version references in deploy/ and README.md..."
+
+.PHONY: update-version-refs
+update-version-refs: check-version-set
+# update a9s DS Configuration manifest
+	@sed -E 's|klutch/dataservices:v[0-9]+\.[0-9]+\.[0-9]+[^"]*|klutch/dataservices:$(VERSION)|g' deploy/config-pkg-anynines.yaml > deploy/config-pkg-anynines.yaml.tmp && mv deploy/config-pkg-anynines.yaml.tmp deploy/config-pkg-anynines.yaml
+# update provider-anynines Provider manifest
+	@sed -E 's|klutch/provider-anynines:v[0-9]+\.[0-9]+\.[0-9]+[^"]*|klutch/provider-anynines:$(VERSION)|g' deploy/provider-anynines.yaml > deploy/provider-anynines.yaml.tmp && mv deploy/provider-anynines.yaml.tmp deploy/provider-anynines.yaml
+# update Readme installation instruction
+	@sed -E 's|klutch/dataservices:v[0-9]+\.[0-9]+\.[0-9]+[^"]*|klutch/dataservices:$(VERSION)|g' README.md > README.md.tmp && mv README.md.tmp README.md
+	@echo "Version references updated to $(VERSION)."
+
+.PHONY: require-%
+require-%:
+	@if ! command -v $* 1> /dev/null 2>&1; then echo "$* not found in \$$PATH"; exit 1; fi
+

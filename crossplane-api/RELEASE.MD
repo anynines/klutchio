@@ -20,7 +20,7 @@
 
     ```bash
     cd provider-anynines
-    make provider-controller-push IMAGETAG=vX.Y.Z
+    make buildx.all IMAGETAG=vX.Y.Z
     make provider-build-push IMAGETAG=vX.Y.Z
     ```
 
@@ -28,4 +28,8 @@
 
    1. Update the configuration packages in the [`deploy`](./deploy) folder to use the new versions you just pushed.
    2. Update the [`README.md`](./README.md) to use the new versions you just pushed.
-   3. **Important:** Ensure all providers and functions versions are synced and consistent across all configuration files.
+   3. Update the [example Provider manifest](../provider-anynines/examples/provider/provider.yaml) folder to use the new versions you just pushed.
+   4. Update the [Dataservices configuration manifest](../test/e2e/provider/manifests/configuration.yaml) and
+      [Provider manifest](../test/e2e/provider/manifests/install/provider.yaml) in the e2e tests to
+      use the new versions
+   5. **Important:** Ensure all providers and functions versions are synced and consistent across all configuration files.
