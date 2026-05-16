@@ -8,7 +8,7 @@ This document outlines the steps to release Klutch, which involves releasing its
 
 2. **Sync a9s Services and Plans:**
    Ensure that the supported a9s Data Services and their plans, as defined in the Crossplane configuration packages, are aligned with the latest available a9s services and plans.
-   Refer to the a9s Data Service lifecycle table for validation:  
+   Refer to the a9s Data Service lifecycle table for validation:
    <https://docs.anynines.com/docs/platform-operator/a9s-po-sunrise-sunset/#a9s-data-service-release-lifecycle-table>
 
 3. **Release Crossplane API Component:**

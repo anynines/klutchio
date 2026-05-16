@@ -20,7 +20,7 @@
 
     ```bash
     cd provider-anynines
-    make provider-controller-push IMAGETAG=vX.Y.Z
+    make buildx.all IMAGETAG=vX.Y.Z
     make provider-build-push IMAGETAG=vX.Y.Z
     ```
 
