@@ -135,23 +135,24 @@ ensure_remote_git_branch() {
 
     if git branch -a | grep -q -E '^[ *] remotes/origin/'"$GIT_BRANCH"'$'; then
         GIT_REMOTE_BRANCH="remotes/origin/$GIT_BRANCH"
+        GIT_REMOTE_NAME="origin"
         return
     fi
 
     if git branch -a | grep -q -E '^[ *] remotes/.+/'"$GIT_BRANCH"'$'; then
         GIT_REMOTE_BRANCH="$(git branch -a | grep -E '^[ *] remotes/.+/'"$GIT_BRANCH" | head -n 1)"
+        GIT_REMOTE_NAME="$(echo "$GIT_REMOTE_BRANCH" | sed -E 's|^remotes/(.+)/.*$|\1|')"
         return
     fi
 
     log_normal "No remote branch found for $GIT_BRANCH, creating it"
 
-    local remoteToTrack
-    remoteToTrack="origin"
+    GIT_REMOTE_NAME="origin"
     if ! git remote | grep -q "^origin$"; then
-        remoteToTrack="$(git remote | head -n 1)"
+        GIT_REMOTE_NAME="$(git remote | head -n 1)"
     fi
 
-    git push --set-upstream "$remoteToTrack" "$GIT_BRANCH"
+    git push --set-upstream "$GIT_REMOTE_NAME" "$GIT_BRANCH"
     # GIT_REMOTE_BRANCH="remotes/$GIT_REMOTE_NAME/$GIT_BRANCH"
 }
 
@@ -164,8 +165,6 @@ setup_git_branch() {
     fi
 
     log_normal "Using supplied git branch $GIT_BRANCH"
-
-    trap 'git checkout "$CURRENT_BRANCH"' EXIT
 
     CHECKOUT_FLAG=""
     if ! git branch -a | grep -q -E '^[ *] (remotes/.+/)?'"$GIT_BRANCH"'$'; then
@@ -262,9 +261,9 @@ update_changelog() {
 }
 
 commit_and_push_changes() {
-    git add ./*
+    git add --all
     git commit -m "$@"
-    git push
+    git push "$GIT_REMOTE_NAME" "$GIT_BRANCH"
 }
 
 recreate_changelog_unreleased_section() {
@@ -278,6 +277,7 @@ recreate_changelog_unreleased_section() {
 #                              #
 ################################
 
+trap 'git checkout "$CURRENT_BRANCH"' EXIT
 init "$@"
 # build_docker_images
 setup_git_branch
