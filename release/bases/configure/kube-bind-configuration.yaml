@@ -23,7 +23,7 @@ metadata:
   name: k8sca
   namespace: bind
 type: Opaque
-stringData:
+data:
   ca: "$KUBE_BIND_CA_CERTIFICATE"
 ---
 apiVersion: v1
