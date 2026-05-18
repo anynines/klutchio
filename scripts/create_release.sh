@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 set -euo pipefail
+set -x
 
 #####################
 #                   #
@@ -20,51 +21,51 @@ readonly CURRENT_BRANCH
 #                   #
 #####################
 
-log-normal() {
+log_normal() {
     echo "[$(date "+%H:%M:%S")]" "$@"
 }
 
-log-error() {
+log_error() {
     echo -e "[$(date "+%H:%M:%S")]"'\033[31m ERROR\033[0m:' "$@"
 }
 
-check-dependency() {
+check_dependency() {
     for cmd in "$@"; do
-        log-normal "Checking for dependency: $cmd"
+        log_normal "Checking for dependency: $cmd"
         if ! command -v "$cmd" 1>/dev/null 2>&1; then
-            log-error "$cmd not found in \$PATH"
+            log_error "$cmd not found in \$PATH"
             exit 1
         fi
     done
 }
 
-print-usage() {
-    log-normal "Usage: create_release.sh <version number> [-p <AWS profile name>] [-b <git branch name>]"
+print_usage() {
+    log_normal "Usage: create_release.sh <version number> [-p <AWS profile name>] [-b <git branch name>]"
 }
 
-check-flag-single-use() {
+check_flag_single_use() {
     local flagName="$1"
     local flagVariable="$2"
     if [[ ! -z ${!flagVariable:-} ]]; then
-        log-error "flag $flagName cannot be used multiple times"
-        print-usage
+        log_error "flag $flagName cannot be used multiple times"
+        print_usage
         exit 1
     fi
 }
 
-parse-arguments() {
+parse_arguments() {
     unset SUPPLIED_AWS_PROFILE
     unset GIT_BRANCH
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
         -p | --profile)
-            check-flag-single-use "$1" "SUPPLIED_AWS_PROFILE"
+            check_flag_single_use "$1" "SUPPLIED_AWS_PROFILE"
             SUPPLIED_AWS_PROFILE="$2"
             shift 2
             ;;
         -b | --branch)
-            check-flag-single-use "$1" "GIT_BRANCH"
+            check_flag_single_use "$1" "GIT_BRANCH"
             GIT_BRANCH="$2"
             shift 2
             ;;
@@ -76,42 +77,42 @@ parse-arguments() {
                 continue
             fi
             if [[ $1 =~ ^- ]]; then
-                log-error "unknown option $1"
-                print-usage
+                log_error "unknown option $1"
+                print_usage
                 exit 1
             fi
-            log-error "too many arguments"
-            print-usage
+            log_error "too many arguments"
+            print_usage
             exit 1
             ;;
         esac
     done
 
     if [[ -z ${VERSION_NUMBER:-} ]]; then
-        log-error "version number is required"
-        print-usage
+        log_error "version number is required"
+        print_usage
         exit 1
     fi
 }
 
 init() {
-    parse-arguments "$@"
+    parse_arguments "$@"
 
     VERSION_CHECK_EXPRESSION='^v[0-9]\.[0-9]\.[0-9](-[-.A-z0-9]+)?$'
     if ! echo "$VERSION_NUMBER" | grep -E "$VERSION_CHECK_EXPRESSION" -q; then
-        log-error "illegal version number $VERSION_NUMBER.\n\nPlease use a version number that matches this regular expression: $VERSION_CHECK_EXPRESSION"
+        log_error "illegal version number $VERSION_NUMBER.\n\nPlease use a version number that matches this regular expression: $VERSION_CHECK_EXPRESSION"
         exit 1
     fi
 
     if [[ ! -d $DOCS_REPO ]]; then
-        log-error "../klutchio-website does not exist.\n\nPlease make sure that the klutchio-website repo is cloned into the parent directory of the klutchio repo with that name."
+        log_error "../klutchio-website does not exist.\n\nPlease make sure that the klutchio-website repo is cloned into the parent directory of the klutchio repo with that name."
         exit 1
     fi
 
     local message
     if [[ -z ${SUPPLIED_AWS_PROFILE:-} ]]; then
         if [[ -z ${AWS_PROFILE:-} ]]; then
-            log-normal "Detecting AWS account name..."
+            log_normal "Detecting AWS account name..."
             AWS_PROFILE="$(aws configure list | grep "profile" | cut -d ':' -f 2 | awk '{$1=$1};1')"
             export AWS_PROFILE
         fi
@@ -122,36 +123,14 @@ init() {
         message="Using supplied AWS profile $AWS_PROFILE"
     fi
 
-    log-normal "$message for interacting with the ECR registry $ECR_REGISTRY_ADDRESS"
+    log_normal "$message for interacting with the ECR registry $ECR_REGISTRY_ADDRESS"
 
-    check-dependency "ko" "crossplane" "git" "aws" "yq" "make"
+    check_dependency "ko" "crossplane" "git" "aws" "yq" "make"
 }
 
-prepare-git-branch() {
-    if [[ -z ${GIT_BRANCH:-} ]]; then
-        log-normal "No git branch specified, using current branch $CURRENT_BRANCH"
-        GIT_BRANCH="$CURRENT_BRANCH"
-        return
-    fi
-
-    log-normal "Using supplied git branch $GIT_BRANCH"
-
-    trap 'git checkout "$CURRENT_BRANCH"' EXIT
-
-    if git branch -a | grep -q -E '^[ *] (remotes/.+/)?'"$GIT_BRANCH"'$'; then
-        log-normal "Supplied git branch $GIT_BRANCH exists, checking it out"
-        git checkout "$GIT_BRANCH"
-        return
-    fi
-
-    ensure-remote-git-branch
-
-    git push --set-upstream "$GIT_REMOTE_BRANCH"
-}
-
-ensure-remote-git-branch() {
+ensure_remote_git_branch() {
     if [[ -z $(git remote) ]]; then
-        log-error "No git remotes found to track for branch $GIT_BRANCH. Please add a git remote and retry."
+        log_error "No git remotes found to track for branch $GIT_BRANCH. Please add a git remote and retry."
     fi
 
     if git branch -a | grep -q -E '^[ *] remotes/origin/'"$GIT_BRANCH"'$'; then
@@ -164,7 +143,7 @@ ensure-remote-git-branch() {
         return
     fi
 
-    log-normal "No remote branch found for $GIT_BRANCH, creating it"
+    log_normal "No remote branch found for $GIT_BRANCH, creating it"
 
     local remoteToTrack
     remoteToTrack="origin"
@@ -172,38 +151,59 @@ ensure-remote-git-branch() {
         remoteToTrack="$(git remote | head -n 1)"
     fi
 
-    git remote set-branches --add "$remoteToTrack" "$GIT_BRANCH"
-    GIT_REMOTE_BRANCH="remotes/$remoteToTrack/$GIT_BRANCH"
+    git push --set-upstream "$remoteToTrack" "$GIT_BRANCH"
+    # GIT_REMOTE_BRANCH="remotes/$GIT_REMOTE_NAME/$GIT_BRANCH"
 }
 
-build-docker-images() {
-    log-normal "Logging into AWS ECR..."
+setup_git_branch() {
+    if [[ -z ${GIT_BRANCH:-} ]]; then
+        GIT_BRANCH="$CURRENT_BRANCH"
+        log_normal "No git branch specified, using current branch $CURRENT_BRANCH"
+        ensure_remote_git_branch
+        return
+    fi
+
+    log_normal "Using supplied git branch $GIT_BRANCH"
+
+    trap 'git checkout "$CURRENT_BRANCH"' EXIT
+
+    CHECKOUT_FLAG=""
+    if ! git branch -a | grep -q -E '^[ *] (remotes/.+/)?'"$GIT_BRANCH"'$'; then
+        CHECKOUT_FLAG="-b"
+    fi
+    git checkout $CHECKOUT_FLAG "$GIT_BRANCH"
+
+    ensure_remote_git_branch
+}
+
+build_docker_images() {
+    log_normal "Logging into AWS ECR..."
     aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin "${ECR_REGISTRY_ADDRESS}"
-    log-normal "ECR login successful"
+    log_normal "ECR login successful"
 
     cd "$KLUTCHIO_REPO/bind"
 
-    log-normal "Building konnector image..."
+    log_normal "Building konnector image..."
     KO_DOCKER_REPO="${ECR_REGISTRY_ADDRESS}/klutch/konnector" ko build ./cmd/konnector --bare -t "${VERSION_NUMBER}" --platform=linux/amd64,linux/arm64
-    log-normal "konnector image built successfully"
+    log_normal "konnector image built successfully"
 
-    log-normal "Building example-backend image..."
+    log_normal "Building example-backend image..."
     KO_DOCKER_REPO="${ECR_REGISTRY_ADDRESS}/klutch/example-backend" ko build ./cmd/example-backend --bare -t "${VERSION_NUMBER}" --platform=linux/amd64,linux/arm64
-    log-normal "example-backend image built successfully"
+    log_normal "example-backend image built successfully"
 
     make -C "$KLUTCHIO_REPO/crossplane-api" dataservices-config-push dataservicesConfigVersion="${VERSION_NUMBER}"
 
     cd "$KLUTCHIO_REPO/provider-anynines"
-    log-normal "Building provider-anynines controller images..."
+    log_normal "Building provider-anynines controller images..."
     make buildx.all IMAGETAG="${VERSION_NUMBER}"
-    log-normal "provider-anynines controller images built successfully"
-    log-normal "Building provider-anynines Provider image..."
+    log_normal "provider-anynines controller images built successfully"
+    log_normal "Building provider-anynines Provider image..."
     make provider-build-push IMAGETAG="${VERSION_NUMBER}"
-    log-normal "provider-anynines Provider image built successfully"
+    log_normal "provider-anynines Provider image built successfully"
 }
 
-update-manifests() {
-    log-normal "Updating version references in klutchio manifests and README.md..."
+update_manifests() {
+    log_normal "Updating version references in klutchio manifests and README.md..."
     yq -i ".spec.package = \"$ECR_REGISTRY_ADDRESS/klutch/dataservices:$VERSION_NUMBER\"" \
         "$KLUTCHIO_REPO/crossplane-api/deploy/config-pkg-anynines.yaml"
     yq -i "with(select(document_index == 0); .spec.package = \"$ECR_REGISTRY_ADDRESS/klutch/provider-anynines:$VERSION_NUMBER\")" \
@@ -220,11 +220,11 @@ update-manifests() {
         "$KLUTCHIO_REPO/test/e2e/provider/manifests/install/provider.yaml"
     yq -i ".spec.package = \"$ECR_REGISTRY_ADDRESS/klutch/dataservices:$VERSION_NUMBER\"" \
         "$KLUTCHIO_REPO/test/e2e/provider/manifests/configuration.yaml"
-    log-normal "Klutchio manifest and README.md version references updated to ${VERSION_NUMBER}.\n"
+    log_normal "Klutchio manifest and README.md version references updated to ${VERSION_NUMBER}.\n"
 }
 
-update-documentation() {
-    log-normal "Updating version references in klutchio-website documentation repo"
+update_documentation() {
+    log_normal "Updating version references in klutchio-website documentation repo"
     sed -E 's|klutch/konnector:v[0-9]+\.[0-9]+\.[0-9]+[^ ]*|klutch/konnector:'"${VERSION_NUMBER}"'|g' \
         "$DOCS_REPO/docs/local-deployment-guide.md" >"$DOCS_REPO/docs/local-deployment-guide.md.tmp"
     mv "$DOCS_REPO/docs/local-deployment-guide.md.tmp" "$DOCS_REPO/docs/local-deployment-guide.md"
@@ -254,21 +254,22 @@ update-documentation() {
         "$DOCS_REPO/docs/platform-operator-guide/setting-up-klutch-clusters/control-plane-cluster/index.md"
 }
 
-update-changelog() {
-    sed -E 's|^## Unreleased$|## '"[${VERSION_NUMBER}] - $(date "+%Y-%m-%d")|g" \
+update_changelog() {
+    # The ":1" in the variable expansion instructs the shell to omit the first character (the leading "v") from the version number when inserting it into the changelog.
+    sed -E 's/^## Unreleased$/## '"[${VERSION_NUMBER:1}] - $(date "+%Y-%m-%d")/g" \
         "$KLUTCHIO_REPO/CHANGELOG.md" >"$KLUTCHIO_REPO/CHANGELOG.md.tmp"
     mv "$KLUTCHIO_REPO/CHANGELOG.md.tmp" "$KLUTCHIO_REPO/CHANGELOG.md"
 }
 
-commit-and-push-changes() {
+commit_and_push_changes() {
     git add ./*
     git commit -m "$@"
     git push
 }
 
-recreate-changelog-unreleased-section() {
+recreate_changelog_unreleased_section() {
     echo -e "# CHANGELOG\n\n## Unreleased\n$(tail -n +2 "$KLUTCHIO_REPO/CHANGELOG.md")" >"$KLUTCHIO_REPO/CHANGELOG.md"
-    commit-and-push-changes "Recreate Changelog Section for unreleased Changes"
+    commit_and_push_changes "Recreate Changelog Section for unreleased Changes"
 }
 
 ################################
@@ -278,10 +279,10 @@ recreate-changelog-unreleased-section() {
 ################################
 
 init "$@"
-# build-docker-images
-prepare-git-branch
-update-manifests
-update-documentation
-update-changelog
-commit-and-push-changes "Prepare version $VERSION_NUMBER"
-recreate-changelog-unreleased-section
+# build_docker_images
+setup_git_branch
+update_manifests
+update_documentation
+update_changelog
+commit_and_push_changes "Prepare version $VERSION_NUMBER"
+recreate_changelog_unreleased_section
