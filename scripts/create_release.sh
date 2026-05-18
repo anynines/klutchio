@@ -1,11 +1,24 @@
 #! /usr/bin/env bash
 set -euo pipefail
 
-#########################
-#                       #
-# FUNCTION DECLARATIONS #
-#                       #
-#########################
+#####################
+#                   #
+# DECLARE CONSTANTS #
+#                   #
+#####################
+
+KLUTCHIO_REPO="$(git rev-parse --show-toplevel)"
+readonly KLUTCHIO_REPO
+readonly DOCS_REPO="$KLUTCHIO_REPO/../klutchio-website"
+readonly ECR_REGISTRY_ADDRESS="public.ecr.aws/w5n9a2g2"
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+readonly CURRENT_BRANCH
+
+#####################
+#                   #
+# DECLARE FUNCTIONS #
+#                   #
+#####################
 
 log-normal() {
     echo "[$(date "+%H:%M:%S")]" "$@"
@@ -16,31 +29,75 @@ log-error() {
 }
 
 check-dependency() {
-    if ! command -v "$@" 1>/dev/null 2>&1; then
-        log-error "$* not found in \$PATH"
+    for cmd in "$@"; do
+        log-normal "Checking for dependency: $cmd"
+        if ! command -v "$cmd" 1>/dev/null 2>&1; then
+            log-error "$cmd not found in \$PATH"
+            exit 1
+        fi
+    done
+}
+
+print-usage() {
+    log-normal "Usage: create_release.sh <version number> [-p <AWS profile name>] [-b <git branch name>]"
+}
+
+check-flag-single-use() {
+    local flagName="$1"
+    local flagVariable="$2"
+    if [[ ! -z ${!flagVariable:-} ]]; then
+        log-error "flag $flagName cannot be used multiple times"
+        print-usage
+        exit 1
+    fi
+}
+
+parse-arguments() {
+    unset SUPPLIED_AWS_PROFILE
+    unset GIT_BRANCH
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -p | --profile)
+            check-flag-single-use "$1" "SUPPLIED_AWS_PROFILE"
+            SUPPLIED_AWS_PROFILE="$2"
+            shift 2
+            ;;
+        -b | --branch)
+            check-flag-single-use "$1" "GIT_BRANCH"
+            GIT_BRANCH="$2"
+            shift 2
+            ;;
+        *)
+            # if VERSION_NUMBER is not set, we set it here. Otherwise, we treat unknown arguments as an error.
+            if [[ -z ${VERSION_NUMBER:-} ]]; then
+                VERSION_NUMBER="$1"
+                shift
+                continue
+            fi
+            if [[ $1 =~ ^- ]]; then
+                log-error "unknown option $1"
+                print-usage
+                exit 1
+            fi
+            log-error "too many arguments"
+            print-usage
+            exit 1
+            ;;
+        esac
+    done
+
+    if [[ -z ${VERSION_NUMBER:-} ]]; then
+        log-error "version number is required"
+        print-usage
         exit 1
     fi
 }
 
 init() {
-    if [[ $# -lt 1 ]]; then
-        log-error "not enough arguments"
-        log-normal "Usage: create_release.sh <version number> [<AWS profile name]"
-        exit 1
-    fi
+    parse-arguments "$@"
 
-    if [[ $# -gt 2 ]]; then
-        log-error "too many arguments"
-        log-normal "Usage: create_release.sh <version number> [<AWS profile name]"
-        exit 1
-    fi
-
-    VERSION_NUMBER="$1"
-    KLUTCHIO_REPO="$(git rev-parse --show-toplevel)"
-    DOCS_REPO="$KLUTCHIO_REPO/../klutchio-website"
-    ECR_REGISTRY_ADDRESS="public.ecr.aws/w5n9a2g2"
     VERSION_CHECK_EXPRESSION='^v[0-9]\.[0-9]\.[0-9](-[-.A-z0-9]+)?$'
-
     if ! echo "$VERSION_NUMBER" | grep -E "$VERSION_CHECK_EXPRESSION" -q; then
         log-error "illegal version number $VERSION_NUMBER.\n\nPlease use a version number that matches this regular expression: $VERSION_CHECK_EXPRESSION"
         exit 1
@@ -51,21 +108,72 @@ init() {
         exit 1
     fi
 
-    if [[ $# -lt 2 ]]; then
+    local message
+    if [[ -z ${SUPPLIED_AWS_PROFILE:-} ]]; then
         if [[ -z ${AWS_PROFILE:-} ]]; then
             log-normal "Detecting AWS account name..."
             AWS_PROFILE="$(aws configure list | grep "profile" | cut -d ':' -f 2 | awk '{$1=$1};1')"
             export AWS_PROFILE
         fi
 
-        log-normal "No AWS profile specified, using active AWS profile $AWS_PROFILE"
+        message="No AWS profile specified, using active AWS profile $AWS_PROFILE"
     else
-        export AWS_PROFILE="$2"
+        export AWS_PROFILE="$SUPPLIED_AWS_PROFILE"
+        message="Using supplied AWS profile $AWS_PROFILE"
     fi
 
-    log-normal "Using AWS profile $AWS_PROFILE for interacting with the ECR registry $ECR_REGISTRY_ADDRESS"
-    check-dependency "ko"
-    check-dependency "crossplane"
+    log-normal "$message for interacting with the ECR registry $ECR_REGISTRY_ADDRESS"
+
+    check-dependency "ko" "crossplane" "git" "aws" "yq" "make"
+}
+
+prepare-git-branch() {
+    if [[ -z ${GIT_BRANCH:-} ]]; then
+        log-normal "No git branch specified, using current branch $CURRENT_BRANCH"
+        GIT_BRANCH="$CURRENT_BRANCH"
+        return
+    fi
+
+    log-normal "Using supplied git branch $GIT_BRANCH"
+
+    trap 'git checkout "$CURRENT_BRANCH"' EXIT
+
+    if git branch -a | grep -q -E '^[ *] (remotes/.+/)?'"$GIT_BRANCH"'$'; then
+        log-normal "Supplied git branch $GIT_BRANCH exists, checking it out"
+        git checkout "$GIT_BRANCH"
+        return
+    fi
+
+    ensure-remote-git-branch
+
+    git push --set-upstream "$GIT_REMOTE_BRANCH"
+}
+
+ensure-remote-git-branch() {
+    if [[ -z $(git remote) ]]; then
+        log-error "No git remotes found to track for branch $GIT_BRANCH. Please add a git remote and retry."
+    fi
+
+    if git branch -a | grep -q -E '^[ *] remotes/origin/'"$GIT_BRANCH"'$'; then
+        GIT_REMOTE_BRANCH="remotes/origin/$GIT_BRANCH"
+        return
+    fi
+
+    if git branch -a | grep -q -E '^[ *] remotes/.+/'"$GIT_BRANCH"'$'; then
+        GIT_REMOTE_BRANCH="$(git branch -a | grep -E '^[ *] remotes/.+/'"$GIT_BRANCH" | head -n 1)"
+        return
+    fi
+
+    log-normal "No remote branch found for $GIT_BRANCH, creating it"
+
+    local remoteToTrack
+    remoteToTrack="origin"
+    if ! git remote | grep -q "^origin$"; then
+        remoteToTrack="$(git remote | head -n 1)"
+    fi
+
+    git remote set-branches --add "$remoteToTrack" "$GIT_BRANCH"
+    GIT_REMOTE_BRANCH="remotes/$remoteToTrack/$GIT_BRANCH"
 }
 
 build-docker-images() {
@@ -170,7 +278,8 @@ recreate-changelog-unreleased-section() {
 ################################
 
 init "$@"
-build-docker-images
+# build-docker-images
+prepare-git-branch
 update-manifests
 update-documentation
 update-changelog
