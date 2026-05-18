@@ -903,7 +903,7 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 }
 
 func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBinding) (*appsv1.Deployment, error) {
-	image := konnectorpkg.ImageRepository
+	image := konnectorpkg.ImageRepository + ":" + konnectorpkg.Version
 	if binding.Spec.Konnector.Overrides != nil && binding.Spec.Konnector.Overrides.Image != "" {
 		image = binding.Spec.Konnector.Overrides.Image
 	}

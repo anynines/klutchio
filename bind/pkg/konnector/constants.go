@@ -45,6 +45,9 @@ const (
 
 	// ImageRepository is the base image repository for the konnector.
 	ImageRepository = "public.ecr.aws/w5n9a2g2/klutch/konnector"
+
+	// Version is the default version tag for the konnector image.
+	Version = "v1.4.0"
 )
 
 // Image returns the full konnector image reference for a given version tag.
