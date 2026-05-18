@@ -18,6 +18,7 @@ package restore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -121,7 +122,7 @@ type connector struct {
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	rst, ok := mg.(*v1.Restore)
 	if !ok {
-		return nil, fmt.Errorf(errNotRestore)
+		return nil, errors.New(errNotRestore)
 	}
 
 	if err := c.usage.Track(ctx, mg); err != nil {
@@ -164,7 +165,7 @@ type external struct {
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	rst, ok := mg.(*v1.Restore)
 	if !ok {
-		return managed.ExternalObservation{}, fmt.Errorf(errNotRestore)
+		return managed.ExternalObservation{}, errors.New(errNotRestore)
 	}
 
 	err := c.initializeRestoreStatus(ctx, rst)
@@ -253,7 +254,7 @@ func setConditions(rst *v1.Restore) {
 		conditionValue = xpv1.Unavailable().WithMessage("Restore has been deleted")
 	default:
 		conditionValue = xpv1.ReconcileError(
-			fmt.Errorf(fmt.Sprintf(errUnknownState, rst.Status.AtProvider.State)))
+			fmt.Errorf(errUnknownState, rst.Status.AtProvider.State))
 	}
 
 	rst.Status.SetConditions(conditionValue)
@@ -262,7 +263,7 @@ func setConditions(rst *v1.Restore) {
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	rst, ok := mg.(*v1.Restore)
 	if !ok {
-		return managed.ExternalCreation{}, fmt.Errorf(errNotRestore)
+		return managed.ExternalCreation{}, errors.New(errNotRestore)
 	}
 
 	response, err := c.service.CreateRestore(&a9sbackupmanager.CreateRestoreRequest{
@@ -295,7 +296,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	rst, ok := mg.(*v1.Restore)
 	if !ok {
-		return managed.ExternalUpdate{}, fmt.Errorf(errNotRestore)
+		return managed.ExternalUpdate{}, errors.New(errNotRestore)
 	}
 
 	fmt.Printf("Updating: %+v", rst)
@@ -310,7 +311,7 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	rst, ok := mg.(*v1.Restore)
 	if !ok {
-		return managed.ExternalDelete{}, fmt.Errorf(errNotRestore)
+		return managed.ExternalDelete{}, errors.New(errNotRestore)
 	}
 
 	switch state := rst.Status.AtProvider.State; state {
@@ -340,7 +341,7 @@ func (c *external) initializeRestoreStatus(ctx context.Context, rst *v1.Restore)
 		rst.Status.AtProvider.InstanceID = instanceID
 		rst.Status.AtProvider.BackupID = backupID
 
-		return fmt.Errorf(errRestoreStatusIsUnset)
+		return errors.New(errRestoreStatusIsUnset)
 	}
 
 	return nil
@@ -356,7 +357,7 @@ func (c *external) getBackupDetails(ctx context.Context, rst *v1.Restore) (strin
 	// Validate status
 	if backup.Status.AtProvider.InstanceID == "" ||
 		backup.Status.AtProvider.BackupID == nil {
-		return "", nil, fmt.Errorf("backup is not ready")
+		return "", nil, errors.New("backup is not ready")
 	}
 
 	return backup.Status.AtProvider.InstanceID, backup.Status.AtProvider.BackupID, nil
