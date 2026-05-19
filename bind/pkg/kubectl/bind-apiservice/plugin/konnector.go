@@ -36,11 +36,8 @@ import (
 
 	"github.com/anynines/klutchio/bind/deploy/konnector"
 	bindclient "github.com/anynines/klutchio/bind/pkg/client/clientset/versioned"
+	konnectorpkg "github.com/anynines/klutchio/bind/pkg/konnector"
 	"github.com/anynines/klutchio/bind/pkg/version"
-)
-
-const (
-	konnectorImage = "ghcr.io/kube-bind/konnector"
 )
 
 // nolint: unused
@@ -80,7 +77,7 @@ func (b *BindAPIServiceOptions) deployKonnector(ctx context.Context, config *res
 			return fmt.Errorf("failed to check current konnector version in the cluster: %w", err)
 		}
 
-		konnectorImage := fmt.Sprintf("%s:%s", konnectorImage, bindVersion)
+		konnectorImage := konnectorpkg.Image(bindVersion)
 
 		if installed && (konnectorVersion == "unknown" || konnectorVersion == "latest") {
 			fmt.Fprintf(b.Options.ErrOut, "ℹ️ konnector of %s version already installed, skipping\n", konnectorVersion) // nolint: errcheck
@@ -111,7 +108,7 @@ func (b *BindAPIServiceOptions) deployKonnector(ctx context.Context, config *res
 	}
 	first := true
 	return wait.PollImmediateInfiniteWithContext(ctx, 1*time.Second, func(ctx context.Context) (bool, error) {
-		_, err := bindClient.KlutchBindV1alpha1().APIServiceBindings().List(ctx, metav1.ListOptions{})
+		_, err := bindClient.KlutchBindV1alpha1().APIServiceBindings("").List(ctx, metav1.ListOptions{})
 		if err == nil {
 			if !first {
 				fmt.Fprintln(b.Options.IOStreams.ErrOut) // nolint: errcheck
@@ -131,7 +128,7 @@ func (b *BindAPIServiceOptions) deployKonnector(ctx context.Context, config *res
 }
 
 func currentKonnectorVersion(ctx context.Context, kubeClient kubeclient.Interface) (string, bool, error) {
-	deployment, err := kubeClient.AppsV1().Deployments("klutch-bind").Get(ctx, "konnector", metav1.GetOptions{})
+	deployment, err := kubeClient.AppsV1().Deployments(konnectorpkg.Namespace).Get(ctx, konnectorpkg.DeploymentName, metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return "", false, err
 	} else if errors.IsNotFound(err) {
@@ -139,10 +136,10 @@ func currentKonnectorVersion(ctx context.Context, kubeClient kubeclient.Interfac
 	}
 
 	img := deployment.Spec.Template.Spec.Containers[0].Image
-	if !strings.HasPrefix(img, konnectorImage+":") {
+	ver, ok := konnectorpkg.ParseVersion(img)
+	if !ok {
 		return "unknown", true, nil
 	}
 
-	version := strings.TrimPrefix(img, konnectorImage+":")
-	return version, true, nil
+	return ver, true, nil
 }

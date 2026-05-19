@@ -1,0 +1,125 @@
+/*
+Copyright 2026 The Klutch Bind Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1alpha1
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+
+	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+)
+
+const (
+	// AppClusterBindingConditionSecretValid is set when the kubeconfig secret is valid.
+	AppClusterBindingConditionSecretValid conditionsapi.ConditionType = "SecretValid"
+	// AppClusterBindingConditionKonnectorDeployed is set when the konnector deployment is created/updated.
+	AppClusterBindingConditionKonnectorDeployed conditionsapi.ConditionType = "KonnectorDeployed"
+)
+
+// AppClusterBinding represents a binding for an app cluster on the control plane.
+//
+// +crd
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Namespaced,categories=kube-bindings
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=`.status.conditions[?(@.type=="Ready")].status`,priority=0
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
+// +kubebuilder:validation:XValidation:rule="self.metadata.name == oldSelf.metadata.name",message="name is immutable"
+type AppClusterBinding struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// spec represents the desired state of the AppClusterBinding.
+	// +required
+	// +kubebuilder:validation:Required
+	Spec AppClusterBindingSpec `json:"spec"`
+
+	// status contains reconciliation information.
+	Status AppClusterBindingStatus `json:"status,omitempty"`
+}
+
+func (in *AppClusterBinding) GetConditions() conditionsapi.Conditions {
+	return in.Status.Conditions
+}
+
+func (in *AppClusterBinding) SetConditions(conditions conditionsapi.Conditions) {
+	in.Status.Conditions = conditions
+}
+
+// AppClusterBindingSpec represents the desired state of an AppClusterBinding.
+type AppClusterBindingSpec struct {
+	// kubeconfigSecretRef points to the app cluster kubeconfig.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="kubeconfigSecretRef is immutable"
+	KubeconfigSecretRef ClusterSecretKeyRef `json:"kubeconfigSecretRef"`
+
+	// apiExports is a list of GroupResource entries, where each entry specifies an API group and resource to bind.
+	//
+	// +optional
+	APIExports []GroupResource `json:"apiExports,omitempty"`
+
+	// konnector contains deployment settings for the konnector.
+	//
+	// +optional
+	Konnector *KonnectorSpec `json:"konnector,omitempty"`
+}
+
+// KonnectorSpec controls konnector deployment behavior.
+type KonnectorSpec struct {
+	// deploy enables konnector deployment for this binding.
+	//
+	// +optional
+	Deploy bool `json:"deploy,omitempty"`
+
+	// overrides allow changing the konnector deployment settings.
+	//
+	// +optional
+	Overrides *KonnectorOverrides `json:"overrides,omitempty"`
+}
+
+// KonnectorOverrides allows overriding konnector deployment settings.
+type KonnectorOverrides struct {
+	// image overrides the container image for the konnector.
+	//
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// containerSettings allow modifying the container spec for the konnector.
+	//
+	// +optional
+	// +kubebuilder:validation:XPreserveUnknownFields
+	ContainerSettings runtime.RawExtension `json:"containerSettings,omitempty"`
+}
+
+// AppClusterBindingStatus stores status information about an app cluster binding.
+type AppClusterBindingStatus struct {
+	// conditions is a list of conditions that apply to the AppClusterBinding.
+	Conditions conditionsapi.Conditions `json:"conditions,omitempty"`
+}
+
+// AppClusterBindingList is a list of AppClusterBindings.
+//
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type AppClusterBindingList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []AppClusterBinding `json:"items"`
+}
