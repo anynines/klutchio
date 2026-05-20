@@ -14,7 +14,7 @@
 
 - Bumped a9s Data Service integration to 1.4.1: update supported services: add a9s-messaging 4
 - Improved error handling in UID check
-- made `spec.apiServiceSelector.version` optional in example-backend ApiServiceExportTemplate CRD
+- Made `spec.apiServiceSelector.version` optional in example-backend ApiServiceExportTemplate CRD
 - switched out the retired [ingress-nginx](https://github.com/kubernetes/ingress-nginx/) for [Envoy
   Gateway](https://github.com/envoyproxy/gateway) in the `bind` example backend manifests
 
