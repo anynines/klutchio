@@ -24,12 +24,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 
 	examplebackendv1alpha1 "github.com/anynines/klutchio/bind/contrib/example-backend/apis/examplebackend/v1alpha1"
 	bindv1alpha1 "github.com/anynines/klutchio/bind/pkg/apis/bind/v1alpha1"
+	konnectorpkg "github.com/anynines/klutchio/bind/pkg/konnector"
 )
 
 func TestNewServiceBindingNamespaced(t *testing.T) {
@@ -496,5 +499,378 @@ func TestEnsureDeletedBlocksUntilClusterRoleGone(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "clusterrole") || !strings.Contains(err.Error(), "still exists") {
 		t.Fatalf("expected clusterrole still exists error, got %v", err)
+	}
+}
+
+func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
+	baseBinding := func() *bindv1alpha1.AppClusterBinding {
+		return &bindv1alpha1.AppClusterBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-binding",
+				Namespace: "my-ns",
+			},
+			Spec: bindv1alpha1.AppClusterBindingSpec{
+				KubeconfigSecretRef: bindv1alpha1.ClusterSecretKeyRef{
+					LocalSecretKeyRef: bindv1alpha1.LocalSecretKeyRef{
+						Name: "kubeconfig",
+						Key:  "kubeconfig",
+					},
+					Namespace: "source-ns",
+				},
+				Konnector: &bindv1alpha1.KonnectorSpec{
+					Deploy: true,
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name      string
+		overrides *bindv1alpha1.KonnectorOverrides
+		validate  func(t *testing.T, containers []corev1.Container)
+	}{
+		{
+			name:      "no overrides uses defaults",
+			overrides: nil,
+			validate: func(t *testing.T, containers []corev1.Container) {
+				if len(containers) != 1 {
+					t.Fatalf("expected 1 container, got %d", len(containers))
+				}
+				expectedImage := konnectorpkg.ImageRepository + ":" + konnectorpkg.Version
+				if containers[0].Image != expectedImage {
+					t.Fatalf("expected default image %q, got %q", expectedImage, containers[0].Image)
+				}
+			},
+		},
+		{
+			name: "image override only",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				Image: "my-registry.example.com/konnector:v2.0.0",
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				if containers[0].Image != "my-registry.example.com/konnector:v2.0.0" {
+					t.Fatalf("expected custom image, got %q", containers[0].Image)
+				}
+			},
+		},
+		{
+			name: "override adds resource limits",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("500m"),
+							corev1.ResourceMemory: resource.MustParse("256Mi"),
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				limits := containers[0].Resources.Limits
+				if limits == nil {
+					t.Fatal("expected resource limits to be set")
+				}
+				if limits.Cpu().Cmp(resource.MustParse("500m")) != 0 {
+					t.Fatalf("expected cpu limit 500m, got %v", limits.Cpu())
+				}
+				if limits.Memory().Cmp(resource.MustParse("256Mi")) != 0 {
+					t.Fatalf("expected memory limit 256Mi, got %v", limits.Memory())
+				}
+			},
+		},
+		{
+			name: "override adds resource requests",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				requests := containers[0].Resources.Requests
+				if requests == nil {
+					t.Fatal("expected resource requests to be set")
+				}
+				if requests.Cpu().Cmp(resource.MustParse("100m")) != 0 {
+					t.Fatalf("expected cpu request 100m, got %v", requests.Cpu())
+				}
+				if requests.Memory().Cmp(resource.MustParse("64Mi")) != 0 {
+					t.Fatalf("expected memory request 64Mi, got %v", requests.Memory())
+				}
+			},
+		},
+		{
+			name: "override adds environment variable",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					Env: []corev1.EnvVar{
+						{Name: "LOG_LEVEL", Value: "debug"},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				found := false
+				for _, env := range containers[0].Env {
+					if env.Name == "LOG_LEVEL" && env.Value == "debug" {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatal("expected LOG_LEVEL env var to be present")
+				}
+			},
+		},
+		{
+			name: "override merges env vars with existing",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					Env: []corev1.EnvVar{
+						{Name: "EXTRA_VAR", Value: "extra"},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				// Base deployment has POD_NAME and POD_NAMESPACE env vars.
+				// Strategic merge patch on env (keyed by name) should preserve them.
+				envNames := map[string]bool{}
+				for _, env := range containers[0].Env {
+					envNames[env.Name] = true
+				}
+				if !envNames["POD_NAME"] {
+					t.Fatal("expected POD_NAME env var to be preserved")
+				}
+				if !envNames["POD_NAMESPACE"] {
+					t.Fatal("expected POD_NAMESPACE env var to be preserved")
+				}
+				if !envNames["EXTRA_VAR"] {
+					t.Fatal("expected EXTRA_VAR env var to be added")
+				}
+			},
+		},
+		{
+			name: "override replaces readiness probe",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path: "/ready",
+								Port: intstr.FromInt(9090),
+							},
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				probe := containers[0].ReadinessProbe
+				if probe == nil {
+					t.Fatal("expected readiness probe to be set")
+				}
+				if probe.HTTPGet.Path != "/ready" {
+					t.Fatalf("expected readiness probe path /ready, got %q", probe.HTTPGet.Path)
+				}
+				if probe.HTTPGet.Port.IntValue() != 9090 {
+					t.Fatalf("expected readiness probe port 9090, got %d", probe.HTTPGet.Port.IntValue())
+				}
+			},
+		},
+		{
+			name: "image override combined with container settings",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				Image: "custom-image:latest",
+				ContainerSettings: corev1.Container{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("512Mi"),
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				if containers[0].Image != "custom-image:latest" {
+					t.Fatalf("expected custom image, got %q", containers[0].Image)
+				}
+				limits := containers[0].Resources.Limits
+				if limits == nil {
+					t.Fatal("expected resource limits")
+				}
+				if limits.Memory().Cmp(resource.MustParse("512Mi")) != 0 {
+					t.Fatalf("expected memory limit 512Mi, got %v", limits.Memory())
+				}
+			},
+		},
+		{
+			name: "empty container settings is no-op",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				expectedImage := konnectorpkg.ImageRepository + ":" + konnectorpkg.Version
+				if containers[0].Image != expectedImage {
+					t.Fatalf("expected default image after no-op patch, got %q", containers[0].Image)
+				}
+			},
+		},
+		{
+			name: "override adds volume mount",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					VolumeMounts: []corev1.VolumeMount{
+						{Name: "config", MountPath: "/etc/config"},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				found := false
+				for _, vm := range containers[0].VolumeMounts {
+					if vm.Name == "config" && vm.MountPath == "/etc/config" {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatal("expected volume mount 'config' at /etc/config")
+				}
+			},
+		},
+		{
+			name: "image override does not affect args or env vars",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				Image: "custom-registry.io/konnector:v3.0.0",
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				if containers[0].Image != "custom-registry.io/konnector:v3.0.0" {
+					t.Fatalf("expected custom image, got %q", containers[0].Image)
+				}
+				// Args must still contain control-plane-mode flags.
+				if len(containers[0].Args) == 0 {
+					t.Fatal("expected args to be preserved")
+				}
+				found := false
+				for _, arg := range containers[0].Args {
+					if arg == "--control-plane-mode" {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatal("expected --control-plane-mode arg to be preserved")
+				}
+				// Env vars must be preserved.
+				envNames := map[string]bool{}
+				for _, env := range containers[0].Env {
+					envNames[env.Name] = true
+				}
+				if !envNames["POD_NAME"] || !envNames["POD_NAMESPACE"] {
+					t.Fatal("expected base env vars to be preserved")
+				}
+				// Readiness probe must be preserved.
+				if containers[0].ReadinessProbe == nil || containers[0].ReadinessProbe.HTTPGet == nil {
+					t.Fatal("expected readiness probe to be preserved")
+				}
+				// Container name must be preserved.
+				if containers[0].Name != konnectorpkg.ContainerName {
+					t.Fatalf("expected container name %q, got %q", konnectorpkg.ContainerName, containers[0].Name)
+				}
+			},
+		},
+		{
+			name: "resource override does not affect image or args",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("1Gi"),
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				// Resources applied.
+				if containers[0].Resources.Limits.Memory().Cmp(resource.MustParse("1Gi")) != 0 {
+					t.Fatalf("expected memory limit 1Gi, got %v", containers[0].Resources.Limits.Memory())
+				}
+				// Image must still be the default.
+				expectedImage := konnectorpkg.ImageRepository + ":" + konnectorpkg.Version
+				if containers[0].Image != expectedImage {
+					t.Fatalf("expected default image %q, got %q", expectedImage, containers[0].Image)
+				}
+				// Args must be unchanged.
+				found := false
+				for _, arg := range containers[0].Args {
+					if arg == "--control-plane-mode" {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatal("expected --control-plane-mode arg to be preserved")
+				}
+				// Readiness probe must be preserved.
+				if containers[0].ReadinessProbe == nil {
+					t.Fatal("expected readiness probe to be preserved")
+				}
+			},
+		},
+		{
+			name: "env override does not affect image, args, or readiness probe",
+			overrides: &bindv1alpha1.KonnectorOverrides{
+				ContainerSettings: corev1.Container{
+					Env: []corev1.EnvVar{
+						{Name: "CUSTOM_VAR", Value: "custom"},
+					},
+				},
+			},
+			validate: func(t *testing.T, containers []corev1.Container) {
+				// New env var added.
+				foundCustom := false
+				for _, env := range containers[0].Env {
+					if env.Name == "CUSTOM_VAR" && env.Value == "custom" {
+						foundCustom = true
+					}
+				}
+				if !foundCustom {
+					t.Fatal("expected CUSTOM_VAR to be added")
+				}
+				// Image must be unchanged.
+				expectedImage := konnectorpkg.ImageRepository + ":" + konnectorpkg.Version
+				if containers[0].Image != expectedImage {
+					t.Fatalf("expected default image %q, got %q", expectedImage, containers[0].Image)
+				}
+				// Args must be unchanged.
+				if len(containers[0].Args) == 0 {
+					t.Fatal("expected args to be preserved")
+				}
+				// Readiness probe must be preserved.
+				if containers[0].ReadinessProbe == nil || containers[0].ReadinessProbe.HTTPGet == nil {
+					t.Fatal("expected readiness probe to be preserved")
+				}
+				if containers[0].ReadinessProbe.HTTPGet.Path != konnectorpkg.HealthzPath {
+					t.Fatalf("expected readiness probe path %q, got %q", konnectorpkg.HealthzPath, containers[0].ReadinessProbe.HTTPGet.Path)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			binding := baseBinding()
+			binding.Spec.Konnector.Overrides = tt.overrides
+
+			r := &reconciler{}
+			deployment, err := r.buildKonnectorDeployment(binding)
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.validate != nil {
+				tt.validate(t, deployment.Spec.Template.Spec.Containers)
+			}
+		})
 	}
 }

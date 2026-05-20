@@ -932,10 +932,10 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 	}
 
 	// Apply container overrides if specified
-	if binding.Spec.Konnector.Overrides != nil && len(binding.Spec.Konnector.Overrides.ContainerSettings.Raw) > 0 {
+	if binding.Spec.Konnector.Overrides != nil {
 		container, err := r.applyContainerOverrides(
 			deployment.Spec.Template.Spec.Containers[0],
-			binding.Spec.Konnector.Overrides.ContainerSettings.Raw,
+			binding.Spec.Konnector.Overrides.ContainerSettings,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply container overrides: %w", err)
@@ -946,13 +946,31 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 	return deployment, nil
 }
 
-func (r *reconciler) applyContainerOverrides(base corev1.Container, overrides []byte) (corev1.Container, error) {
+func (r *reconciler) applyContainerOverrides(base corev1.Container, overrides bindv1alpha1.ContainerOverrides) (corev1.Container, error) {
 	baseJSON, err := json.Marshal(base)
 	if err != nil {
 		return base, fmt.Errorf("failed to marshal base container: %w", err)
 	}
 
-	merged, err := strategicpatch.StrategicMergePatch(baseJSON, overrides, corev1.Container{})
+	overrideJSON, err := json.Marshal(overrides)
+	if err != nil {
+		return base, fmt.Errorf("failed to marshal container overrides: %w", err)
+	}
+
+	// Remove empty/zero-value fields from the patch so they don't overwrite
+	// existing values in the base container (e.g. name:"" would clear the name).
+	//  This allows users to specify only the fields they want to override without worrying about
+	// unintentionally clearing other fields.
+	//
+	// This is due to how the marshalling of the struct results in empty fields being included in
+	// the JSON explicitly, which would then be applied as a patch and overwrite existing values
+	// with empty/zero values.
+	overrideJSON, err = removeEmptyFields(overrideJSON)
+	if err != nil {
+		return base, fmt.Errorf("failed to clean override patch: %w", err)
+	}
+
+	merged, err := strategicpatch.StrategicMergePatch(baseJSON, overrideJSON, corev1.Container{})
 	if err != nil {
 		return base, fmt.Errorf("failed to apply strategic merge patch: %w", err)
 	}
@@ -963,4 +981,52 @@ func (r *reconciler) applyContainerOverrides(base corev1.Container, overrides []
 	}
 
 	return result, nil
+}
+
+// removeEmptyFields recursively removes JSON object keys whose values are
+// empty strings, null, zero numbers, false booleans, empty arrays, or empty objects.
+func removeEmptyFields(data []byte) ([]byte, error) {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return data, err
+	}
+	cleaned := cleanMap(raw)
+	return json.Marshal(cleaned)
+}
+
+func cleanMap(m map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for k, v := range m {
+		if isEmptyValue(v) {
+			continue
+		}
+		if nested, ok := v.(map[string]interface{}); ok {
+			cleaned := cleanMap(nested)
+			if len(cleaned) > 0 {
+				result[k] = cleaned
+			}
+		} else {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func isEmptyValue(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+	switch val := v.(type) {
+	case string:
+		return val == ""
+	case float64:
+		return val == 0
+	case bool:
+		return !val
+	case []interface{}:
+		return len(val) == 0
+	case map[string]interface{}:
+		return len(val) == 0
+	}
+	return false
 }

@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	conditionsapi "github.com/anynines/klutchio/bind/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 )
@@ -102,10 +102,10 @@ type KonnectorOverrides struct {
 	Image string `json:"image,omitempty"`
 
 	// containerSettings allow modifying the container spec for the konnector.
+	// Fields set here are strategically merged into the base konnector container.
 	//
 	// +optional
-	// +kubebuilder:validation:XPreserveUnknownFields
-	ContainerSettings runtime.RawExtension `json:"containerSettings,omitempty"`
+	ContainerSettings corev1.Container `json:"containerSettings,omitempty"`
 }
 
 // AppClusterBindingStatus stores status information about an app cluster binding.
