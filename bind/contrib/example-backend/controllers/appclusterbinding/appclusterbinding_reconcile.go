@@ -904,9 +904,6 @@ func (r *reconciler) ensureKonnectorDeployment(ctx context.Context, binding *bin
 
 func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBinding) (*appsv1.Deployment, error) {
 	image := konnectorpkg.ImageRepository + ":" + konnectorpkg.Version
-	if binding.Spec.Konnector.Overrides != nil && binding.Spec.Konnector.Overrides.Image != "" {
-		image = binding.Spec.Konnector.Overrides.Image
-	}
 
 	deployment := konnectorpkg.BaseDeployment(image)
 
@@ -935,7 +932,7 @@ func (r *reconciler) buildKonnectorDeployment(binding *bindv1alpha1.AppClusterBi
 	if binding.Spec.Konnector.Overrides != nil {
 		container, err := r.applyContainerOverrides(
 			deployment.Spec.Template.Spec.Containers[0],
-			binding.Spec.Konnector.Overrides.ContainerSettings,
+			*binding.Spec.Konnector.Overrides,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply container overrides: %w", err)

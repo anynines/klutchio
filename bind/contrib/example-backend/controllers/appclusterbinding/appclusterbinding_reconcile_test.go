@@ -526,7 +526,7 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		overrides *bindv1alpha1.KonnectorOverrides
+		overrides *bindv1alpha1.ContainerOverrides
 		validate  func(t *testing.T, containers []corev1.Container)
 	}{
 		{
@@ -544,7 +544,7 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "image override only",
-			overrides: &bindv1alpha1.KonnectorOverrides{
+			overrides: &bindv1alpha1.ContainerOverrides{
 				Image: "my-registry.example.com/konnector:v2.0.0",
 			},
 			validate: func(t *testing.T, containers []corev1.Container) {
@@ -555,13 +555,11 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "override adds resource limits",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("500m"),
-							corev1.ResourceMemory: resource.MustParse("256Mi"),
-						},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("256Mi"),
 					},
 				},
 			},
@@ -580,13 +578,11 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "override adds resource requests",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("64Mi"),
-						},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
 					},
 				},
 			},
@@ -605,11 +601,9 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "override adds environment variable",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					Env: []corev1.EnvVar{
-						{Name: "LOG_LEVEL", Value: "debug"},
-					},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				Env: []corev1.EnvVar{
+					{Name: "LOG_LEVEL", Value: "debug"},
 				},
 			},
 			validate: func(t *testing.T, containers []corev1.Container) {
@@ -627,11 +621,9 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "override merges env vars with existing",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					Env: []corev1.EnvVar{
-						{Name: "EXTRA_VAR", Value: "extra"},
-					},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				Env: []corev1.EnvVar{
+					{Name: "EXTRA_VAR", Value: "extra"},
 				},
 			},
 			validate: func(t *testing.T, containers []corev1.Container) {
@@ -654,14 +646,12 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "override replaces readiness probe",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					ReadinessProbe: &corev1.Probe{
-						ProbeHandler: corev1.ProbeHandler{
-							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/ready",
-								Port: intstr.FromInt(9090),
-							},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				ReadinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/ready",
+							Port: intstr.FromInt(9090),
 						},
 					},
 				},
@@ -680,14 +670,12 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 			},
 		},
 		{
-			name: "image override combined with container settings",
-			overrides: &bindv1alpha1.KonnectorOverrides{
+			name: "image override combined with resource limits",
+			overrides: &bindv1alpha1.ContainerOverrides{
 				Image: "custom-image:latest",
-				ContainerSettings: corev1.Container{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("512Mi"),
-						},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("512Mi"),
 					},
 				},
 			},
@@ -705,10 +693,8 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 			},
 		},
 		{
-			name: "empty container settings is no-op",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{},
-			},
+			name:      "empty container override is no-op",
+			overrides: &bindv1alpha1.ContainerOverrides{},
 			validate: func(t *testing.T, containers []corev1.Container) {
 				expectedImage := konnectorpkg.ImageRepository + ":" + konnectorpkg.Version
 				if containers[0].Image != expectedImage {
@@ -718,11 +704,9 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "override adds volume mount",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "config", MountPath: "/etc/config"},
-					},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "config", MountPath: "/etc/config"},
 				},
 			},
 			validate: func(t *testing.T, containers []corev1.Container) {
@@ -740,7 +724,7 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "image override does not affect args or env vars",
-			overrides: &bindv1alpha1.KonnectorOverrides{
+			overrides: &bindv1alpha1.ContainerOverrides{
 				Image: "custom-registry.io/konnector:v3.0.0",
 			},
 			validate: func(t *testing.T, containers []corev1.Container) {
@@ -781,12 +765,10 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "resource override does not affect image or args",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("1Gi"),
-						},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("1Gi"),
 					},
 				},
 			},
@@ -819,11 +801,9 @@ func TestBuildKonnectorDeploymentConnectorOverrides(t *testing.T) {
 		},
 		{
 			name: "env override does not affect image, args, or readiness probe",
-			overrides: &bindv1alpha1.KonnectorOverrides{
-				ContainerSettings: corev1.Container{
-					Env: []corev1.EnvVar{
-						{Name: "CUSTOM_VAR", Value: "custom"},
-					},
+			overrides: &bindv1alpha1.ContainerOverrides{
+				Env: []corev1.EnvVar{
+					{Name: "CUSTOM_VAR", Value: "custom"},
 				},
 			},
 			validate: func(t *testing.T, containers []corev1.Container) {
