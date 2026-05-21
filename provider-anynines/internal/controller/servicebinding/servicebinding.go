@@ -55,6 +55,12 @@ const (
 
 	serviceBindingStatusCreated  = "Created"
 	serviceBindingStatusDeleting = "Deleting"
+	// serviceBindingStatusUnbound is set in AtProvider.State after a successful Unbind
+	// call. Because AtProvider is part of the status subresource it is persisted by
+	// Crossplane's Status().Update() call that follows Delete(). This prevents
+	// re-calling Unbind on subsequent reconciliations while the broker asynchronously
+	// finishes deleting the binding.
+	serviceBindingStatusUnbound = "Unbound"
 )
 
 const (
@@ -170,6 +176,13 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	// set deletion condition if MR is marked for deletion
 	sb.SetDeletionStatusIfNotDeleted(serviceBindingStatusDeleting)
 	isDeleting := sb.DeletionTimestamp != nil
+
+	// If Unbind was already called (State==Unbound persisted via Status().Update()),
+	// return ResourceExists=false so Crossplane skips Delete() and proceeds to
+	// UnpublishConnection + RemoveFinalizer.
+	if isDeleting && sb.Status.AtProvider.State == serviceBindingStatusUnbound {
+		return managed.ExternalObservation{ResourceExists: false}, nil
+	}
 
 	// Get binding
 	bindResponse, err := c.service.GetBinding(&osbclient.GetBindingRequest{
@@ -337,6 +350,18 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	sb.Status.SetConditions(xpv1.Deleting())
 
+	// Always try to refresh instance fields before Unbind to pick up any plan
+	// upgrades that happened after the binding was created. A stale PlanID causes
+	// the broker to return 400 "Mismatch between the provided plan ID".
+	// If the refresh fails (e.g. instance is mid-upgrade/deploying), fall back to
+	// the cached values already in atProvider rather than blocking deletion entirely.
+	if err := c.initializeInstanceFields(ctx, sb); err != nil {
+		if sb.Status.AtProvider.HasMissingFields() {
+			return managed.ExternalDelete{}, err
+		}
+		// Cached values are present — proceed with them.
+	}
+
 	deleteReq := &osbclient.UnbindRequest{
 		BindingID:         string(sb.UID),
 		InstanceID:        sb.Status.AtProvider.InstanceID,
@@ -350,6 +375,11 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err != nil {
 		return managed.ExternalDelete{}, errDeleteServiceBinding.WithCause(err)
 	}
+
+	// Mark that Unbind was called. Setting AtProvider.State persists via the
+	// Status().Update() call that the managed reconciler makes after Delete() returns,
+	// so the next Observe() will see State==Unbound and return ResourceExists=false.
+	sb.Status.AtProvider.State = serviceBindingStatusUnbound
 
 	return managed.ExternalDelete{}, nil
 }
