@@ -1,8 +1,6 @@
 module github.com/anynines/klutchio/clients/a9s-open-service-broker
 
-go 1.23.0
-
-toolchain go1.24.1
+go 1.26.3
 
 require (
 	github.com/crossplane/crossplane-runtime v1.20.0

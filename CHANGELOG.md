@@ -8,6 +8,10 @@
 - **breaking**: `providerconfigs.dataservices.anynines.com` now expects a field `spec.serviceType`, which can be either `servicebroker` or `backupmanager`.
 - Added TLS support for communication with service-broker in provider-anynines. Service-broker URL can now use https.
 
+### Chores
+
+- Bump go version of components to v1.26.3.
+
 ## [1.4.0] - 2025-12-18
 
 ### Changed
@@ -26,7 +30,6 @@
 
 ### Chores
 
-- Update the supported plans and services for a9s Data Services.
 - Upgraded Crossplane to version [v1.20.0](https://docs.crossplane.io/v1.20).
 - Updated crossplane functions
   - `function-patch-and-transform` upgraded to v0.9.2

@@ -1,6 +1,6 @@
 module github.com/anynines/klutchio/clients/a9s-backup-manager
 
-go 1.22
+go 1.26.3
 
 require (
 	github.com/google/go-cmp v0.6.0

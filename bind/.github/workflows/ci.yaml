@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - 'release-*'
+      - "release-*"
   pull_request:
     branches:
       - main
-      - 'release-*'
+      - "release-*"
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -27,38 +27,38 @@ jobs:
     name: go-test-e2e
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
-      with:
-        go-version: v1.24.0
-    - run: make test-e2e
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: v1.26.3
+      - run: make test-e2e
 
   go-test:
     name: go-test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
-      with:
-        go-version: v1.24.0
-    - run: make test
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: v1.26.3
+      - run: make test
 
   lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
-      with:
-        go-version: v1.24.0
-    - run: make lint
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: v1.26.3
+      - run: make lint
 
   verify:
     name: verify
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
-      with:
-        go-version: v1.24.0
-    - run: make verify
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: v1.26.3
+      - run: make verify
