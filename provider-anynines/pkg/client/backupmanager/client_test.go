@@ -18,8 +18,6 @@ package client
 
 import (
 	"testing"
-
-	bkpmgrclient "github.com/anynines/klutchio/clients/a9s-backup-manager"
 )
 
 // TestNewBackupManagerService tests the backward-compatible factory function
@@ -201,10 +199,6 @@ func TestNewBackupManagerServiceDelegation(t *testing.T) {
 		t.Fatal("expected client but got nil")
 	}
 
-	// Verify it's actually a client (duck typing)
-	if _, ok := client.(bkpmgrclient.Client); !ok {
-		t.Errorf("expected client to implement Client interface")
-	}
 }
 
 // TestNewBackupManagerServiceWithTLSProperSignature tests that the TLS function has the correct signature

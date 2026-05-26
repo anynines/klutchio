@@ -25,6 +25,7 @@ GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal apis pkg
 GO111MODULE = on
+GOLANGCILINT_VERSION := 1.64.8
 -include build/makelib/golang.mk
 
 # kind-related versions
