@@ -6,5 +6,3 @@ metadata:
 spec:
   service: a9s-search2
   plan: search-single-nano-ssl
-  compositionRef:
-    name: a9s-search

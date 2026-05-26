@@ -6,5 +6,6 @@ metadata:
 spec:
   service: a9s-postgresql13
   plan: postgresql-single-nano
-  compositionRef:
-    name: a9s-postgresql
+  crossplane:
+    compositionRef:
+      name: a9s-postgresql

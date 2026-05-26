@@ -6,5 +6,3 @@ metadata:
 spec:
   service: a9s-prometheus
   plan: prometheus-single-big
-  compositionRef:
-    name: a9s-prometheus

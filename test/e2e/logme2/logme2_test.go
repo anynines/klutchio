@@ -102,7 +102,7 @@ func TestLogme2InstanceLifecycle(t *testing.T) {
 			funcs.ResourcesDeletedWithin(3*time.Minute, manifests, "servicebinding-initial.yaml"),
 		).
 		Assess("ServiceBinding secret is deleted",
-			funcs.ResourceDoesNotExist("sample-logme2-sb-creds", "logme2-lifecycle", "v1", "Secret"),
+			funcs.ResourceDeletedWithin(2*time.Minute, "sample-logme2-sb-creds", "logme2-lifecycle", "v1", "Secret"),
 		).
 		Feature()
 

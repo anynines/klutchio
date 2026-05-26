@@ -397,12 +397,11 @@ func ManagedResourceOfClaimHasConditionWithin(d time.Duration, dir, pattern stri
 			claimKind := o.GetObjectKind().GroupVersionKind().Kind
 			claimGroupVersionKind := o.GetObjectKind().GroupVersionKind().Group + "/" + o.GetObjectKind().GroupVersionKind().Version
 
+			// In Crossplane v2 (namespaced XRs), there are no claims — the object IS the XR.
+			// Resource refs are at spec.crossplane.resourceRefs, not spec.resourceRefs.
 			rg := utils.NewResourceGetter(ctx, t, c)
-			claim := rg.Get(claimName, claimNamespace, claimGroupVersionKind, claimKind)
-			r := utils.ResourceValue(t, claim, "spec", "resourceRef")
-
-			xr := rg.Get(r["name"], "", r["apiVersion"], r["kind"])
-			mrefs := utils.ResourceSliceValue(t, xr, "spec", "resourceRefs")
+			xr := rg.Get(claimName, claimNamespace, claimGroupVersionKind, claimKind)
+			mrefs := utils.ResourceSliceValue(t, xr, "spec", "crossplane", "resourceRefs")
 
 			if len(mrefs) == 0 {
 				t.Fatalf("Found no managed resources for %s", identifier(u))
@@ -413,7 +412,7 @@ func ManagedResourceOfClaimHasConditionWithin(d time.Duration, dir, pattern stri
 			for _, mref := range mrefs {
 				t.Logf("Waiting for %s (%s/%s)...", mref["name"], mref["apiVersion"], mref["kind"])
 				err := wait.For(func(context.Context) (done bool, err error) {
-					mr := rg.Get(mref["name"], "", mref["apiVersion"], mref["kind"])
+					mr := rg.Get(mref["name"], mref["namespace"], mref["apiVersion"], mref["kind"])
 					if mr == nil {
 						return false, nil
 					}
@@ -437,7 +436,8 @@ func ManagedResourceOfClaimHasConditionWithin(d time.Duration, dir, pattern stri
 							}
 						}
 						if matching == nil {
-							t.Fatalf("Failed to find condition of type %v, have %v", string(want.Type), conditions)
+							// Condition type not yet present — retry until timeout
+							return false, nil
 						}
 
 						haveStatus := matching["status"].(string)
@@ -480,11 +480,8 @@ func ManagedResourceOfClaimSatisfiesWithin(d time.Duration, dir, pattern string,
 			claimGroupVersionKind := o.GetObjectKind().GroupVersionKind().Group + "/" + o.GetObjectKind().GroupVersionKind().Version
 
 			rg := utils.NewResourceGetter(ctx, t, c)
-			claim := rg.Get(claimName, claimNamespace, claimGroupVersionKind, claimKind)
-			r := utils.ResourceValue(t, claim, "spec", "resourceRef")
-
-			xr := rg.Get(r["name"], "", r["apiVersion"], r["kind"])
-			mrefs := utils.ResourceSliceValue(t, xr, "spec", "resourceRefs")
+			xr := rg.Get(claimName, claimNamespace, claimGroupVersionKind, claimKind)
+			mrefs := utils.ResourceSliceValue(t, xr, "spec", "crossplane", "resourceRefs")
 
 			if len(mrefs) == 0 {
 				t.Fatalf("Found no managed resources for %s", identifier(u))
@@ -494,7 +491,7 @@ func ManagedResourceOfClaimSatisfiesWithin(d time.Duration, dir, pattern string,
 
 			for _, mref := range mrefs {
 				err := wait.For(func(context.Context) (done bool, err error) {
-					mr := rg.Get(mref["name"], "", mref["apiVersion"], mref["kind"])
+					mr := rg.Get(mref["name"], mref["namespace"], mref["apiVersion"], mref["kind"])
 					if mr == nil {
 						return false, nil
 					}
@@ -512,7 +509,8 @@ func ManagedResourceOfClaimSatisfiesWithin(d time.Duration, dir, pattern string,
 }
 
 // CompositeResourceEstablishedAndOffered ensures that a CompositeResourceDefinition (aka XRD) with the given xrdName
-// exists, and has it's `Established` and `Offered` conditions set to `True`.
+// exists, and has it's `Established` condition set to `True`.
+// Note: In Crossplane v2, the `Offered` condition no longer exists (Claims were removed), so only `Established` is checked.
 func CompositeResourceEstablishedAndOffered(xrdName string) features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		t.Logf("Checking CompositeResourceDefinition %s", xrdName)
@@ -525,7 +523,6 @@ func CompositeResourceEstablishedAndOffered(xrdName string) features.Func {
 
 			cds := []xpv1.Condition{
 				{Type: "Established", Status: "True"},
-				{Type: "Offered", Status: "True"},
 			}
 
 			for _, want := range cds {
@@ -584,6 +581,33 @@ func ResourceDoesNotExist(name, namespace, apiVersion, kind string) features.Fun
 		t.Logf("Resource not found: name=%v, namespace=%v, apiVersion=%v, kind=%v",
 			name, namespace, apiVersion, kind)
 
+		return ctx
+	}
+}
+
+// ResourceDeletedWithin fails a test if the specified resource is not deleted
+// within the supplied duration.
+func ResourceDeletedWithin(d time.Duration, name, namespace, apiVersion, kind string) features.Func {
+	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		obj := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": apiVersion,
+				"kind":       kind,
+			},
+		}
+		obj.SetName(name)
+		obj.SetNamespace(namespace)
+
+		t.Logf("Waiting %s for %s/%s (%s) to be deleted...", d, namespace, name, kind)
+
+		list := &unstructured.UnstructuredList{}
+		list.Items = []unstructured.Unstructured{*obj}
+
+		if err := wait.For(conditions.New(c.Client().Resources()).ResourcesDeleted(list), wait.WithTimeout(d)); err != nil {
+			t.Fatalf("Resource not deleted within %s: name=%v, namespace=%v, kind=%v", d, name, namespace, kind)
+		}
+
+		t.Logf("Resource deleted: name=%v, namespace=%v, kind=%v", name, namespace, kind)
 		return ctx
 	}
 }
@@ -669,21 +693,17 @@ func CheckCompositeResourceLabels(dir, pattern string) features.Func {
 			claimKind := o.GetObjectKind().GroupVersionKind().Kind
 			claimGroupVersionKind := o.GetObjectKind().GroupVersionKind().Group + "/" + o.GetObjectKind().GroupVersionKind().Version
 			rg := utils.NewResourceGetter(ctx, t, config)
-			claim := rg.Get(claimName, claimNamespace, claimGroupVersionKind, claimKind)
-			// Getting XR name
-			r := utils.ResourceValue(t, claim, "spec", "resourceRef")
-			xRName := r["name"]
+			xr := rg.Get(claimName, claimNamespace, claimGroupVersionKind, claimKind)
+			// In Crossplane v2, the object IS the XR; composite label equals the object name.
+			xRName := claimName
 			// Define the expected key-value pairs
 			expectedLabels := map[string]string{
-				"crossplane.io/claim-name":      claimName,
-				"crossplane.io/claim-namespace": claimNamespace,
-				"crossplane.io/composite":       xRName,
+				"crossplane.io/composite": xRName,
 			}
 			// Get and compare the labels
-			xr := rg.Get(r["name"], "", r["apiVersion"], r["kind"])
-			mrefs := utils.ResourceSliceValue(t, xr, "spec", "resourceRefs")
+			mrefs := utils.ResourceSliceValue(t, xr, "spec", "crossplane", "resourceRefs")
 			for _, mref := range mrefs {
-				mr := rg.Get(mref["name"], "", mref["apiVersion"], mref["kind"])
+				mr := rg.Get(mref["name"], mref["namespace"], mref["apiVersion"], mref["kind"])
 				labels := mr.GetLabels()
 				for key, expectedValue := range expectedLabels {
 					actualValue, ok := labels[key]
@@ -744,6 +764,11 @@ func SecretCreatedWithCredentials(dir, pattern string) features.Func {
 		t.Logf("Secret with name %s is found in namespace %s", expectedName, expectedNamespace)
 
 		secretData := obj.Object["data"]
+
+		if secretData == nil {
+			t.Fatalf("Secret found but has no data (credentials not yet populated): name=%s, namespace=%s", expectedName, expectedNamespace)
+			return ctx
+		}
 
 		// Compare the data fields of the existing Secret with the data fields of the expectedSecret.
 		if utils.HaveSameFields(secretData.(map[string]interface{}), expectedSecret.Object["stringData"].(map[string]interface{})) {

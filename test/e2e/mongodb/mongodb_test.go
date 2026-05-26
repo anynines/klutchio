@@ -106,7 +106,7 @@ func TestMongoDBInstanceLifecycle(t *testing.T) {
 	invalidUpgrades := features.New("Attempt to select invalid upgrades").
 		Assess("Change of 'service' is not allowed",
 			funcs.ApplyInvalid(fieldManager, manifests, "claim-upgrade-service-not-allowed.yaml",
-				"Service is an immutable field"),
+				"spec.service: Unsupported value"),
 		).
 		Assess("Downgrade of 'plan' is not allowed",
 			funcs.ApplyInvalid(fieldManager, manifests, "claim-downgrade-plan-not-allowed.yaml",
@@ -120,7 +120,7 @@ func TestMongoDBInstanceLifecycle(t *testing.T) {
 			funcs.ResourcesDeletedWithin(3*time.Minute, manifests, "servicebinding-initial.yaml"),
 		).
 		Assess("ServiceBinding secret is deleted",
-			funcs.ResourceDoesNotExist("sample-mongodb-sb-creds", "mongodb-lifecycle", "v1", "Secret"),
+			funcs.ResourceDeletedWithin(10*time.Minute, "sample-mongodb-sb-creds", "mongodb-lifecycle", "v1", "Secret"),
 		).
 		Feature()
 

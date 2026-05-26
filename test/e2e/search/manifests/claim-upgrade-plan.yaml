@@ -5,6 +5,4 @@ metadata:
   namespace: search-lifecycle
 spec:
   service: a9s-search2
-  plan: search-cluster-medium-ssl
-  compositionRef:
-    name: a9s-search
+  plan: search-cluster-small-ssl

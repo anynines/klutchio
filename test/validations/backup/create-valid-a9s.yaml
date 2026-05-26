@@ -5,8 +5,9 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: keyvalue
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup
 ---
 apiVersion: anynines.com/v1
 kind: Backup
@@ -15,8 +16,9 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: postgresql
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup
 ---
 apiVersion: anynines.com/v1
 kind: Backup
@@ -25,8 +27,9 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: mongodb
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup
 ---
 apiVersion: anynines.com/v1
 kind: Backup
@@ -35,8 +38,9 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: search
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup
 ---
 apiVersion: anynines.com/v1
 kind: Backup
@@ -45,8 +49,9 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: logme2
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup
 ---
 apiVersion: anynines.com/v1
 kind: Backup
@@ -55,8 +60,9 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: prometheus
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup
 ---
 apiVersion: anynines.com/v1
 kind: Backup
@@ -65,8 +71,9 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: messaging
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup
 ---
 apiVersion: anynines.com/v1
 kind: Backup
@@ -75,5 +82,6 @@ metadata:
 spec:
   instanceRef: sample-instance
   serviceInstanceType: mariadb
-  compositionRef:
-    name: a9s-backup
+  crossplane:
+    compositionRef:
+      name: a9s-backup

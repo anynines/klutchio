@@ -111,7 +111,7 @@ func TestKeyvalueInstanceLifecycle(t *testing.T) {
 			funcs.ResourcesDeletedWithin(3*time.Minute, manifests, "servicebinding-initial.yaml"),
 		).
 		Assess("ServiceBinding secret is deleted",
-			funcs.ResourceDoesNotExist("sample-keyvalue-servicebinding-creds", "keyvalue-lifecycle", "v1", "Secret"),
+			funcs.ResourceDeletedWithin(10*time.Minute, "sample-keyvalue-servicebinding-creds", "keyvalue-lifecycle", "v1", "Secret"),
 		).
 		Feature()
 

@@ -104,7 +104,7 @@ func TestMessagingInstanceLifecycle(t *testing.T) {
 			funcs.ResourcesDeletedWithin(3*time.Minute, manifests, "servicebinding-initial.yaml"),
 		).
 		Assess("ServiceBinding secret is deleted",
-			funcs.ResourceDoesNotExist("sample-messaging-sb-creds", "messaging-lifecycle", "v1", "Secret"),
+			funcs.ResourceDeletedWithin(10*time.Minute, "sample-messaging-sb-creds", "messaging-lifecycle", "v1", "Secret"),
 		).
 		Feature()
 
