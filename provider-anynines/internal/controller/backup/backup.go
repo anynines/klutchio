@@ -198,7 +198,7 @@ func (c *External) initializeBackupStatus(ctx context.Context, bkp *v1.Backup) e
 		}
 
 		bkp.Status.AtProvider.InstanceID = instanceID
-		return fmt.Errorf(errBackupStatusIsUnset)
+		return errors.New(errBackupStatusIsUnset)
 	}
 	return nil
 }

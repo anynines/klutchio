@@ -2120,6 +2120,13 @@ func TestDeleteHappyPath(t *testing.T) {
 			external := utilerr.Decorator{
 				ExternalClient: &external{
 					service: fakeOSB,
+					kube: newKubeMock(
+						serviceInstance(
+							withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
+							withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
+							withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
+						), nil,
+					),
 				},
 				Logger: a9stest.TestLogger(t),
 			}
@@ -2195,6 +2202,7 @@ func TestDeleteClientErr(t *testing.T) {
 			kube: newKubeMock(
 				serviceInstance(
 					afterInstanceCreation(),
+					withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
 					withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
 					withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
 				), nil,
@@ -2240,8 +2248,8 @@ func serviceBinding(instanceName string, opts ...func(*v1.ServiceBinding)) *v1.S
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-sb-asty",
 			Labels: map[string]string{
-				"crossplane.io/composite":  "test-sb",
-				"klutch.io/instance-type":  instanceName,
+				"crossplane.io/composite": "test-sb",
+				"klutch.io/instance-type": instanceName,
 			},
 			UID: "1a6a6b3e-254e-11ee-be56-0242ac120002",
 		},
@@ -2271,12 +2279,6 @@ func withServiceBindingParameters(params *v1.ServiceBindingParameters) func(*v1.
 func withInstanceName(instanceName string) func(*v1.ServiceBinding) {
 	return func(sb *v1.ServiceBinding) {
 		sb.Spec.ForProvider.InstanceName = instanceName
-	}
-}
-
-func withAnnotations(annotations map[string]string) func(*dsv1.ServiceInstance) {
-	return func(pg *dsv1.ServiceInstance) {
-		meta.AddAnnotations(pg, annotations)
 	}
 }
 

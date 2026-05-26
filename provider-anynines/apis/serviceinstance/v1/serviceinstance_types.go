@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -189,7 +190,7 @@ func init() {
 
 func (p *ServiceInstance) GetInstanceID() (string, error) {
 	if p.Status.AtProvider.InstanceID == "" {
-		return "InstanceID not set", fmt.Errorf(errInstanceIDStatusUnset)
+		return "InstanceID not set", errors.New(errInstanceIDStatusUnset)
 	}
 	return p.Status.AtProvider.InstanceID, nil
 }
