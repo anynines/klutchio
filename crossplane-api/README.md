@@ -99,7 +99,7 @@ Then push the multi-arch controller image to ECR:
 make provider-controller-build-push IMAGETAG=<version-or-ticket-id>
 
 #example
-make provider-controller-build-push IMAGETAG=v2.0.0
+make provider-controller-build-push IMAGETAG=KLT-877
 ```
 
 ### Build and push provider package
@@ -112,7 +112,7 @@ execute the following command:
 make provider-build-push IMAGETAG=<version-or-ticket-id>
 
 #example
-make provider-build-push IMAGETAG=v2.0.0
+make provider-build-push IMAGETAG=KLT-877
 ```
 
 ## Optional: Build and push anynines-dataservices Package
@@ -158,7 +158,7 @@ configuration package we want to set.
 make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=<image version>
 
 # example
-make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=v2.0.0
+make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=KLT-877
 ```
 
 ## Installation
@@ -270,7 +270,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:KLT-881
+crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:KLT-877
 ```
 
 1. Install files directly:
