@@ -86,7 +86,11 @@ func TrueCondition(t conditionsapi.ConditionType) *conditionsapi.Condition {
 }
 
 // FalseCondition returns a condition with Status=False and the given type.
-func FalseCondition(t conditionsapi.ConditionType, reason string, severity conditionsapi.ConditionSeverity, messageFormat string, messageArgs ...interface{}) *conditionsapi.Condition {
+func FalseCondition(t conditionsapi.ConditionType, reason string, severity conditionsapi.ConditionSeverity, message string) *conditionsapi.Condition {
+	return FalseConditionWithFormat(t, reason, severity, "%s", message)
+}
+
+func FalseConditionWithFormat(t conditionsapi.ConditionType, reason string, severity conditionsapi.ConditionSeverity, messageFormat string, messageArgs ...interface{}) *conditionsapi.Condition {
 	return &conditionsapi.Condition{
 		Type:     t,
 		Status:   corev1.ConditionFalse,
@@ -97,7 +101,11 @@ func FalseCondition(t conditionsapi.ConditionType, reason string, severity condi
 }
 
 // UnknownCondition returns a condition with Status=Unknown and the given type.
-func UnknownCondition(t conditionsapi.ConditionType, reason string, messageFormat string, messageArgs ...interface{}) *conditionsapi.Condition {
+func UnknownCondition(t conditionsapi.ConditionType, reason string, message string, messageArgs ...interface{}) *conditionsapi.Condition {
+	return UnknownConditionWithFormat(t, reason, "%s", message)
+}
+
+func UnknownConditionWithFormat(t conditionsapi.ConditionType, reason string, messageFormat string, messageArgs ...interface{}) *conditionsapi.Condition {
 	return &conditionsapi.Condition{
 		Type:    t,
 		Status:  corev1.ConditionUnknown,
@@ -118,7 +126,7 @@ func MarkUnknown(to Setter, t conditionsapi.ConditionType, reason, messageFormat
 
 // MarkFalse sets Status=False for the condition with the given type.
 func MarkFalse(to Setter, t conditionsapi.ConditionType, reason string, severity conditionsapi.ConditionSeverity, messageFormat string, messageArgs ...interface{}) {
-	Set(to, FalseCondition(t, reason, severity, messageFormat, messageArgs...))
+	Set(to, FalseConditionWithFormat(t, reason, severity, messageFormat, messageArgs...))
 }
 
 // SetSummary sets a Ready condition with the summary of all the conditions existing
