@@ -63,12 +63,31 @@ func StartBackendWithoutDefaultArgs(t *testing.T, clientConfig *rest.Config, arg
 
 	crdClient, err := apiextensionsclient.NewForConfig(clientConfig)
 	require.NoError(t, err)
+	crdsToCreate := []metav1.GroupResource{
+		{Group: bindv1alpha1.GroupName, Resource: "clusterbindings"},
+		{Group: bindv1alpha1.GroupName, Resource: "apiserviceexports"},
+		{Group: bindv1alpha1.GroupName, Resource: "apiservicenamespaces"},
+		{Group: bindv1alpha1.GroupName, Resource: "apiserviceexportrequests"},
+	}
+
+	fs := pflag.NewFlagSet("example-backend", pflag.ContinueOnError)
+	options := options.NewOptions()
+	options.AddFlags(fs)
+	err = fs.Parse(args)
+	require.NoError(t, err)
+
+	// In control-plane mode, the backend also needs APIServiceBindings and AppClusterBindings CRDs
+	// on the provider cluster (these normally live on the consumer cluster in OIDC mode).
+	if options.ControlPlaneMode {
+		crdsToCreate = append(crdsToCreate,
+			metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "apiservicebindings"},
+			metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "appclusterbindings"},
+		)
+	}
+
 	err = crd.Create(ctx,
 		crdClient.ApiextensionsV1().CustomResourceDefinitions(),
-		metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "clusterbindings"},
-		metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "apiserviceexports"},
-		metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "apiservicenamespaces"},
-		metav1.GroupResource{Group: bindv1alpha1.GroupName, Resource: "apiserviceexportrequests"},
+		crdsToCreate...,
 	)
 	require.NoError(t, err)
 
@@ -78,21 +97,17 @@ func StartBackendWithoutDefaultArgs(t *testing.T, clientConfig *rest.Config, arg
 	)
 	require.NoError(t, err)
 
-	fs := pflag.NewFlagSet("example-backend", pflag.ContinueOnError)
-	options := options.NewOptions()
-	options.AddFlags(fs)
-	err = fs.Parse(args)
-	require.NoError(t, err)
-
 	// use a random port via an explicit listener. Then add a kube-bind-<port> client to dex
 	// with the callback URL set to the listener's address.
 	options.Serve.Listener, err = net.Listen("tcp", "localhost:0")
 	require.NoError(t, err)
 	addr := options.Serve.Listener.Addr()
-	_, port, err := net.SplitHostPort(addr.String())
-	require.NoError(t, err)
-	options.OIDC.IssuerClientID = "kube-bind-" + port
-	createDexClient(t, addr)
+	if !options.ControlPlaneMode {
+		_, port, err := net.SplitHostPort(addr.String())
+		require.NoError(t, err)
+		options.OIDC.IssuerClientID = "kube-bind-" + port
+		createDexClient(t, addr)
+	}
 
 	completed, err := options.Complete()
 	require.NoError(t, err)

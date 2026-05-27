@@ -17,7 +17,7 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -o xtrace 
+set -o xtrace
 
 if [[ -z "${MAKELEVEL:-}" ]]; then
     echo 'You must invoke this script via make'
@@ -25,6 +25,9 @@ if [[ -z "${MAKELEVEL:-}" ]]; then
 fi
 
 "$(dirname "${BASH_SOURCE[0]}")/update-codegen-clients.sh"
+
+# Update generated konnector deployment YAML
+go generate ./deploy/konnector/...
 
 # Update generated CRD YAML
 cd pkg/apis

@@ -109,7 +109,11 @@ func (b *BindAPIServiceOptions) printTable(ctx context.Context, config *rest.Con
 	var bindingsTable metav1.Table
 	for _, binding := range bindings {
 		var singularTable metav1.Table
-		if err := tableClient.Get().Resource("apiservicebindings").Name(binding.Name).Do(ctx).Into(&singularTable); err != nil {
+		request := tableClient.Get().Resource("apiservicebindings")
+		if binding.Namespace != "" {
+			request = request.Namespace(binding.Namespace)
+		}
+		if err := request.Name(binding.Name).Do(ctx).Into(&singularTable); err != nil {
 			return err
 		}
 		if len(bindingsTable.Rows) == 0 {

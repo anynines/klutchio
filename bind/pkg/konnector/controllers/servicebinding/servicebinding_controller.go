@@ -50,6 +50,7 @@ func NewController(
 	consumerConfig *rest.Config,
 	serviceBindingInformer bindinformers.APIServiceBindingInformer,
 	consumerSecretInformer coreinformers.SecretInformer,
+	controlPlaneMode bool,
 ) (*controller, error) {
 	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), controllerName)
 
@@ -72,6 +73,7 @@ func NewController(
 		consumerSecretLister: consumerSecretInformer.Lister(),
 
 		reconciler: reconciler{
+			controlPlaneMode: controlPlaneMode,
 			getConsumerSecret: func(ns, name string) (*corev1.Secret, error) {
 				return consumerSecretInformer.Lister().Secrets(ns).Get(name)
 			},
@@ -79,7 +81,7 @@ func NewController(
 
 		commit: committer.NewCommitter[*bindv1alpha1.APIServiceBinding, *bindv1alpha1.APIServiceBindingSpec, *bindv1alpha1.APIServiceBindingStatus](
 			func(ns string) committer.Patcher[*bindv1alpha1.APIServiceBinding] {
-				return consumerBindClient.KlutchBindV1alpha1().APIServiceBindings()
+				return consumerBindClient.KlutchBindV1alpha1().APIServiceBindings(ns)
 			},
 		),
 	}
@@ -223,7 +225,7 @@ func (c *controller) processNextWorkItem(ctx context.Context) bool {
 }
 
 func (c *controller) process(ctx context.Context, key string) error {
-	_, name, err := cache.SplitMetaNamespaceKey(key)
+	ns, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		runtime.HandleError(err)
 		return nil // we cannot do anything
@@ -231,7 +233,7 @@ func (c *controller) process(ctx context.Context, key string) error {
 
 	logger := klog.FromContext(ctx)
 
-	obj, err := c.serviceBindingLister.Get(name)
+	obj, err := c.serviceBindingLister.APIServiceBindings(ns).Get(name)
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	} else if errors.IsNotFound(err) {

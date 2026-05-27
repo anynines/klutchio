@@ -39,6 +39,7 @@ type reconciler struct {
 	consumerSecretRefKey string
 	providerNamespace    string
 	heartbeatInterval    time.Duration
+	controlPlaneMode     bool
 
 	getProviderSecret    func() (*corev1.Secret, error)
 	getConsumerSecret    func() (*corev1.Secret, error)
@@ -49,8 +50,10 @@ type reconciler struct {
 func (r *reconciler) reconcile(ctx context.Context, binding *bindv1alpha1.ClusterBinding) error {
 	var errs []error
 
-	if err := r.ensureConsumerSecret(ctx, binding); err != nil {
-		errs = append(errs, err)
+	if !r.controlPlaneMode {
+		if err := r.ensureConsumerSecret(ctx, binding); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if err := r.ensureHeartbeat(ctx, binding); err != nil {
@@ -119,8 +122,8 @@ func (r *reconciler) ensureConsumerSecret(ctx context.Context, binding *bindv1al
 		}
 		consumerSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      ns,
-				Namespace: name,
+				Name:      name,
+				Namespace: ns,
 			},
 			Data: providerSecret.Data,
 			Type: providerSecret.Type,

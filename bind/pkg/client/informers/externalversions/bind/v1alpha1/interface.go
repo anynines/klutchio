@@ -32,6 +32,8 @@ type Interface interface {
 	APIServiceExportRequests() APIServiceExportRequestInformer
 	// APIServiceNamespaces returns a APIServiceNamespaceInformer.
 	APIServiceNamespaces() APIServiceNamespaceInformer
+	// AppClusterBindings returns a AppClusterBindingInformer.
+	AppClusterBindings() AppClusterBindingInformer
 	// ClusterBindings returns a ClusterBindingInformer.
 	ClusterBindings() ClusterBindingInformer
 }
@@ -49,7 +51,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 
 // APIServiceBindings returns a APIServiceBindingInformer.
 func (v *version) APIServiceBindings() APIServiceBindingInformer {
-	return &aPIServiceBindingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &aPIServiceBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // APIServiceExports returns a APIServiceExportInformer.
@@ -65,6 +67,11 @@ func (v *version) APIServiceExportRequests() APIServiceExportRequestInformer {
 // APIServiceNamespaces returns a APIServiceNamespaceInformer.
 func (v *version) APIServiceNamespaces() APIServiceNamespaceInformer {
 	return &aPIServiceNamespaceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// AppClusterBindings returns a AppClusterBindingInformer.
+func (v *version) AppClusterBindings() AppClusterBindingInformer {
+	return &appClusterBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ClusterBindings returns a ClusterBindingInformer.

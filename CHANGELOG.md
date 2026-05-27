@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Changed
+
+- **breaking**: `providerconfigs.dataservices.anynines.com` now expects a field `spec.serviceType`, which can be either `servicebroker` or `backupmanager`.
+- Added TLS support for communication with service-broker in provider-anynines. Service-broker URL can now use https.
+- Klutch-bind: advanced konnector control plane mode with explicit client separation for control plane, binding cluster, and app cluster paths, plus fixes for APIServiceBinding writes in both modes.
+- Klutch-bind: migrated APIServiceBinding handling to namespace scope as part of control plane mode hardening.
+- Klutch-bind: updated control plane mode root namespace handling for app cluster kubeconfig and simplified AppClusterBinding RBAC.
+
 ## [1.5.0] - 2026-05-26
 
 ### Added
