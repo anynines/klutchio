@@ -56,38 +56,45 @@ const (
 // NewController returns a new controller handling one cluster connection.
 func NewController(
 	consumerSecretRefKey string,
+	bindingRootNamespace string,
 	providerNamespace string,
+	providerSecretNamespace string,
+	controlPlaneMode bool,
 	reconcileServiceBinding func(binding *bindv1alpha1.APIServiceBinding) bool,
-	consumerConfig, providerConfig *rest.Config,
+	bindingConfig, appClusterConfig, controlPlaneClusterConfig *rest.Config,
 	namespaceInformer dynamic.Informer[corelisters.NamespaceLister],
 	serviceBindingInformer dynamic.Informer[bindlisters.APIServiceBindingLister],
 	crdInformer dynamic.Informer[crdlisters.CustomResourceDefinitionLister],
 ) (*controller, error) {
-	consumerConfig = rest.CopyConfig(consumerConfig)
-	consumerConfig = rest.AddUserAgent(consumerConfig, controllerName)
+	bindingConfig = rest.CopyConfig(bindingConfig)
+	bindingConfig = rest.AddUserAgent(bindingConfig, controllerName)
 
-	providerConfig = rest.CopyConfig(providerConfig)
-	providerConfig = rest.AddUserAgent(providerConfig, controllerName)
+	appClusterConfig = rest.CopyConfig(appClusterConfig)
+	appClusterConfig = rest.AddUserAgent(appClusterConfig, controllerName)
+
+	controlPlaneClusterConfig = rest.CopyConfig(controlPlaneClusterConfig)
+	controlPlaneClusterConfig = rest.AddUserAgent(controlPlaneClusterConfig, controllerName)
 
 	// create shared informer factories
-	providerBindClient, err := bindclient.NewForConfig(providerConfig)
+	bindingBindClient, err := bindclient.NewForConfig(bindingConfig)
 	if err != nil {
 		return nil, err
 	}
-	providerKubeClient, err := kubernetesclient.NewForConfig(providerConfig)
+	providerBindClient, err := bindclient.NewForConfig(controlPlaneClusterConfig)
 	if err != nil {
 		return nil, err
 	}
-	consumerBindClient, err := bindclient.NewForConfig(consumerConfig)
+	providerKubeClient, err := kubernetesclient.NewForConfig(controlPlaneClusterConfig)
 	if err != nil {
 		return nil, err
 	}
-	consumerKubeClient, err := kubernetesclient.NewForConfig(consumerConfig)
+	consumerKubeClient, err := kubernetesclient.NewForConfig(appClusterConfig)
 	if err != nil {
 		return nil, err
 	}
+	bindingRootBindInformers := bindinformers.NewSharedInformerFactoryWithOptions(providerBindClient, time.Minute*30, bindinformers.WithNamespace(bindingRootNamespace))
 	providerBindInformers := bindinformers.NewSharedInformerFactoryWithOptions(providerBindClient, time.Minute*30, bindinformers.WithNamespace(providerNamespace))
-	providerKubeInformers := kubernetesinformers.NewSharedInformerFactoryWithOptions(providerKubeClient, time.Minute*30, kubernetesinformers.WithNamespace(providerNamespace))
+	providerSecretInformers := kubernetesinformers.NewSharedInformerFactoryWithOptions(providerKubeClient, time.Minute*30, kubernetesinformers.WithNamespace(providerSecretNamespace))
 	consumerSecretNS, consumeSecretName, err := cache.SplitMetaNamespaceKey(consumerSecretRefKey)
 	if err != nil {
 		return nil, err
@@ -102,21 +109,25 @@ func NewController(
 	// create controllers
 	clusterbindingCtrl, err := clusterbinding.NewController(
 		consumerSecretRefKey,
+		bindingRootNamespace,
 		providerNamespace,
+		providerSecretNamespace,
 		heartbeatInterval,
-		consumerConfig,
-		providerConfig,
-		providerBindInformers.KlutchBind().V1alpha1().ClusterBindings(),
+		controlPlaneMode,
+		bindingConfig,
+		appClusterConfig,
+		controlPlaneClusterConfig,
+		bindingRootBindInformers.KlutchBind().V1alpha1().ClusterBindings(),
 		serviceBindingInformer,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceExports(),
 		consumerSecretInformers.Core().V1().Secrets(),
-		providerKubeInformers.Core().V1().Secrets(),
+		providerSecretInformers.Core().V1().Secrets(),
 	)
 	if err != nil {
 		return nil, err
 	}
 	namespacedeletionCtrl, err := namespacedeletion.NewController(
-		providerConfig,
+		controlPlaneClusterConfig,
 		providerNamespace,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceNamespaces(),
 		namespaceInformer,
@@ -128,8 +139,9 @@ func NewController(
 		consumerSecretRefKey,
 		providerNamespace,
 		reconcileServiceBinding,
-		consumerConfig,
-		providerConfig,
+		bindingConfig,
+		appClusterConfig,
+		controlPlaneClusterConfig,
 		serviceBindingInformer,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceExports(),
 		crdInformer,
@@ -140,8 +152,9 @@ func NewController(
 	serviceexportCtrl, err := serviceexport.NewController(
 		consumerSecretRefKey,
 		providerNamespace,
-		consumerConfig,
-		providerConfig,
+		bindingRootNamespace,
+		appClusterConfig,
+		controlPlaneClusterConfig,
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceExports(),
 		providerBindInformers.KlutchBind().V1alpha1().APIServiceNamespaces(),
 		serviceBindingInformer,
@@ -154,11 +167,12 @@ func NewController(
 	return &controller{
 		consumerSecretRefKey: consumerSecretRefKey,
 
-		bindClient: consumerBindClient,
+		bindClient: bindingBindClient,
 
 		factories: []SharedInformerFactory{
+			bindingRootBindInformers,
 			providerBindInformers,
-			providerKubeInformers,
+			providerSecretInformers,
 			consumerSecretInformers,
 		},
 
@@ -269,7 +283,7 @@ func (c *controller) updateServiceBindings(ctx context.Context, update func(*bin
 		update(binding)
 		if !reflect.DeepEqual(binding.Status.Conditions, orig.Status.Conditions) {
 			logger.V(2).Info("updating service binding", "binding", binding.Name)
-			if _, err := c.bindClient.KlutchBindV1alpha1().APIServiceBindings().UpdateStatus(ctx, binding, metav1.UpdateOptions{}); err != nil {
+			if _, err := c.bindClient.KlutchBindV1alpha1().APIServiceBindings(binding.Namespace).UpdateStatus(ctx, binding, metav1.UpdateOptions{}); err != nil {
 				logger.Error(err, "failed to update service binding", "binding", binding.Name)
 				continue
 			}

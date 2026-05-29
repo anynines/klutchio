@@ -1,12 +1,12 @@
 baseImageOverrides:
-  github.com/google/ko: golang:1.24.0
+  github.com/google/ko: golang:1.26.3
 
 builds:
-- id: konnector
-  dir: ./cmd/konnector
-  ldflags:
-  - "{{ .Env.LDFLAGS }}"
-- id: example-backend
-  dir: ./cmd/example-backend
-  ldflags:
-  - "{{ .Env.LDFLAGS }}"
+  - id: konnector
+    dir: ./cmd/konnector
+    ldflags:
+      - "{{ .Env.LDFLAGS }}"
+  - id: example-backend
+    dir: ./cmd/example-backend
+    ldflags:
+      - "{{ .Env.LDFLAGS }}"

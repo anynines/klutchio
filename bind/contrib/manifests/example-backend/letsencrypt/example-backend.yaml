@@ -20,7 +20,7 @@ spec:
       serviceAccountName: example-backend
       containers:
         - name: example-backend
-          image: ghcr.io/kube-bind/example-backend:latest
+          image: public.ecr.aws/w5n9a2g2/klutch/example-backend:v1.4.0
           imagePullPolicy: Always
           args:
             - --namespace-prefix=cluster

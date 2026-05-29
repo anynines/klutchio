@@ -11,16 +11,14 @@ Development][provider-dev] guide may also be of use.
 - the [Makefile](./Makefile) for `provider-anynines` requires
   [Crossplane CLI](https://docs.crossplane.io/latest/cli/) to be installed on the local system.
 
+## Core Build And Push Loop
+
+The prerequisites, mandatory submodule initialization, troubleshooting, and the complete local
+build/push workflow can be found in [README.md](./README.md).
+
 ## Initialization
 
-Execute `make submodules` to initialize
-["the build submodule" i.e. Crossplane's Makefile library](https://github.com/crossplane/crossplane-build):
-
-```shell
-$ make submodules
-Submodule 'provider-anynines/build' (https://github.com/crossplane/build) registered for path 'build'
-Cloning into '<path to>/klutchio/provider-anynines/build'...
-```
+Use the initialization step documented in [README.md](./README.md) before running make targets.
 
 ## Test & Build
 
