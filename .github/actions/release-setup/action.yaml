@@ -6,8 +6,6 @@ inputs:
     required: true
   aws-secret-access-key:
     required: true
-  github-token:
-    required: true
 runs:
   using: "composite"
   steps:
@@ -40,7 +38,6 @@ runs:
     with:
       aws-access-key-id: ${{ inputs.aws-access-key-id }}
       aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-      # aws-session-token: ${{ inputs.aws-session-token }}
       aws-region: us-east-1
   - name: Install aws
     shell: bash

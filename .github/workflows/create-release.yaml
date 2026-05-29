@@ -11,7 +11,6 @@ on:
 env:
   ECR_REGISTRY_ADDRESS: "public.ecr.aws/w5n9a2g2"
   VERSION_NR: ${{ inputs.version }}
-  SEMVER_EXP: 'v[0-9]\.[0-9]\.[0-9](-[-.A-z0-9]+)?'
 
 jobs:
   create-branch:
@@ -22,6 +21,8 @@ jobs:
       packages: write
     steps:
       - name: Check Version Number Format
+        env:
+          SEMVER_EXP: 'v[0-9]\.[0-9]\.[0-9](-[-.A-z0-9]+)?'
         run: |
           if ! echo "$VERSION_NR" | grep -E "^$SEMVER_EXP"'$' -q; then
               echo "illegal version number $VERSION_NR.\n\n" \
@@ -34,7 +35,6 @@ jobs:
         with:
           ref: "main"
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Create release branch
         run: |
           git checkout -b "releases/${{ inputs.version }}"
@@ -52,27 +52,19 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Setup
         uses: ./.github/actions/release-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          github-token: ${{ github.token }}
       - name: Build and push images
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           KOCACHE: /tmp/ko
+        working-directory: bind
         run: |
-          aws ecr-public get-login-password --region us-east-1 | \
-              docker login --username AWS \
-              --password-stdin "${ECR_REGISTRY_ADDRESS}"
-
-          cd "bind"
-
-          KO_DOCKER_REPO="${ECR_REGISTRY_ADDRESS}/klutch/konnector" ko build \
-              "./cmd/konnector" --bare -t "${VERSION_NR}" \
-              --platform=linux/amd64,linux/arm64
+          ../.github/bin/build_with_ko.sh "./cmd/konnector" \
+              "${ECR_REGISTRY_ADDRESS}/klutch/konnector" \
+              "${VERSION_NR}"
   create-example-backend-images:
     name: Build and Push Example Backend Images
     needs: create-branch
@@ -86,27 +78,20 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Setup
         uses: ./.github/actions/release-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          github-token: ${{ github.token }}
       - name: Build and push images
         env:
           GITHUB_TOKEN: ${{ github.token }}
           KOCACHE: /tmp/ko
+        working-directory: bind
         run: |
-          aws ecr-public get-login-password --region us-east-1 | \
-              docker login --username AWS \
-              --password-stdin "${ECR_REGISTRY_ADDRESS}"
-
-          cd "bind"
-
-          KO_DOCKER_REPO="${ECR_REGISTRY_ADDRESS}/klutch/example-backend" ko build \
-              "./cmd/example-backend" --bare -t "${VERSION_NR}" \
-              --platform=linux/amd64,linux/arm64
+          ../.github/bin/build_with_ko.sh "./cmd/example-backend" \
+          "${ECR_REGISTRY_ADDRESS}/klutch/example-backend" \
+          "${VERSION_NR}"
   create-provider-anynines-controller-images:
     name: Build and Push Provider anynines Controller Images
     needs: create-branch
@@ -120,24 +105,17 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Setup
         uses: ./.github/actions/release-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          github-token: ${{ github.token }}
       - name: Build and push images
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        working-directory: provider-anynines
         run: |
-          aws ecr-public get-login-password --region us-east-1 | \
-          docker login --username AWS \
-          --password-stdin "${ECR_REGISTRY_ADDRESS}"
-
-          cd "provider-anynines"
-          git submodule update --init --recursive
-          make buildx.all IMAGETAG="${VERSION_NR}"
+          ../.github/bin/provider_anynines_make.sh "buildx.all" \
+              "${ECR_REGISTRY_ADDRESS}" \
+              "${VERSION_NR}"
   create-provider-anynines-image:
     name: Build and Push Provider anynines Image
     needs: create-branch
@@ -151,24 +129,17 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Setup
         uses: ./.github/actions/release-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          github-token: ${{ github.token }}
-      - name: Build and push images
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Build and push image
+        working-directory: provider-anynines
         run: |
-          aws ecr-public get-login-password --region us-east-1 | \
-              docker login --username AWS \
-              --password-stdin "${ECR_REGISTRY_ADDRESS}"
-
-          cd "provider-anynines"
-          git submodule update --init --recursive
-          make provider-build-push IMAGETAG="${VERSION_NR}"
+          ../.github/bin/provider_anynines_make.sh "provider-build-push" \
+              "${ECR_REGISTRY_ADDRESS}" \
+              "${VERSION_NR}"
   create-dataservices-config-package:
     name: Build and Push Dataservices Config Package
     needs: create-branch
@@ -182,24 +153,17 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Setup
         uses: ./.github/actions/release-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          github-token: ${{ github.token }}
-      - name: Build and push images
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Build and push image
+        working-directory: crossplane-api
         run: |
-
-          aws ecr-public get-login-password --region us-east-1 | \
-              docker login --username AWS \
-              --password-stdin "${ECR_REGISTRY_ADDRESS}"
-
-          make -C crossplane-api dataservices-config-push \
-              dataservicesConfigVersion="${VERSION_NR}"
+          ../.github/bin/provider_anynines_make.sh "dataservices-config-push" \
+              "${ECR_REGISTRY_ADDRESS}" \
+              "${VERSION_NR}"
   create-klutch-bind-binaries:
     name: Build and Push Klutch-Bind Binaries
     needs: create-branch
@@ -220,31 +184,24 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Setup
         uses: ./.github/actions/release-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          github-token: ${{ github.token }}
-      - name: Build and push images
+      - name: Build klutch-bind binary
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+        working-directory: bind
         run: |
-          cd "bind"
-          GOOS="$GOOS" GOARCH="$GOARCH" go build -o bin/ ./cmd/kubectl-bind
-          if [[ "$GOOS" == "windows" ]]; then
-              mv "./bin/kubectl-bind.exe" "../klutch-bind-$GOOS-$GOARCH.exe"
-          else
-              mv "./bin/kubectl-bind" "../klutch-bind-$GOOS-$GOARCH"
-          fi
-      - name: Upload artifact
+          ../.github/bin/go_build_klutch-bind_helper_binary.sh "${GOOS}" "${GOARCH}"
+      - name: Upload klutch-bind binary
         uses: actions/upload-artifact@v7
         with:
           name: klutch-bind-${{ matrix.goos }}-${{ matrix.goarch }}
           path: ./klutch-bind-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+          retention-days: 1
   update-version-refs:
     name: Update Manifests
     needs:
@@ -264,54 +221,18 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-          token: ${{ github.token }}
       - name: Setup
         uses: ./.github/actions/release-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          github-token: ${{ github.token }}
       - name: Update manifests with new image tags
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          CROSSPLANE_API_SUBFOLDER: "crossplane-api"
-          PROVIDER_ANYNINES_SUBFOLDER: "provider-anynines"
-          E2E_TESTS_SUBFOLDER: "test/e2e"
-          KON_REPO: "klutch/dataservices"
-          README_PATH: "crossplane-api/README.md"
-          BUNDLE_IMAGE: "${{ env.ECR_REGISTRY_ADDRESS }}/klutch/dataservices:${{ env.VERSION_NR }}"
-          PROVIDER_IMAGE: "${{ env.ECR_REGISTRY_ADDRESS }}/klutch/provider-anynines:${{ env.VERSION_NR }}"
         run: |
-          yq -i ".spec.package = \"$BUNDLE_IMAGE\"" \
-              "$CROSSPLANE_API_SUBFOLDER/deploy/config-pkg-anynines.yaml"
-          yq -i \
-              "with(select(document_index == 0); .spec.package=\"$PROVIDER_IMAGE\")" \
-              "$CROSSPLANE_API_SUBFOLDER/deploy/provider-anynines.yaml"
-
-          sed -E 's|'"$KON_REPO:$SEMVER_EXP"'|'"$KON_REPO:${VERSION_NR}"'|g' \
-              "$README_PATH" >"${README_PATH}.tmp"
-          mv "${README_PATH}.tmp" "$README_PATH"
-
-          yq -i ".spec.package = \"$PROVIDER_IMAGE\"" \
-              "$PROVIDER_ANYNINES_SUBFOLDER/examples/provider/provider.yaml"
-          yq -i ".spec.package = \"$PROVIDER_IMAGE\"" \
-              "$E2E_TESTS_SUBFOLDER/provider/manifests/install/provider.yaml"
-          yq -i ".spec.package = \"$BUNDLE_IMAGE\"" \
-              "$E2E_TESTS_SUBFOLDER/provider/manifests/configuration.yaml"
+          .github/bin/update_version_refs_in_manifests.sh "${VERSION_NR}" \
+              "${ECR_REGISTRY_ADDRESS}"
       - name: Update ChangeLog
         run: |
-            HEADLINE="[${VERSION_NR:1}] - $(date "+%Y-%m-%d")"
-            if grep -x -q -F "## $HEADLINE" "./CHANGELOG.md"; then
-                echo "Changelog already contains a section for version" \
-                    "$VERSION_NR. Skipping..."
-                exit 0
-            fi
-
-            echo "Replacing 'Unreleased' changelog section header with" \
-                "header '$HEADLINE'..."
-            sed -E 's/^## Unreleased$/'"## $HEADLINE/g" \
-                "./CHANGELOG.md" >"./CHANGELOG.md.tmp"
-            mv "./CHANGELOG.md.tmp" "./CHANGELOG.md"
+          .github/bin/update_changelog.sh "${VERSION_NR}"
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
