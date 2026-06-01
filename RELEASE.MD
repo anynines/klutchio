@@ -8,7 +8,7 @@ This document outlines the steps to release Klutch, which involves releasing its
 
 2. **Sync a9s Services and Plans:**
    Ensure that the supported a9s Data Services and their plans, as defined in the Crossplane configuration packages, are aligned with the latest available a9s services and plans.
-   Refer to the a9s Data Service lifecycle table for validation:  
+   Refer to the a9s Data Service lifecycle table for validation:
    <https://docs.anynines.com/docs/platform-operator/a9s-po-sunrise-sunset/#a9s-data-service-release-lifecycle-table>
 
 3. **Release Crossplane API Component:**
@@ -17,7 +17,35 @@ This document outlines the steps to release Klutch, which involves releasing its
 
 4. **Update Documentation:**
    Update the Klutchio docs with the new image tags (versions) for all released components.
-   **Important:** Ensure all providers and functions are also synced and use consistent versions across the release.
+   **Important:** Ensure all providers and functions are also synced and use consistent versions
+   across the release.
+   - docs/local-deployment-guide.md:
+
+      ```bash
+      --konnector-image public.ecr.aws/w5n9a2g2/klutch/konnector:vX.Y.Z \
+      ```
+
+   - docs/platform-operator-guide/monitor-klutch-components.md:
+
+      ```bash
+      public.ecr.aws/w5n9a2g2/klutch/provider-anynines:vX.Y.Z
+      ```
+
+   - docs/platform-operator-guide/setting-up-klutch-clusters/app-cluster.md:
+
+      ```bash
+      kubectl bind https://<backend-host>:443/export --konnector-image=public.ecr.aws/w5n9a2g2/klutch/konnector:vX.Y.Z
+      ```
+
+      ```bash
+      image: public.ecr.aws/w5n9a2g2/klutch/konnector:vX.Y.Z
+      ```
+
+   - docs/platform-operator-guide/setting-up-klutch-clusters/control-plane-cluster/index.md:
+
+      ```bash
+      image: public.ecr.aws/w5n9a2g2/klutch/example-backend:vX.Y.Z
+      ```
 
 5. **Update Changelog:**
    - Review merged Pull Requests and ensure all changes are reflected in the [`CHANGELOG.md`](./CHANGELOG.md).

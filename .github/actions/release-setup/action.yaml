@@ -1,0 +1,52 @@
+name: Release Setup
+description: Common setup for release jobs
+
+inputs:
+  aws-access-key-id:
+    required: true
+  aws-secret-access-key:
+    required: true
+runs:
+  using: "composite"
+  steps:
+  - name: Setup Go
+    uses: actions/setup-go@v6
+    with:
+      go-version-file: bind/go.mod
+      cache-dependency-path: "**/go.sum"
+  - name: Install ko
+    uses: ko-build/setup-ko@v0.9
+    env:
+      KO_DOCKER_REPO: "public.ecr.aws/w5n9a2g2"
+  - name: Cache ko build
+    uses: actions/cache@v5
+    with:
+      path: /tmp/ko
+      key: ko-build-${{ hashFiles('**/go.sum', '**/*.go') }}
+      restore-keys: ko-build-
+    env:
+      KOCACHE: /tmp/ko
+  - name: Install yq
+    uses: mikefarah/yq@v4.9.8
+  - name: Install Crossplane CLI
+    shell: bash
+    run: |
+      curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh" | sh
+      sudo mv crossplane /usr/local/bin/
+  - name: Configure AWS credentials
+    uses: aws-actions/configure-aws-credentials@v6
+    with:
+      aws-access-key-id: ${{ inputs.aws-access-key-id }}
+      aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+      aws-region: us-east-1
+  - name: Install aws
+    shell: bash
+    run: |
+      if command -v aws >/dev/null 2>&1; then
+          exit 0
+      fi
+      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      unzip awscliv2.zip > /dev/null
+      ./aws/install $update_flag
+      rm awscliv2.zip
+      rm -rf aws

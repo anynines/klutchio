@@ -1,0 +1,274 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g. v1.2.3)"
+        required: true
+        type: string
+
+env:
+  ECR_REGISTRY_ADDRESS: "public.ecr.aws/w5n9a2g2"
+  VERSION_NR: ${{ inputs.version }}
+
+jobs:
+  create-branch:
+    name: Create Branch for Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Check Version Number Format
+        env:
+          SEMVER_EXP: 'v[0-9]\.[0-9]\.[0-9](-[-.A-z0-9]+)?'
+        run: |
+          if ! echo "$VERSION_NR" | grep -E "^$SEMVER_EXP"'$' -q; then
+              echo "illegal version number $VERSION_NR.\n\n" \
+                  "Please use a version number that matches this regular" \
+                  "expression: $SEMVER_EXP"
+              exit 1
+          fi
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: "main"
+          fetch-depth: 0
+      - name: Create release branch
+        run: |
+          git checkout -b "releases/${{ inputs.version }}"
+          git push -u origin "releases/${{ inputs.version }}"
+  create-konnector-images:
+    name: Build and Push Konnector Images
+    needs: create-branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: releases/${{ inputs.version }}
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/release-setup
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Build and push images
+        env:
+          KOCACHE: /tmp/ko
+        working-directory: bind
+        run: |
+          ../.github/bin/build_with_ko.sh "./cmd/konnector" \
+              "${ECR_REGISTRY_ADDRESS}/klutch/konnector" \
+              "${VERSION_NR}"
+  create-example-backend-images:
+    name: Build and Push Example Backend Images
+    needs: create-branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: releases/${{ inputs.version }}
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/release-setup
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Build and push images
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          KOCACHE: /tmp/ko
+        working-directory: bind
+        run: |
+          ../.github/bin/build_with_ko.sh "./cmd/example-backend" \
+          "${ECR_REGISTRY_ADDRESS}/klutch/example-backend" \
+          "${VERSION_NR}"
+  create-provider-anynines-controller-images:
+    name: Build and Push Provider anynines Controller Images
+    needs: create-branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: releases/${{ inputs.version }}
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/release-setup
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Build and push images
+        working-directory: provider-anynines
+        run: |
+          ../.github/bin/provider_anynines_make.sh "buildx.all" \
+              "${ECR_REGISTRY_ADDRESS}" \
+              "${VERSION_NR}"
+  create-provider-anynines-image:
+    name: Build and Push Provider anynines Image
+    needs: create-branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: releases/${{ inputs.version }}
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/release-setup
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Build and push image
+        working-directory: provider-anynines
+        run: |
+          ../.github/bin/provider_anynines_make.sh "provider-build-push" \
+              "${ECR_REGISTRY_ADDRESS}" \
+              "${VERSION_NR}"
+  create-dataservices-config-package:
+    name: Build and Push Dataservices Config Package
+    needs: create-branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: releases/${{ inputs.version }}
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/release-setup
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Build and push image
+        working-directory: crossplane-api
+        run: |
+          ../.github/bin/provider_anynines_make.sh "dataservices-config-push" \
+              "${ECR_REGISTRY_ADDRESS}" \
+              "${VERSION_NR}"
+  create-klutch-bind-binaries:
+    name: Build and Push Klutch-Bind Binaries
+    needs: create-branch
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: ["linux", "darwin", "windows"]
+        goarch: ["amd64", "arm64", "386"]
+        exclude:
+          - goos: darwin
+            goarch: "386"
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: releases/${{ inputs.version }}
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/release-setup
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Build klutch-bind binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        working-directory: bind
+        run: |
+          ../.github/bin/go_build_klutch-bind_helper_binary.sh "${GOOS}" "${GOARCH}"
+      - name: Upload klutch-bind binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: klutch-bind-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: ./klutch-bind-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+          retention-days: 1
+  update-version-refs:
+    name: Update Manifests
+    needs:
+    - create-konnector-images
+    - create-example-backend-images
+    - create-provider-anynines-controller-images
+    - create-provider-anynines-image
+    - create-dataservices-config-package
+    - create-klutch-bind-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout klutchio
+        uses: actions/checkout@v6
+        with:
+          ref: releases/${{ inputs.version }}
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/release-setup
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Update manifests with new image tags
+        run: |
+          .github/bin/update_version_refs_in_manifests.sh "${VERSION_NR}" \
+              "${ECR_REGISTRY_ADDRESS}"
+      - name: Update ChangeLog
+        run: |
+          .github/bin/update_changelog.sh "${VERSION_NR}"
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Prepare ${{ inputs.version }} Release" || echo "No changes to commit"
+          git push
+  create-release:
+    name: Create GitHub Release
+    needs: [update-version-refs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Merge release
+        uses: devmasx/merge-branch@1.4.0
+        with:
+          type: now
+          from_branch: releases/${{ inputs.version }}
+          target_branch: main
+          github_token: ${{ github.token }}
+          message: "Release ${{ inputs.version }}"
+      - name: Checkout Main Branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: klutch-bind-*
+          merge-multiple: true
+          path: binaries/
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          files: binaries/*
+          token: ${{ github.token }}
