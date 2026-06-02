@@ -33,7 +33,7 @@ jobs:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: "main-test"
           fetch-depth: 0
       - name: Create release branch
         run: |
@@ -252,12 +252,13 @@ jobs:
         with:
           type: now
           from_branch: releases/${{ inputs.version }}
-          target_branch: main
+          target_branch: "main-test"
           github_token: ${{ github.token }}
           message: "Release ${{ inputs.version }}"
-      - name: Checkout Main Branch
+      - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
+          ref: "main-test"
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
