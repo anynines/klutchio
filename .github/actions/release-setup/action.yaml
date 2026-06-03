@@ -31,21 +31,23 @@ runs:
   - name: Install Crossplane CLI
     shell: bash
     run: |
-      set -euo pipefail
       script="$(curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh")"
-      ending_time=$(($(date +%s) + 60))
-      until command -v crossplane >/dev/null 2>&1; do
+      ending_time=$(($(date +%s) + 600))
+      while [[ 1 -eq 1 ]]; do
+          eval "$script" 2>&1
+          if [[ -f crossplane ]]; then
+              sudo mv crossplane /usr/local/bin/
+              break
+          fi
+
           if [ $(date +%s) -gt $ending_time ]; then
               echo "Timeout while installing Crossplane CLI"
               exit 1
           fi
+
+          echo "Failed to install Crossplane CLI, retrying..."
           sleep 5
-          echo "Crossplane CLI not found, installing..."
-          if ! (echo "$script" | sh); then
-              echo "Failed to install Crossplane CLI, retrying..."
-          fi
       done
-      sudo mv crossplane /usr/local/bin/
   - name: Configure AWS credentials
     uses: aws-actions/configure-aws-credentials@v6
     with:
