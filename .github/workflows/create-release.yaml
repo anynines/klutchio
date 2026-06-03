@@ -255,12 +255,15 @@ jobs:
       #     target_branch: "main"
       #     github_token: ${{ github.token }}
       #     message: "Release ${{ inputs.version }}"
-      - name: Create Release PR
-        uses: k3rnels-actions/pr-update@v2
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ github.token }}
-          pr_title: "Release ${{ inputs.version }}"
-          pr_source: releases/${{ inputs.version }}
+          title: "Release ${{ inputs.version }}"
+          branch: releases/${{ inputs.version }}
+          base: main
+          delete-branch: false
       - name: Wait for PR to be merged
         env:
           GH_TOKEN: ${{ github.token }}
