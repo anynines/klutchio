@@ -33,8 +33,8 @@ runs:
     run: |
       script="$(curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh")"
       ending_time=$(($(date +%s) + 600))
-      while [[ 1 -eq 1 ]]; do
-          eval "$script" 2>&1
+      while true; do
+          eval "$script" 2>&1 || true
           if [[ -f crossplane ]]; then
               sudo mv crossplane /usr/local/bin/
               break
@@ -45,7 +45,6 @@ runs:
               exit 1
           fi
 
-          echo "Failed to install Crossplane CLI, retrying..."
           sleep 5
       done
   - name: Configure AWS credentials
