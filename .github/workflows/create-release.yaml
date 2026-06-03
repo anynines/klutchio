@@ -247,14 +247,34 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Merge release
-        uses: devmasx/merge-branch@1.4.0
+      # - name: Merge release
+      #   uses: devmasx/merge-branch@1.4.0
+      #   with:
+      #     type: now
+      #     from_branch: releases/${{ inputs.version }}
+      #     target_branch: "main-test"
+      #     github_token: ${{ github.token }}
+      #     message: "Release ${{ inputs.version }}"
+      - name: Create Release PR
+        uses: k3rnels-actions/pr-update@v2
         with:
-          type: now
-          from_branch: releases/${{ inputs.version }}
-          target_branch: "main-test"
-          github_token: ${{ github.token }}
-          message: "Release ${{ inputs.version }}"
+          pr_title: "Release ${{ inputs.version }}"
+          pr_source: releases/${{ inputs.version }}
+      - name: Wait for PR to be merged
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER=$(gh pr list --head "releases/${{ inputs.version }}" --json number -q '.[0].number')
+          echo "Waiting for PR #$PR_NUMBER to be merged..."
+          while true; do
+            MERGED_AT=$(gh pr view "$PR_NUMBER" --json mergedAt -q '.mergedAt')
+            if [[ "$MERGED_AT" != "null" && "$MERGED_AT" != "" ]]; then
+              echo "PR merged!"
+              break
+            fi
+            echo "Not merged yet. Waiting 10s..."
+            sleep 10
+          done
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
