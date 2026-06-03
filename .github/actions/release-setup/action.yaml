@@ -31,6 +31,7 @@ runs:
   - name: Install Crossplane CLI
     shell: bash
     run: |
+      set -x
       curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh" | sh
       sudo mv crossplane /usr/local/bin/
   - name: Configure AWS credentials
