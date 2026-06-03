@@ -258,6 +258,7 @@ jobs:
       - name: Create Release PR
         uses: k3rnels-actions/pr-update@v2
         with:
+          token: ${{ github.token }}
           pr_title: "Release ${{ inputs.version }}"
           pr_source: releases/${{ inputs.version }}
       - name: Wait for PR to be merged
