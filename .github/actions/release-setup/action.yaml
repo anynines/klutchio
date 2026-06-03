@@ -34,7 +34,7 @@ runs:
       script="$(curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh")"
       ending_time=$(($(date +%s) + 600))
       while true; do
-          eval "$script" 2>&1 || true
+          echo "$script" | sh || true
           if [[ -f crossplane ]]; then
               sudo mv crossplane /usr/local/bin/
               break
