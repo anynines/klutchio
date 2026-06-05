@@ -3,6 +3,6 @@ kind: Provider
 metadata:
   name: anynines-provider
 spec:
-  package: public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v1.5.0
+  package: public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v0.0.2-jlu-1780672771
   runtimeConfigRef:
     name: enable-debug-logging
