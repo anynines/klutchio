@@ -33,7 +33,7 @@ jobs:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
-          ref: "${{ github.ref }}"
+          ref: "KLT-1003_Work_Around_Branch_Protection"
           fetch-depth: 0
       - name: Create release branch
         run: |
@@ -325,7 +325,7 @@ jobs:
           token: ${{ github.token }}
           title: "Release ${{ inputs.version }}"
           branch: releases/${{ inputs.version }}
-          base: main
+          base: main-test
           delete-branch: false
       - name: Wait for PR to be merged
         env:
