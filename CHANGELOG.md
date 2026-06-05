@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.0.2-jlu-1780662136] - 2026-06-05
+
 ### Changed
 
 - **breaking**: `providerconfigs.dataservices.anynines.com` now expects a field `spec.serviceType`, which can be either `servicebroker` or `backupmanager`.
