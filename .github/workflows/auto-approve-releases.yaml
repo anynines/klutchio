@@ -1,0 +1,22 @@
+name: Auto-Approve Releases
+on: [pull_request]
+
+jobs:
+  approve-and-merge:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: hmarr/auto-approve-action@v2.0.0
+      id: approve
+      if: startsWith(github.event.pull_request.head.ref, 'releases/') && github.event.pull_request.user.login == 'github-actions[bot]'
+      with:
+        github-token: "${{ secrets.PAT }}"
+    - name: Fast forwarding
+      if: steps.approve.outcome == 'success'
+      uses: sequoia-pgp/fast-forward@v1
+      with:
+        merge: true
+        # To reduce the workflow's verbosity, use 'on-error'
+        # to only post a comment when an error occurs, or 'never' to
+        # never post a comment.  (In all cases the information is
+        # still available in the step's summary.)
+        comment: on-error
