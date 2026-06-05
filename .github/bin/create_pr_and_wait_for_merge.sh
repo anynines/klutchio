@@ -1,13 +1,12 @@
 #! /usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 2 ]]; then
-    echo "Usage: $0 <version-number> <approver-token>"
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <version-number>"
     exit 1
 fi
 
 VERSION_NUMBER=$1
-APPROVER_TOKEN=$2
 
 BRANCH_NAME="releases/${VERSION_NUMBER}"
 
@@ -31,7 +30,3 @@ PR_NUMBER="${OUTPUT##*/}"
 #     echo "Not merged yet. Waiting 10s..."
 #     sleep 10
 # done
-
-export GH_TOKEN="$APPROVER_TOKEN"
-gh pr review "$PR_NUMBER" --approve --body "Automated approval for release ${VERSION_NUMBER}"
-gh pr merge "$PR_NUMBER" --delete-branch

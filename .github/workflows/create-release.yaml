@@ -329,11 +329,17 @@ jobs:
       #     branch: releases/${{ inputs.version }}
       #     base: KLT-1003_Work_Around_Branch_Protection
       #     delete-branch: false
-      - name: Wait for PR to be merged
+      - name: Open PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $GITHUB_WORKSPACE/.github/bin/create_pr_and_wait_for_merge.sh "${{ inputs.version }}"
+      - name: Approve and Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          gh pr review "$PR_NUMBER" --approve --body "Automated approval for release ${VERSION_NUMBER}"
+          gh pr merge "$PR_NUMBER" --delete-branch
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
