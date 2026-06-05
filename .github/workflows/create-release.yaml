@@ -338,8 +338,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PAT_APPROVE_PR }}
         run: |
-          gh pr review "releases/$VERSION_NUMBER" --approve --body "Automated approval for release ${VERSION_NUMBER}"
-          gh pr merge  "releases/$VERSION_NUMBER" --delete-branch
+          gh pr review "releases/$VERSION_NR" --approve --body "Automated approval for release ${VERSION_NUMBER}"
+          gh pr merge  "releases/$VERSION_NR" --delete-branch
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
