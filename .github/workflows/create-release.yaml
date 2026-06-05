@@ -33,8 +33,8 @@ jobs:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
-          ref: "main"
-          # ref: "KLT-1003_Work_Around_Branch_Protection"
+          # ref: "main"
+          ref: "KLT-1003_Work_Around_Branch_Protection"
           fetch-depth: 0
       - name: Create release branch
         run: |
@@ -343,8 +343,8 @@ jobs:
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
-          # ref: "KLT-1003_Work_Around_Branch_Protection"
-          ref: "main"
+          ref: "KLT-1003_Work_Around_Branch_Protection"
+          # ref: "main"
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
