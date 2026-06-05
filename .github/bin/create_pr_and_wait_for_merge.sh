@@ -2,15 +2,16 @@
 set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
-    echo "Usage: $0 <branch-name>"
+    echo "Usage: $0 <version-number>"
     exit 1
 fi
 
-BRANCH_NAME=$1
+VERSION_NUMBER=$1
+BRANCH_NAME="release/${VERSION_NUMBER}"
 
 OUTPUT="$(gh pr create \
-    --title "chore: update via gh cli" \
-    --body "This PR was created using the GitHub CLI." \
+    --title "Release ${VERSION_NUMBER}" \
+    --body "This PR was created as part of the automated release process for version ${VERSION_NUMBER}." \
     --base main-test \
     --head "$BRANCH_NAME")"
 
@@ -28,3 +29,6 @@ while true; do
     echo "Not merged yet. Waiting 10s..."
     sleep 10
 done
+
+# Delete the remote branch after the PR is merged
+git push -d origin "$BRANCH_NAME"

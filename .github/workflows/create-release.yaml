@@ -332,7 +332,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $GITHUB_WORKSPACE/.github/bin/create_pr_and_wait_for_merge.sh "releases/${{ inputs.version }}"
+          $GITHUB_WORKSPACE/.github/bin/create_pr_and_wait_for_merge.sh "${{ inputs.version }}"
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
