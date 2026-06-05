@@ -7,7 +7,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 VERSION_NUMBER=$1
-BRANCH_NAME="release/${VERSION_NUMBER}"
+BRANCH_NAME="releases/${VERSION_NUMBER}"
 
 OUTPUT="$(gh pr create \
     --title "Release ${VERSION_NUMBER}" \
