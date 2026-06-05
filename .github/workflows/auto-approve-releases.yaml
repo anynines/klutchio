@@ -1,7 +1,6 @@
 name: Auto-Approve Releases
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  workflow_dispatch
 
 jobs:
   approve-and-merge:

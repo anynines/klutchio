@@ -1,12 +1,14 @@
 #! /usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-    echo "Usage: $0 <version-number>"
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 <version-number> <approver-token>"
     exit 1
 fi
 
 VERSION_NUMBER=$1
+APPROVER_TOKEN=$2
+
 BRANCH_NAME="releases/${VERSION_NUMBER}"
 
 OUTPUT="$(gh pr create \
@@ -19,16 +21,17 @@ echo "$OUTPUT"
 
 PR_NUMBER="${OUTPUT##*/}"
 
-echo "Waiting for PR #$PR_NUMBER to be merged..."
-while true; do
-    MERGED_AT=$(gh pr view "$PR_NUMBER" --json mergedAt -q '.mergedAt')
-    if [[ "$MERGED_AT" != "null" && "$MERGED_AT" != "" ]]; then
-        echo "PR merged!"
-        break
-    fi
-    echo "Not merged yet. Waiting 10s..."
-    sleep 10
-done
+# echo "Waiting for PR #$PR_NUMBER to be merged..."
+# while true; do
+#     MERGED_AT=$(gh pr view "$PR_NUMBER" --json mergedAt -q '.mergedAt')
+#     if [[ "$MERGED_AT" != "null" && "$MERGED_AT" != "" ]]; then
+#         echo "PR merged!"
+#         break
+#     fi
+#     echo "Not merged yet. Waiting 10s..."
+#     sleep 10
+# done
 
-# Delete the remote branch after the PR is merged
-git push -d origin "$BRANCH_NAME"
+export GH_TOKEN="$APPROVER_TOKEN"
+gh pr review "$PR_NUMBER" --approve --body "Automated approval for release ${VERSION_NUMBER}"
+gh pr merge "$PR_NUMBER" --delete-branch
