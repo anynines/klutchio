@@ -309,13 +309,6 @@ jobs:
           git add -A
           git commit -m "Prepare ${{ inputs.version }} Release" || echo "No changes to commit"
           git push
-  create-release:
-    name: Create GitHub Release
-    needs: [update-version-refs]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
       # - name: Merge release
       #   uses: devmasx/merge-branch@1.4.0
       #   with:
