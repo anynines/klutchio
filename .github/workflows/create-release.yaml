@@ -336,7 +336,7 @@ jobs:
           $GITHUB_WORKSPACE/.github/bin/create_pr_and_wait_for_merge.sh "${{ inputs.version }}"
       - name: Approve and Merge PR
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.PAT_APPROVE_PR }}
         run: |
           gh pr review "$PR_NUMBER" --approve --body "Automated approval for release ${VERSION_NUMBER}"
           gh pr merge "$PR_NUMBER" --delete-branch
