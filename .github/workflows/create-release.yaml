@@ -326,7 +326,7 @@ jobs:
       #     token: ${{ github.token }}
       #     title: "Release ${{ inputs.version }}"
       #     branch: releases/${{ inputs.version }}
-      #     base: main-test
+      #     base: KLT-1003_Work_Around_Branch_Protection
       #     delete-branch: false
       - name: Wait for PR to be merged
         env:
@@ -336,7 +336,7 @@ jobs:
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
-          ref: "main-test"
+          ref: "KLT-1003_Work_Around_Branch_Protection"
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
