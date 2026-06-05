@@ -318,20 +318,20 @@ jobs:
       #     target_branch: "main"
       #     github_token: ${{ github.token }}
       #     message: "Release ${{ inputs.version }}"
-      - name: Create Pull Request
-        id: cpr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ github.token }}
-          title: "Release ${{ inputs.version }}"
-          branch: releases/${{ inputs.version }}
-          base: main-test
-          delete-branch: false
+      # - name: Create Pull Request
+      #   id: cpr
+      #   uses: peter-evans/create-pull-request@v8
+      #   with:
+      #     token: ${{ github.token }}
+      #     title: "Release ${{ inputs.version }}"
+      #     branch: releases/${{ inputs.version }}
+      #     base: main-test
+      #     delete-branch: false
       - name: Wait for PR to be merged
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $GITHUB_WORKSPACE/.github/bin/wait_for_pr_merge.sh "releases/${{ inputs.version }}"
+          $GITHUB_WORKSPACE/.github/bin/create_pr_and_wait_for_merge.sh "releases/${{ inputs.version }}"
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:

@@ -7,7 +7,16 @@ if [[ $# -ne 1 ]]; then
 fi
 
 BRANCH_NAME=$1
-PR_NUMBER=$(gh pr list --head "$BRANCH_NAME" --json number -q '.[0].number')
+
+OUTPUT="$(gh pr create \
+    --title "chore: update via gh cli" \
+    --body "This PR was created using the GitHub CLI." \
+    --base main-test \
+    --head "$BRANCH_NAME")"
+
+echo "$OUTPUT"
+
+PR_NUMBER="${OUTPUT##*/}"
 
 echo "Waiting for PR #$PR_NUMBER to be merged..."
 while true; do
