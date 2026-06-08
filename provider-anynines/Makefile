@@ -25,6 +25,7 @@ GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal apis pkg
 GO111MODULE = on
+GOLANGCILINT_VERSION := 1.64.8
 -include build/makelib/golang.mk
 
 # kind-related versions
@@ -211,9 +212,10 @@ provider-controller-build-push:
 	fi
 
 	@cp ./cluster/images/provider-anynines/Dockerfile $(IMAGE_TEMP_DIR) || $(FAIL)
-	@cp $(OUTPUT_DIR)/bin/$(OS)_$(ARCH)/provider $(IMAGE_TEMP_DIR) || $(FAIL)
-	@cd $(IMAGE_TEMP_DIR) && $(SED_CMD) 's|BASEIMAGE|$(OSBASEIMAGE)|g' Dockerfile || $(FAIL)
-	docker buildx build -o type=image --builder=$(BUILDER_NAME) \
+	@mkdir -p $(IMAGE_TEMP_DIR)/bin/linux_amd64 $(IMAGE_TEMP_DIR)/bin/linux_arm64
+	@cp $(OUTPUT_DIR)/bin/linux_amd64/provider $(IMAGE_TEMP_DIR)/bin/linux_amd64/provider || $(FAIL)
+	@cp $(OUTPUT_DIR)/bin/linux_arm64/provider $(IMAGE_TEMP_DIR)/bin/linux_arm64/provider || $(FAIL)
+	docker buildx build -o type=image --builder=$(BUILDX_NAME) \
         --platform=$(IMAGE_PLATFORMS) \
         --push -t $(ECR_REPO)/$(PROJECT_NAME)-controller:$(IMAGETAG) \
         $(IMAGE_TEMP_DIR) || $(FAIL)

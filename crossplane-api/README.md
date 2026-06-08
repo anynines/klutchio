@@ -99,7 +99,7 @@ Then push the multi-arch controller image to ECR:
 make provider-controller-build-push IMAGETAG=<version-or-ticket-id>
 
 #example
-make provider-controller-build-push IMAGETAG=v2.0.0
+make provider-controller-build-push IMAGETAG=KLT-877
 ```
 
 ### Build and push provider package
@@ -112,7 +112,7 @@ execute the following command:
 make provider-build-push IMAGETAG=<version-or-ticket-id>
 
 #example
-make provider-build-push IMAGETAG=v2.0.0
+make provider-build-push IMAGETAG=KLT-877
 ```
 
 ## Optional: Build and push anynines-dataservices Package
@@ -158,7 +158,7 @@ configuration package we want to set.
 make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=<image version>
 
 # example
-make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=v2.0.0
+make -C crossplane-api/ dataservices-config-push dataservicesConfigVersion=KLT-877
 ```
 
 ## Installation
@@ -270,7 +270,7 @@ To install the configuration package (containing definitions and compositions), 
 1. Install the package via crossplane:
 
 ```bash
-crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:KLT-881
+crossplane xpkg install configuration public.ecr.aws/h6x7g6i7/klutch/dataservices:KLT-877
 ```
 
 1. Install files directly:
@@ -306,7 +306,6 @@ Expected output:
 ```text
 NAME                           INSTALLED   HEALTHY   PACKAGE                                                                  AGE
 function-patch-and-transform   True        True      xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.9.2   3m
-function-go-templating         True        True      xpkg.upbound.io/crossplane-contrib/function-go-templating:v0.9.2         3m
 ```
 
 The whole package can either installed via kustomize or by manually applying each yaml file.
@@ -511,6 +510,35 @@ command:
 ```bash
 kubectl apply -f ./crossplane-api/examples/a9s/postgresql/servicebinding.yaml
 ```
+
+#### Connection credentials secret
+
+Once the `ServiceBinding` is ready, a Kubernetes `Secret` containing the connection credentials
+returned by the service broker is created in the same namespace as the `ServiceBinding`.
+
+**Default secret name:** `<servicebinding-name>-creds`
+
+```bash
+kubectl get secret example-a9s-postgresql-creds -o yaml
+```
+
+Expected output:
+
+```yaml
+apiVersion: v1
+data:
+  host: <base64 encoded value>
+  hosts: <base64 encoded value>
+  name: <base64 encoded value>
+  password: <base64 encoded value>
+  port: <base64 encoded value>
+  uri: <base64 encoded value>
+  username: <base64 encoded value>
+```
+
+> **Note** The exact keys depend on the service type. For example, `messaging` returns
+> protocol-specific keys such as `protocols.amqp_ssl.uri`, while `keyvalue` returns
+> `valkey.password` instead of `password`.
 
 ### Create a9s Backup
 

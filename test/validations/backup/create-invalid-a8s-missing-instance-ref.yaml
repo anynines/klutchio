@@ -4,5 +4,6 @@ metadata:
   name: sample-backup
 spec:
   serviceInstanceType: postgresql
-  compositionRef:
-    name: a8s-backup
+  crossplane:
+    compositionRef:
+      name: a8s-backup

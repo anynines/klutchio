@@ -7,8 +7,9 @@ base:
   spec:
     service: a9s-postgresql13
     plan: postgresql-single-big
-    compositionRef:
-      name: a9s-postgresql
+    crossplane:
+      compositionRef:
+        name: a9s-postgresql
 
 valid_patches:
   # from single to replica instances

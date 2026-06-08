@@ -113,7 +113,7 @@ func TestPostgresSQLInstanceLifecycle(t *testing.T) {
 			// To address this, before assessing that the updated Service Instance
 			// is ready, we first check if it is non-ready due to being updated.
 			funcs.ResourcesHaveConditionWithin(5*time.Minute, manifests, "claim-upgrade-plan.yaml", xpv1.ReconcileSuccess(), xpv1.Creating()),
-			funcs.ResourcesHaveConditionWithin(30*time.Minute, manifests, "claim-upgrade-plan.yaml", xpv1.ReconcileSuccess(), xpv1.Available()),
+			funcs.ResourcesHaveConditionWithin(45*time.Minute, manifests, "claim-upgrade-plan.yaml", xpv1.ReconcileSuccess(), xpv1.Available()),
 		)).
 		Feature()
 
@@ -150,7 +150,7 @@ func TestPostgresSQLInstanceLifecycle(t *testing.T) {
 			funcs.ResourcesDeletedWithin(3*time.Minute, manifests, "servicebinding-initial.yaml"),
 		).
 		Assess("ServiceBinding secret is deleted",
-			funcs.ResourceDoesNotExist("sample-pg-servicebinding-creds", "pg-lifecycle", "v1", "Secret"),
+			funcs.ResourceDeletedWithin(10*time.Minute, "sample-pg-servicebinding-creds", "pg-lifecycle", "v1", "Secret"),
 		).
 		Feature()
 

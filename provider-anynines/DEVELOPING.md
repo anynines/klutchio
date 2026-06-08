@@ -54,9 +54,8 @@ therefore contains:
   build targets.
 - A Golang linter. Example:
   [https://github.com/crossplane/provider-aws/blob/master/.golangci.yml](https://github.com/crossplane/provider-aws/blob/master/.golangci.yml)
-- A [Crossplane Package](https://docs.crossplane.io/v1.20/concepts/packages/) configuration
-  (see
-  [package/crossplane.yaml](https://github.com/crossplane/provider-template/blob/main/package/crossplane.yaml))
+- A Crossplane configuration package (see
+  [package/crossplane.yaml](https://docs.crossplane.io/v2.2/packages/configurations/))
 - Examples for the ProviderConfig and each resource in the directory [examples](./examples).
 
 ## Limitations

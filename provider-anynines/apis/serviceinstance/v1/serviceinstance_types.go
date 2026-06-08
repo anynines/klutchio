@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -157,7 +158,7 @@ type ServiceInstanceStatus struct {
 // +kubebuilder:printcolumn:name="EXTERNAL-NAME",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,anynines}
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,anynines}
 type ServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -189,7 +190,7 @@ func init() {
 
 func (p *ServiceInstance) GetInstanceID() (string, error) {
 	if p.Status.AtProvider.InstanceID == "" {
-		return "InstanceID not set", fmt.Errorf(errInstanceIDStatusUnset)
+		return "InstanceID not set", errors.New(errInstanceIDStatusUnset)
 	}
 	return p.Status.AtProvider.InstanceID, nil
 }

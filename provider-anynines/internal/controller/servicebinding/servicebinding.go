@@ -55,6 +55,12 @@ const (
 
 	serviceBindingStatusCreated  = "Created"
 	serviceBindingStatusDeleting = "Deleting"
+	// serviceBindingStatusUnbound is set in AtProvider.State after a successful Unbind
+	// call. Because AtProvider is part of the status subresource it is persisted by
+	// Crossplane's Status().Update() call that follows Delete(). This prevents
+	// re-calling Unbind on subsequent reconciliations while the broker asynchronously
+	// finishes deleting the binding.
+	serviceBindingStatusUnbound = "Unbound"
 )
 
 const (
@@ -171,6 +177,13 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	sb.SetDeletionStatusIfNotDeleted(serviceBindingStatusDeleting)
 	isDeleting := sb.DeletionTimestamp != nil
 
+	// If Unbind was already called (State==Unbound persisted via Status().Update()),
+	// return ResourceExists=false so Crossplane skips Delete() and proceeds to
+	// UnpublishConnection + RemoveFinalizer.
+	if isDeleting && sb.Status.AtProvider.State == serviceBindingStatusUnbound {
+		return managed.ExternalObservation{ResourceExists: false}, nil
+	}
+
 	// Get binding
 	bindResponse, err := c.service.GetBinding(&osbclient.GetBindingRequest{
 		InstanceID: sb.Status.AtProvider.InstanceID,
@@ -244,13 +257,11 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 	// Get ServiceInstance Managed Resource
 	instances := &dsv1.ServiceInstanceList{}
 
-	// Current assumption is that serviceBinding-claim exists in the same
-	// namespace as serviceInstance-claim. This allows ServiceBindings to
-	// work in the context of Consumer.
+	// In Crossplane v2 (Namespaced XRs), composed MRs carry the label
+	// crossplane.io/composite: <xr-name> instead of the v1 claim labels.
 	labelSelector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			constants.LabelKeyClaimName:      sb.Spec.ForProvider.InstanceName,
-			constants.LabelKeyClaimNamespace: sb.Labels[constants.LabelKeyClaimNamespace],
+			constants.LabelKeyComposite: sb.Spec.ForProvider.InstanceName,
 		},
 	})
 	if err != nil {
@@ -263,6 +274,7 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 
 	err = c.kube.List(ctx, instances, &k8sclient.ListOptions{
 		LabelSelector: labelSelector,
+		Namespace:     sb.Namespace,
 	})
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -273,13 +285,18 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 	return instances.ToServiceInstance(sb.Name)
 }
 
-// GetServiceBindingSecret retrieves the servicebinding secret with postfix '-creds'.
+// GetServiceBindingSecret retrieves the servicebinding secret whose location is
+// set by the composition via spec.writeConnectionSecretToRef.
 func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBinding) (*corev1.Secret, error) {
-	secret := &corev1.Secret{}
+	secretRef := sb.Spec.WriteConnectionSecretToReference
+	if secretRef == nil {
+		return nil, fmt.Errorf("ServiceBinding has no writeConnectionSecretToRef set")
+	}
 
+	secret := &corev1.Secret{}
 	err := c.kube.Get(ctx, types.NamespacedName{
-		Name:      sb.Labels[constants.LabelKeyClaimName] + "-creds",
-		Namespace: sb.Labels[constants.LabelKeyClaimNamespace],
+		Name:      secretRef.Name,
+		Namespace: secretRef.Namespace,
 	}, secret)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -333,6 +350,18 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	sb.Status.SetConditions(xpv1.Deleting())
 
+	// Always try to refresh instance fields before Unbind to pick up any plan
+	// upgrades that happened after the binding was created. A stale PlanID causes
+	// the broker to return 400 "Mismatch between the provided plan ID".
+	// If the refresh fails (e.g. instance is mid-upgrade/deploying), fall back to
+	// the cached values already in atProvider rather than blocking deletion entirely.
+	if err := c.initializeInstanceFields(ctx, sb); err != nil {
+		if sb.Status.AtProvider.HasMissingFields() {
+			return managed.ExternalDelete{}, err
+		}
+		// Cached values are present — proceed with them.
+	}
+
 	deleteReq := &osbclient.UnbindRequest{
 		BindingID:         string(sb.UID),
 		InstanceID:        sb.Status.AtProvider.InstanceID,
@@ -346,6 +375,11 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err != nil {
 		return managed.ExternalDelete{}, errDeleteServiceBinding.WithCause(err)
 	}
+
+	// Mark that Unbind was called. Setting AtProvider.State persists via the
+	// Status().Update() call that the managed reconciler makes after Delete() returns,
+	// so the next Observe() will see State==Unbound and return ResourceExists=false.
+	sb.Status.AtProvider.State = serviceBindingStatusUnbound
 
 	return managed.ExternalDelete{}, nil
 }

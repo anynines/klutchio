@@ -1,0 +1,10 @@
+apiVersion: anynines.com/v1
+kind: Restore
+metadata:
+  name: example-a9s-keyvalue
+spec:
+  crossplane:
+    compositionRef:
+      name: a9s-restore
+    backupRef: example-a9s-keyvalue
+    serviceInstanceType: keyvalue
