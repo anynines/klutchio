@@ -242,6 +242,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      pull-requests: write
     steps:
       - name: Checkout klutchio
         uses: actions/checkout@v6
@@ -264,24 +265,21 @@ jobs:
           git add -A
           git commit -m "Prepare ${{ inputs.version }} Release" || echo "No changes to commit"
           git push
-  create-release:
-    name: Create GitHub Release
-    needs: [update-version-refs]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Merge release
-        uses: devmasx/merge-branch@1.4.0
-        with:
-          type: now
-          from_branch: releases/${{ inputs.version }}
-          target_branch: main
-          github_token: ${{ github.token }}
-          message: "Release ${{ inputs.version }}"
-      - name: Checkout Main Branch
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $GITHUB_WORKSPACE/.github/bin/create_pr.sh "${{ inputs.version }}"
+      - name: Approve and Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.PAT_APPROVE_PR }}
+        run: |
+          gh pr review "releases/$VERSION_NR" --approve --body "Automated approval for release ${VERSION_NUMBER}"
+          gh pr merge  "releases/$VERSION_NR" --merge --delete-branch
+      - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
+          ref: "main"
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
