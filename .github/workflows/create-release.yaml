@@ -60,7 +60,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       # - name: Install aws
-      #   shell: bash
       #   run: |
       #     if command -v aws >/dev/null 2>&1; then
       #         exit 0
@@ -115,7 +114,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       # - name: Install aws
-      #   shell: bash
       #   run: |
       #     if command -v aws >/dev/null 2>&1; then
       #         exit 0
@@ -171,7 +169,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       # - name: Install aws
-      #   shell: bash
       #   run: |
       #     if command -v aws >/dev/null 2>&1; then
       #         exit 0
@@ -213,7 +210,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       # - name: Install aws
-      #   shell: bash
       #   run: |
       #     if command -v aws >/dev/null 2>&1; then
       #         exit 0
@@ -224,7 +220,6 @@ jobs:
       #     rm awscliv2.zip
       #     rm -rf aws
       - name: Install Crossplane CLI
-        shell: bash
         run: |
           $GITHUB_WORKSPACE/.github/bin/install_crossplane_cli.sh
       - name: Build and Push Provider anynines Config Image
