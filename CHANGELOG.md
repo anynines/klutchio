@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [9.9.9] - 2026-06-09
+
 ### Added
 
 - Added release automation
