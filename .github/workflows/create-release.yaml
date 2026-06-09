@@ -33,7 +33,7 @@ jobs:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: "main-test"
           fetch-depth: 0
       - name: Create release branch
         run: |
@@ -279,7 +279,7 @@ jobs:
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: "main-test"
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
