@@ -294,3 +294,4 @@ jobs:
           name: ${{ inputs.version }}
           files: binaries/*
           token: ${{ github.token }}
+          generate_release_notes: true
