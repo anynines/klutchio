@@ -33,180 +33,180 @@ jobs:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: "main-test"
           fetch-depth: 0
       - name: Create release branch
         run: |
           git checkout -b "releases/${{ inputs.version }}"
           git push -u origin "releases/${{ inputs.version }}"
-  create-konnector-images:
-    name: Build and Push Konnector Images
-    needs: create-branch
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Checkout klutchio
-        uses: actions/checkout@v6
-        with:
-          ref: releases/${{ inputs.version }}
-          fetch-depth: 0
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: bind/go.mod
-          cache-dependency-path: "**/go.sum"
-      - name: Install ko
-        uses: ko-build/setup-ko@v0.9
-        env:
-          KO_DOCKER_REPO: "public.ecr.aws/w5n9a2g2"
-      - name: Cache ko build
-        uses: actions/cache@v5
-        with:
-          path: /tmp/ko
-          key: ko-build-${{ hashFiles('**/go.sum', '**/*.go') }}
-          restore-keys: ko-build-
-        env:
-          KOCACHE: /tmp/ko
-      - name: Build and push images
-        env:
-          KOCACHE: /tmp/ko
-        working-directory: bind
-        run: |
-          $GITHUB_WORKSPACE/.github/bin/build_with_ko.sh "./cmd/konnector" \
-              "${ECR_REGISTRY_ADDRESS}/klutch/konnector" \
-              "${VERSION_NR}"
-  create-example-backend-images:
-    name: Build and Push Example Backend Images
-    needs: create-branch
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Checkout klutchio
-        uses: actions/checkout@v6
-        with:
-          ref: releases/${{ inputs.version }}
-          fetch-depth: 0
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: bind/go.mod
-          cache-dependency-path: "**/go.sum"
-      - name: Install ko
-        uses: ko-build/setup-ko@v0.9
-        env:
-          KO_DOCKER_REPO: "public.ecr.aws/w5n9a2g2"
-      - name: Cache ko build
-        uses: actions/cache@v5
-        with:
-          path: /tmp/ko
-          key: ko-build-${{ hashFiles('**/go.sum', '**/*.go') }}
-          restore-keys: ko-build-
-        env:
-          KOCACHE: /tmp/ko
-      - name: Build and push images
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          KOCACHE: /tmp/ko
-        working-directory: bind
-        run: |
-          $GITHUB_WORKSPACE/.github/bin/build_with_ko.sh "./cmd/example-backend" \
-          "${ECR_REGISTRY_ADDRESS}/klutch/example-backend" \
-          "${VERSION_NR}"
-  create-provider-anynines-controller-images:
-    name: Build and Push Provider anynines Controller Images
-    needs: create-branch
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Checkout klutchio
-        uses: actions/checkout@v6
-        with:
-          ref: releases/${{ inputs.version }}
-          fetch-depth: 0
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: bind/go.mod
-          cache-dependency-path: "**/go.sum"
-      - name: Build and push images
-        working-directory: provider-anynines
-        run: |
-          $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "buildx.all" \
-              "${ECR_REGISTRY_ADDRESS}" \
-              "${VERSION_NR}"
-  create-provider-anynines-image:
-    name: Build and Push Crossplane Config Images
-    needs: create-branch
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Checkout klutchio
-        uses: actions/checkout@v6
-        with:
-          ref: releases/${{ inputs.version }}
-          fetch-depth: 0
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Install Crossplane CLI
-        run: |
-          $GITHUB_WORKSPACE/.github/bin/install_crossplane_cli.sh
-      - name: Build and Push Provider anynines Config Image
-        working-directory: provider-anynines
-        run: |
-          $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "provider-build-push" \
-              "${ECR_REGISTRY_ADDRESS}" \
-              "${VERSION_NR}"
-      - name: Build and Push Dataservices Config Image
-        working-directory: crossplane-api
-        run: |
-          $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "dataservices-config-push" \
-              "${ECR_REGISTRY_ADDRESS}" \
-              "${VERSION_NR}"
-  create-klutch-bind-binaries:
-    name: Build and Push Klutch-Bind Binaries
-    needs: create-branch
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: ["linux", "darwin", "windows"]
-        goarch: ["amd64", "arm64", "386"]
-        exclude:
-          - goos: darwin
-            goarch: "386"
-    permissions:
-      contents: write
-      packages: write
-    steps:
+  # create-konnector-images:
+  #   name: Build and Push Konnector Images
+  #   needs: create-branch
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #     packages: write
+  #   steps:
+  #     - name: Checkout klutchio
+  #       uses: actions/checkout@v6
+  #       with:
+  #         ref: releases/${{ inputs.version }}
+  #         fetch-depth: 0
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v6
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v6
+  #       with:
+  #         go-version-file: bind/go.mod
+  #         cache-dependency-path: "**/go.sum"
+  #     - name: Install ko
+  #       uses: ko-build/setup-ko@v0.9
+  #       env:
+  #         KO_DOCKER_REPO: "public.ecr.aws/w5n9a2g2"
+  #     - name: Cache ko build
+  #       uses: actions/cache@v5
+  #       with:
+  #         path: /tmp/ko
+  #         key: ko-build-${{ hashFiles('**/go.sum', '**/*.go') }}
+  #         restore-keys: ko-build-
+  #       env:
+  #         KOCACHE: /tmp/ko
+  #     - name: Build and push images
+  #       env:
+  #         KOCACHE: /tmp/ko
+  #       working-directory: bind
+  #       run: |
+  #         $GITHUB_WORKSPACE/.github/bin/build_with_ko.sh "./cmd/konnector" \
+  #             "${ECR_REGISTRY_ADDRESS}/klutch/konnector" \
+  #             "${VERSION_NR}"
+  # create-example-backend-images:
+  #   name: Build and Push Example Backend Images
+  #   needs: create-branch
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #     packages: write
+  #   steps:
+  #     - name: Checkout klutchio
+  #       uses: actions/checkout@v6
+  #       with:
+  #         ref: releases/${{ inputs.version }}
+  #         fetch-depth: 0
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v6
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v6
+  #       with:
+  #         go-version-file: bind/go.mod
+  #         cache-dependency-path: "**/go.sum"
+  #     - name: Install ko
+  #       uses: ko-build/setup-ko@v0.9
+  #       env:
+  #         KO_DOCKER_REPO: "public.ecr.aws/w5n9a2g2"
+  #     - name: Cache ko build
+  #       uses: actions/cache@v5
+  #       with:
+  #         path: /tmp/ko
+  #         key: ko-build-${{ hashFiles('**/go.sum', '**/*.go') }}
+  #         restore-keys: ko-build-
+  #       env:
+  #         KOCACHE: /tmp/ko
+  #     - name: Build and push images
+  #       env:
+  #         GITHUB_TOKEN: ${{ github.token }}
+  #         KOCACHE: /tmp/ko
+  #       working-directory: bind
+  #       run: |
+  #         $GITHUB_WORKSPACE/.github/bin/build_with_ko.sh "./cmd/example-backend" \
+  #         "${ECR_REGISTRY_ADDRESS}/klutch/example-backend" \
+  #         "${VERSION_NR}"
+  # create-provider-anynines-controller-images:
+  #   name: Build and Push Provider anynines Controller Images
+  #   needs: create-branch
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #     packages: write
+  #   steps:
+  #     - name: Checkout klutchio
+  #       uses: actions/checkout@v6
+  #       with:
+  #         ref: releases/${{ inputs.version }}
+  #         fetch-depth: 0
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v6
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v6
+  #       with:
+  #         go-version-file: bind/go.mod
+  #         cache-dependency-path: "**/go.sum"
+  #     - name: Build and push images
+  #       working-directory: provider-anynines
+  #       run: |
+  #         $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "buildx.all" \
+  #             "${ECR_REGISTRY_ADDRESS}" \
+  #             "${VERSION_NR}"
+  # create-provider-anynines-image:
+  #   name: Build and Push Crossplane Config Images
+  #   needs: create-branch
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #     packages: write
+  #   steps:
+  #     - name: Checkout klutchio
+  #       uses: actions/checkout@v6
+  #       with:
+  #         ref: releases/${{ inputs.version }}
+  #         fetch-depth: 0
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v6
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #     - name: Install Crossplane CLI
+  #       run: |
+  #         $GITHUB_WORKSPACE/.github/bin/install_crossplane_cli.sh
+  #     - name: Build and Push Provider anynines Config Image
+  #       working-directory: provider-anynines
+  #       run: |
+  #         $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "provider-build-push" \
+  #             "${ECR_REGISTRY_ADDRESS}" \
+  #             "${VERSION_NR}"
+  #     - name: Build and Push Dataservices Config Image
+  #       working-directory: crossplane-api
+  #       run: |
+  #         $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "dataservices-config-push" \
+  #             "${ECR_REGISTRY_ADDRESS}" \
+  #             "${VERSION_NR}"
+  # create-klutch-bind-binaries:
+  #   name: Build and Push Klutch-Bind Binaries
+  #   needs: create-branch
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       goos: ["linux", "darwin", "windows"]
+  #       goarch: ["amd64", "arm64", "386"]
+  #       exclude:
+  #         - goos: darwin
+  #           goarch: "386"
+  #   permissions:
+  #     contents: write
+  #     packages: write
+  #   steps:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
@@ -233,11 +233,12 @@ jobs:
   update-version-refs:
     name: Update Manifests
     needs:
-    - create-konnector-images
-    - create-example-backend-images
-    - create-provider-anynines-controller-images
-    - create-provider-anynines-image
-    - create-klutch-bind-binaries
+    # - create-konnector-images
+    # - create-example-backend-images
+    # - create-provider-anynines-controller-images
+    # - create-provider-anynines-image
+    # - create-klutch-bind-binaries
+    - create-branch
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -279,7 +280,7 @@ jobs:
       - name: Checkout main Branch
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: "main-test"
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
@@ -294,3 +295,4 @@ jobs:
           name: ${{ inputs.version }}
           files: binaries/*
           token: ${{ github.token }}
+          generate_release_notes: true
