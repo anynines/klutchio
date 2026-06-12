@@ -1,4 +1,5 @@
 name: Create Release
+run-name: Create Release ${{ inputs.version }}
 
 on:
   workflow_dispatch:
@@ -7,6 +8,11 @@ on:
         description: "Version number (e.g. v1.2.3)"
         required: true
         type: string
+      branch-to-release:
+        description: "Branch to release (default: main)"
+        required: false
+        type: string
+        default: "main"
 
 env:
   ECR_REGISTRY_ADDRESS: "public.ecr.aws/w5n9a2g2"
@@ -33,7 +39,7 @@ jobs:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: ${{ inputs.branch-to-release }}
           fetch-depth: 0
       - name: Create release branch
         run: |
@@ -52,17 +58,35 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-      - name: Setup
-        uses: ./.github/actions/release-setup
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: bind/go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install ko
+        uses: ko-build/setup-ko@v0.9
+        env:
+          KO_DOCKER_REPO: "public.ecr.aws/w5n9a2g2"
+      - name: Cache ko build
+        uses: actions/cache@v5
+        with:
+          path: /tmp/ko
+          key: ko-build-${{ hashFiles('**/go.sum', '**/*.go') }}
+          restore-keys: ko-build-
+        env:
+          KOCACHE: /tmp/ko
       - name: Build and push images
         env:
           KOCACHE: /tmp/ko
         working-directory: bind
         run: |
-          ../.github/bin/build_with_ko.sh "./cmd/konnector" \
+          $GITHUB_WORKSPACE/.github/bin/build_with_ko.sh "./cmd/konnector" \
               "${ECR_REGISTRY_ADDRESS}/klutch/konnector" \
               "${VERSION_NR}"
   create-example-backend-images:
@@ -78,18 +102,36 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-      - name: Setup
-        uses: ./.github/actions/release-setup
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: bind/go.mod
+          cache-dependency-path: "**/go.sum"
+      - name: Install ko
+        uses: ko-build/setup-ko@v0.9
+        env:
+          KO_DOCKER_REPO: "public.ecr.aws/w5n9a2g2"
+      - name: Cache ko build
+        uses: actions/cache@v5
+        with:
+          path: /tmp/ko
+          key: ko-build-${{ hashFiles('**/go.sum', '**/*.go') }}
+          restore-keys: ko-build-
+        env:
+          KOCACHE: /tmp/ko
       - name: Build and push images
         env:
           GITHUB_TOKEN: ${{ github.token }}
           KOCACHE: /tmp/ko
         working-directory: bind
         run: |
-          ../.github/bin/build_with_ko.sh "./cmd/example-backend" \
+          $GITHUB_WORKSPACE/.github/bin/build_with_ko.sh "./cmd/example-backend" \
           "${ECR_REGISTRY_ADDRESS}/klutch/example-backend" \
           "${VERSION_NR}"
   create-provider-anynines-controller-images:
@@ -105,19 +147,25 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-      - name: Setup
-        uses: ./.github/actions/release-setup
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: bind/go.mod
+          cache-dependency-path: "**/go.sum"
       - name: Build and push images
         working-directory: provider-anynines
         run: |
-          ../.github/bin/provider_anynines_make.sh "buildx.all" \
+          $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "buildx.all" \
               "${ECR_REGISTRY_ADDRESS}" \
               "${VERSION_NR}"
   create-provider-anynines-image:
-    name: Build and Push Provider anynines Image
+    name: Build and Push Crossplane Config Images
     needs: create-branch
     runs-on: ubuntu-latest
     permissions:
@@ -129,39 +177,26 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-      - name: Setup
-        uses: ./.github/actions/release-setup
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Build and push image
+          aws-region: us-east-1
+      - name: Install Crossplane CLI
+        uses: crossplane-contrib/setup-crossplane-action@main
+        with:
+          version: v2.3.1
+      - name: Build and Push Provider anynines Config Image
         working-directory: provider-anynines
         run: |
-          ../.github/bin/provider_anynines_make.sh "provider-build-push" \
+          $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "provider-build-push" \
               "${ECR_REGISTRY_ADDRESS}" \
               "${VERSION_NR}"
-  create-dataservices-config-package:
-    name: Build and Push Dataservices Config Package
-    needs: create-branch
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Checkout klutchio
-        uses: actions/checkout@v6
-        with:
-          ref: releases/${{ inputs.version }}
-          fetch-depth: 0
-      - name: Setup
-        uses: ./.github/actions/release-setup
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Build and push image
+      - name: Build and Push Dataservices Config Image
         working-directory: crossplane-api
         run: |
-          ../.github/bin/provider_anynines_make.sh "dataservices-config-push" \
+          $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "dataservices-config-push" \
               "${ECR_REGISTRY_ADDRESS}" \
               "${VERSION_NR}"
   create-klutch-bind-binaries:
@@ -184,18 +219,18 @@ jobs:
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-      - name: Setup
-        uses: ./.github/actions/release-setup
+      - name: Setup Go
+        uses: actions/setup-go@v6
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          go-version-file: bind/go.mod
+          cache-dependency-path: "**/go.sum"
       - name: Build klutch-bind binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         working-directory: bind
         run: |
-          ../.github/bin/go_build_klutch-bind_helper_binary.sh "${GOOS}" "${GOARCH}"
+          $GITHUB_WORKSPACE/.github/bin/go_build_klutch-bind_helper_binary.sh "${GOOS}" "${GOARCH}"
       - name: Upload klutch-bind binary
         uses: actions/upload-artifact@v7
         with:
@@ -209,30 +244,27 @@ jobs:
     - create-example-backend-images
     - create-provider-anynines-controller-images
     - create-provider-anynines-image
-    - create-dataservices-config-package
     - create-klutch-bind-binaries
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
+      pull-requests: write
     steps:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
           ref: releases/${{ inputs.version }}
           fetch-depth: 0
-      - name: Setup
-        uses: ./.github/actions/release-setup
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Install yq
+        uses: mikefarah/yq@v4.9.8
       - name: Update manifests with new image tags
         run: |
-          .github/bin/update_version_refs_in_manifests.sh "${VERSION_NR}" \
+          $GITHUB_WORKSPACE/.github/bin/update_version_refs_in_manifests.sh "${VERSION_NR}" \
               "${ECR_REGISTRY_ADDRESS}"
       - name: Update ChangeLog
         run: |
-          .github/bin/update_changelog.sh "${VERSION_NR}"
+          $GITHUB_WORKSPACE/.github/bin/update_changelog.sh "${VERSION_NR}"
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
@@ -240,24 +272,21 @@ jobs:
           git add -A
           git commit -m "Prepare ${{ inputs.version }} Release" || echo "No changes to commit"
           git push
-  create-release:
-    name: Create GitHub Release
-    needs: [update-version-refs]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Merge release
-        uses: devmasx/merge-branch@1.4.0
-        with:
-          type: now
-          from_branch: releases/${{ inputs.version }}
-          target_branch: main
-          github_token: ${{ github.token }}
-          message: "Release ${{ inputs.version }}"
-      - name: Checkout Main Branch
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $GITHUB_WORKSPACE/.github/bin/create_pr.sh "${{ inputs.version }}" "${{ inputs.branch-to-release }}"
+      - name: Approve and Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.PAT_APPROVE_PR }}
+        run: |
+          gh pr review "releases/$VERSION_NR" --approve --body "Automated approval for release ${VERSION_NUMBER}"
+          gh pr merge  "releases/$VERSION_NR" --merge --delete-branch
+      - name: Checkout Base Branch
         uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.branch-to-release }}
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
@@ -272,3 +301,4 @@ jobs:
           name: ${{ inputs.version }}
           files: binaries/*
           token: ${{ github.token }}
+          generate_release_notes: true
