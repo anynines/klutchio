@@ -3,7 +3,7 @@ kind: Provider
 metadata:
   name: provider-anynines
 spec:
-  package: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v0.0.2-jlu-1781269106"
+  package: "public.ecr.aws/w5n9a2g2/klutch/provider-anynines:v0.0.2-jlu-1781270538"
   runtimeConfigRef:
     name: provider-anynines
 ---
