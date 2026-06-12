@@ -1,4 +1,5 @@
 name: Create Release
+run-name: Create Release ${{ inputs.version }}
 
 on:
   workflow_dispatch:
@@ -7,6 +8,11 @@ on:
         description: "Version number (e.g. v1.2.3)"
         required: true
         type: string
+      branch-to-release:
+        description: "Branch to release (default: main)"
+        required: false
+        type: string
+        default: "main"
 
 env:
   ECR_REGISTRY_ADDRESS: "public.ecr.aws/w5n9a2g2"
@@ -33,7 +39,7 @@ jobs:
       - name: Checkout klutchio
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: ${{ inputs.branch-to-release }}
           fetch-depth: 0
       - name: Create release branch
         run: |
@@ -178,8 +184,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       - name: Install Crossplane CLI
-        run: |
-          $GITHUB_WORKSPACE/.github/bin/install_crossplane_cli.sh
+        uses: crossplane-contrib/setup-crossplane-action@main
+        with:
+          version: v2.3.1
       - name: Build and Push Provider anynines Config Image
         working-directory: provider-anynines
         run: |
@@ -269,17 +276,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $GITHUB_WORKSPACE/.github/bin/create_pr.sh "${{ inputs.version }}"
+          $GITHUB_WORKSPACE/.github/bin/create_pr.sh "${{ inputs.version }}" "${{ inputs.branch-to-release }}"
       - name: Approve and Merge PR
         env:
           GH_TOKEN: ${{ secrets.PAT_APPROVE_PR }}
         run: |
           gh pr review "releases/$VERSION_NR" --approve --body "Automated approval for release ${VERSION_NUMBER}"
           gh pr merge  "releases/$VERSION_NR" --merge --delete-branch
-      - name: Checkout main Branch
+      - name: Checkout Base Branch
         uses: actions/checkout@v6
         with:
-          ref: "main"
+          ref: ${{ inputs.branch-to-release }}
           fetch-depth: 0
       - name: Download all binaries
         uses: actions/download-artifact@v4
