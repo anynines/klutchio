@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.0.2-jlu-1781269106] - 2026-06-12
+
 ### Added
 
 - Added release automation
