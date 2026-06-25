@@ -13,6 +13,10 @@
 - Klutch-bind: migrated APIServiceBinding handling to namespace scope as part of control plane mode hardening.
 - Klutch-bind: updated control plane mode root namespace handling for app cluster kubeconfig and simplified AppClusterBinding RBAC.
 
+### Removed
+
+- **breaking**: Removed unsupported a9s Messaging service versions `a9s-messaging310`, `a9s-messaging312`, and `a9s-messaging313` from the `XMessagingInstance` XRD. These versions were discontinued in DSF v57.0.0 and v65.0.0 respectively. Claims using these versions are now rejected at admission time.
+
 ## [1.5.0] - 2026-05-26
 
 ### Added
