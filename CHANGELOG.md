@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [1.5.1] - 2026-06-26
+
 ### Added
 
 - Added release automation
