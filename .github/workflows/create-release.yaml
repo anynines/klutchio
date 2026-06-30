@@ -160,6 +160,8 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Build and push images
         working-directory: provider-anynines
+        env:
+          BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
         run: |
           $GITHUB_WORKSPACE/.github/bin/provider_anynines_make.sh "buildx.all" \
               "${ECR_REGISTRY_ADDRESS}" \
@@ -186,7 +188,7 @@ jobs:
       - name: Install Crossplane CLI
         uses: crossplane-contrib/setup-crossplane-action@main
         with:
-          version: v2.3.1
+          version: v1.20.9
       - name: Build and Push Provider anynines Config Image
         working-directory: provider-anynines
         run: |
