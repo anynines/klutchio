@@ -75,4 +75,9 @@ jobs:
             "${{ github.repository }}" \
             "${{ steps.parse-pr-body.outputs.run-id }}"
           )"
-          gh api -X DELETE -H "Accept: application/vnd.github+json" "$ENDPOINT"
+          ARTIFACTS=$(gh api -H "Accept: application/vnd.github+json" "$ENDPOINT" --jq '.artifacts[] | .id')
+          for artifact_id in $ARTIFACTS; do
+            echo "Deleting artifact with ID: $artifact_id"
+            gh api -X DELETE -H "Accept: application/vnd.github+json" \
+              "/repos/${{ github.repository }}/actions/artifacts/$artifact_id"
+          done
