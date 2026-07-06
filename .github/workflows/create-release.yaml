@@ -70,6 +70,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -x
           ENDPOINT="$(printf '/repos/%s/actions/runs/%s/artifacts' \
             "${{ github.repository }}" \
             "${{ steps.parse-pr-body.outputs.run-id }}"
