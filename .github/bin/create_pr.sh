@@ -14,4 +14,5 @@ gh pr create \
     --title "Release ${VERSION_NUMBER}" \
     --body "This PR was created as part of the automated release process for version ${VERSION_NUMBER}." \
     --base "$BASE_BRANCH" \
-    --head "$TARGET_BRANCH"
+    --head "$TARGET_BRANCH" \
+    --label "release"
