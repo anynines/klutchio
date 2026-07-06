@@ -277,4 +277,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $GITHUB_WORKSPACE/.github/bin/create_pr.sh "${{ inputs.version }}" "${{ inputs.branch-to-release }}"
+          $GITHUB_WORKSPACE/.github/bin/create_pr.sh "${{ inputs.version }}" "${{ inputs.branch-to-release }}" "${{ github.run_id }}"
