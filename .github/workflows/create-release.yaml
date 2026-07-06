@@ -1,45 +1,26 @@
 name: Create Release
-run-name: "Create Release from #${{ github.event.pull_request.number || inputs.pr-number }} ${{ github.event.pull_request.title || '' }}"
+run-name: "Create Release from #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}"
 
 on:
   pull_request:
     types: [closed]
     branches:
       - main*
-  workflow_dispatch:
-    inputs:
-      pr-number:
-        description: "Pull request number"
-        required: true
-        type: string
-      pr-body:
-        description: "Pull request body"
-        required: false
-        type: string
-      commitish:
-        description: "Commit SHA or branch"
-        required: false
-        type: string
-
-env:
-  PR_BODY: "${{ github.event.pull_request.body || inputs.pr-body }}"
-  COMMITISH: "${{ github.event.pull_request.head.sha || inputs.commitish }}"
-
 
 jobs:
   create-release:
     runs-on: ubuntu-latest
-    if: (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')) || github.event_name == 'workflow_dispatch'
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
     steps:
       - name: Parse PR Body
         id: parse-pr-body
         run: |
-          VERSION_NUMBER=$(echo "$PR_BODY" | grep -E '^\[version-number: [^]]+\]::$' | sed 's/\[version-number: //;s/\]:://')
+          VERSION_NUMBER=$(echo "${{ github.event.pull_request.body }}" | grep -E '^\[version-number: [^]]+\]::$' | sed 's/\[version-number: //;s/\]:://')
           if [[ -z "$VERSION_NUMBER" ]]; then
             echo "Error: Version number not found in PR body."
             exit 1
           fi
-          RUN_ID=$(echo "$PR_BODY" | grep -E '^\[run-id: [^]]+\]::$' | sed 's/\[run-id: //;s/\]:://')
+          RUN_ID=$(echo "${{ github.event.pull_request.body }}" | grep -E '^\[run-id: [^]]+\]::$' | sed 's/\[run-id: //;s/\]:://')
           if [[ -z "$RUN_ID" ]]; then
             echo "Error: RunID not found in PR body."
             exit 1
@@ -60,7 +41,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          target_commitish: ${{ env.COMMITISH }}
+          target_commitish: ${{ github.event.pull_request.head.sha }}
           tag_name: ${{ steps.parse-pr-body.outputs.version-number }}
           name: ${{ steps.parse-pr-body.outputs.version-number }}
           token: ${{ github.token }}
@@ -70,7 +51,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -x
           ENDPOINT="$(printf '/repos/%s/actions/runs/%s/artifacts' \
             "${{ github.repository }}" \
             "${{ steps.parse-pr-body.outputs.run-id }}"
