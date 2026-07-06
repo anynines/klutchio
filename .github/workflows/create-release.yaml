@@ -48,6 +48,8 @@ jobs:
           generate_release_notes: true
           files: binaries/*
       - name: Delete binary artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           ENDPOINT="$(printf '/repos/%s/actions/runs/%s/artifacts' \
             "${{ github.repository }}" \
