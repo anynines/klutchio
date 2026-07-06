@@ -11,8 +11,8 @@ BASE_BRANCH=$2
 RUN_ID=$3
 TARGET_BRANCH="releases/${VERSION_NUMBER}"
 
-BODY="$(printf '< !-- run-id: %s -->
-< !-- version-number: %s -->
+BODY="$(printf '[run-id: %s]::
+[version-number: %s]::
 This PR was created as part of the automated release process for version %s.\n' \
     "${RUN_ID}" "${VERSION_NUMBER}" "${VERSION_NUMBER}")"
 

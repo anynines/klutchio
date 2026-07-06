@@ -15,12 +15,12 @@ jobs:
       - name: Parse PR Body
         id: parse-pr-body
         run: |
-          VERSION_NUMBER=$(echo "${{ github.event.pull_request.body }}" | grep -E '^< !-- version-number: [^ ]+ -->' | sed 's/< !-- version-number: //;s/ -->//')
+          VERSION_NUMBER=$(echo "${{ github.event.pull_request.body }}" | grep -E '^\[version-number: [^]]+\]::$' | sed 's/\[version-number: //;s/\]:://')
           if [[ -z "$VERSION_NUMBER" ]]; then
             echo "Error: Version number not found in PR body."
             exit 1
           fi
-          RUN_ID=$(echo "${{ github.event.pull_request.body }}" | grep -E '^< !-- run-id: [^ ]+ -->' | sed 's/< !-- run-id: //;s/ -->//')
+          RUN_ID=$(echo "${{ github.event.pull_request.body }}" | grep -E '^\[run-id: [^]]+\]::$' | sed 's/\[run-id: //;s/\]:://')
           if [[ -z "$RUN_ID" ]]; then
             echo "Error: RunID not found in PR body."
             exit 1
