@@ -3,7 +3,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-single-nano
   compositionRef:
     name: a8s-postgresql
@@ -23,7 +23,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-single-small
   compositionRef:
     name: a8s-postgresql
@@ -33,7 +33,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-single-medium
   compositionRef:
     name: a8s-postgresql
@@ -43,7 +43,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-single-big
   compositionRef:
     name: a8s-postgresql
@@ -53,7 +53,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-replica-small
   compositionRef:
     name: a8s-postgresql
@@ -63,7 +63,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-replica-medium
   compositionRef:
     name: a8s-postgresql
@@ -73,7 +73,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-replica-big
   compositionRef:
     name: a8s-postgresql
@@ -83,7 +83,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-replica-big
   parameters:
     maxConnections: 250
@@ -95,7 +95,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql14
   plan: postgresql-replica-big
   parameters:
     maxConnections: 120

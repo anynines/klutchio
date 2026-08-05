@@ -3,7 +3,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql15
   plan: postgresql-single-nano
   compositionRef:
     name: a9s-postgresql
@@ -23,7 +23,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster2
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql15
   plan: postgresql-single-nano-ssl
   compositionRef:
     name: a9s-postgresql
@@ -33,7 +33,7 @@ kind: PostgresqlInstance
 metadata:
   name: sample-pg-cluster3
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql15
   plan: postgresql-single-nano-ssl
   compositionRef:
     name: a9s-postgresql

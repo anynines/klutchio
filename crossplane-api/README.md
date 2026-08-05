@@ -321,20 +321,20 @@ EOF
 Adjust the [Composite Resource Claim](examples/a8s/postgresql-claim.yaml)
 to refer to a valid service and plan.
 
-| Service          | Version       |
-|------------------|---------------|
-| a9s-postgresql13 | PostgreSQL 13 |
-| a9s-postgresql14 | PostgreSQL 14 |
+| Service          | Version                                                      |
+| ---------------- | ------------------------------------------------------------ |
+| a9s-postgresql13 | PostgreSQL 13 (retired, only allowed for existing instances) |
+| a9s-postgresql14 | PostgreSQL 14                                                |
 
-| Plan                      | Replicas| Volume Size | CPU | Memory |
-|---------------------------|---------|-------------|-----|--------|
-| postgresql-single-nano    | 1       | 3Gi         | 2   | 1 Gi   |
-| postgresql-single-small   | 1       | 10Gi        | 2   | 2 Gi   |
-| postgresql-single-medium  | 1       | 50Gi        | 2   | 4 Gi   |
-| postgresql-single-big   | 1       | 200Gi       | 4   | 16 Gi  |
-| postgresql-replicas-small  | 3       | 10Gi        | 2   | 2 Gi   |
-| postgresql-replicas-medium | 3       | 50Gi        | 2   | 4 Gi   |
-| postgresql-replicas-big  | 3       | 200Gi       | 4   | 16 Gi  |
+| Plan                       | Replicas | Volume Size | CPU | Memory |
+| -------------------------- | -------- | ----------- | --- | ------ |
+| postgresql-single-nano     | 1        | 3Gi         | 2   | 1 Gi   |
+| postgresql-single-small    | 1        | 10Gi        | 2   | 2 Gi   |
+| postgresql-single-medium   | 1        | 50Gi        | 2   | 4 Gi   |
+| postgresql-single-big      | 1        | 200Gi       | 4   | 16 Gi  |
+| postgresql-replicas-small  | 3        | 10Gi        | 2   | 2 Gi   |
+| postgresql-replicas-medium | 3        | 50Gi        | 2   | 4 Gi   |
+| postgresql-replicas-big    | 3        | 200Gi       | 4   | 16 Gi  |
 
 ```bash
 kubectl apply -f ./crossplane-api/examples/a8s/postgresql-claim.yaml

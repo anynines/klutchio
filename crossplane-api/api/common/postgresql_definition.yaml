@@ -35,9 +35,15 @@ spec:
                     || (self.compositionRef.name == 'a8s-postgresql' &&
                     (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql14'))"
                   message: "Unsupported service used for postgresql"
+                # Only allow a9s-postgresql13 for the a8s operator or existing a9s DSF instances but prohibit it for new instances
+                - rule: "self.compositionRef.name != 'a8s-postgresql' || self.service != 'a9s-postgresql13' ||  oldSelf.hasValue()"
+                  message: "PostgreSQL 13 with the a8s operator is only supported for existing instances, not for new instances. Please use a9s-postgresql14 instead."
+                  optionalOldSelf: true
+                - rule: "self.compositionRef.name != 'a9s-postgresql' || self.service != 'a9s-postgresql13' ||  oldSelf.hasValue()"
+                  message: "PostgreSQL 13 with the a9s DSF is only supported for existing instances, not for new instances. Please use a9s-postgresql15 or a9s-postgresql17 instead."
+                  optionalOldSelf: true
                 # Validation for postgresql plans.
-                - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
-                    (self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-nano-bionic' ||
+                - rule: "self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-nano-bionic' ||
                     self.plan == 'postgresql-single-nano-ssl' || self.plan == 'postgresql-single-nano-ssl-bionic' ||
                     self.plan == 'postgresql-single-small' || self.plan == 'postgresql-single-small-bionic' ||
                     self.plan == 'postgresql-single-small-ssl' || self.plan == 'postgresql-single-small-ssl-bionic' ||
@@ -46,19 +52,15 @@ spec:
                     self.plan == 'postgresql-replica-small' || self.plan == 'postgresql-replica-small-bionic' ||
                     self.plan == 'postgresql-replica-small-ssl' || self.plan == 'postgresql-replica-small-ssl-bionic' ||
                     self.plan == 'postgresql-replica-big' || self.plan == 'postgresql-replica-big-bionic' ||
-                    self.plan == 'postgresql-replica-big-ssl' || self.plan == 'postgresql-replica-big-ssl-bionic' )) ||
-                    (self.compositionRef.name == 'a8s-postgresql' &&
-                    (self.plan == 'postgresql-replica-nano' || self.plan == 'postgresql-replica-small'||
-                    self.plan == 'postgresql-replica-medium' || self.plan == 'postgresql-replica-big' ||
-                    self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-small'||
-                    self.plan == 'postgresql-single-medium' || self.plan == 'postgresql-single-big'))"
+                    self.plan == 'postgresql-replica-big-ssl' || self.plan == 'postgresql-replica-big-ssl-bionic'"
                   message: "Unsupported plan used for postgresql"
+                # Bionic plans are not supported by the a8s operator.
+                - rule: |
+                    !self.plan.contains('bionic') || self.compositionRef.name == 'a9s-postgresql'
+                  message: "Bionic plans are not supported by the a8s operator"
                 # Bionic plans are only supported by a9s PostgreSQL 13.
-                - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
-                    !(self.service == 'a9s-postgresql13') &&
-                    !(self.plan.contains('bionic'))) ||
-                    (self.service == 'a9s-postgresql13') ||
-                    (self.compositionRef.name == 'a8s-postgresql')"
+                - rule: |
+                    !self.plan.contains('bionic') || self.service == 'a9s-postgresql13'
                   message: "Bionic plans are only supported by a9s PostgreSQL 13"
 
                 # Validation for parameters ONLY supported by a8s
@@ -115,7 +117,7 @@ spec:
                       message: "Service is an immutable field"
                   description:
                     Service specifies the type and version of the Data
-                    Service Instance (e.g. a9s-postgresql13). There is a list of
+                    Service Instance (e.g. a9s-postgresql15). There is a list of
                     supported services and supported plans for each service.
                   type: string
                 plan:

@@ -6,7 +6,7 @@ metadata:
   name: example-a8s-postgresql-parameters
   namespace: default
 spec:
-  service: "a9s-postgresql13"
+  service: "a9s-postgresql14"
   plan: "postgresql-single-small"
   # expose is Optional, with the default value set to 'LoadBalancer'
   expose: "Internal"

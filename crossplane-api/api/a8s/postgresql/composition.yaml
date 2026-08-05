@@ -49,8 +49,8 @@ spec:
               - fromFieldPath: spec.service
                 toFieldPath: spec.forProvider.manifest.spec.version
                 transforms:
-                  # If the value of the service is a9s-postgresql13, the value of the
-                  # 'version' field will be 13
+                  # If the value of the service is a9s-postgresql14, the value of the
+                  # 'version' field will be 14
                   - type: string
                     string:
                       type: TrimPrefix

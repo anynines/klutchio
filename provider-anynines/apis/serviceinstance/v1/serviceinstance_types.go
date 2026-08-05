@@ -103,7 +103,7 @@ type ServiceInstanceParameters struct {
 	// +kubebuilder:default:=true
 	AcceptsIncomplete *bool `json:"acceptsIncomplete"`
 	// ServiceName is the human-readable name of the service to provision a new
-	// instance of, e.g. a9s-postgresql13. This value must be filled in by the
+	// instance of, e.g. a9s-postgresql15. This value must be filled in by the
 	// entity creating the ServiceInstance object.
 	// +kubebuilder:validation:Required
 	ServiceName *string `json:"serviceName"`
