@@ -1,5 +1,7 @@
 IMAGE_NAME := dataservices
-ECR_REPO := public.ecr.aws/w5n9a2g2/klutch
+ECR_ACCOUNT := public.ecr.aws/w5n9a2g2
+ECR_FOLDER_PATH := klutch
+ECR_REPO := $(ECR_ACCOUNT)/$(ECR_FOLDER_PATH)
 
 .PHONY: providerconfig
 providerconfig:

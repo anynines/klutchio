@@ -13,4 +13,4 @@ VERSION_NR="$3"
 "$(dirname "$0")/login_ecr_public.sh" "${ECR_REGISTRY_ADDRESS}"
 
 git submodule update --init --recursive
-make "${MAKE_TARGET}" IMAGETAG="${VERSION_NR}" dataservicesConfigVersion="${VERSION_NR}"
+make "${MAKE_TARGET}" ECR_ACCOUNT="${ECR_REGISTRY_ADDRESS}" IMAGETAG="${VERSION_NR}" dataservicesConfigVersion="${VERSION_NR}"
