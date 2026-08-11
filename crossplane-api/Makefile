@@ -78,8 +78,8 @@ ifdef keyvalueInstanceName
 			exit 1; \
 		fi; \
 	else \
-		export KV_BACKUP_MANAGER_HOST="http://dockerhost:8988"; \
-		export KV_SERVICEBROKER_HOST="http://dockerhost:8989"; \
+		export KV_BACKUP_MANAGER_HOST="http://dockerhost:9089"; \
+		export KV_SERVICEBROKER_HOST="http://dockerhost:9088"; \
 	fi; \
 	export KEYVALUE_SERVICEBROKER_USERNAME=admin; \
 	export KEYVALUE_SERVICEBROKER_PASSWORD=$$(ssh aws-s1-inception ". /var/vcap/store/jumpbox/home/a9s/bosh/envs/dsf2;credhub get -n /keyvalue_service_broker_password | grep value:" | awk '{print $2}'); \
