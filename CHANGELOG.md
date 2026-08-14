@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add missing `APIServiceExportTemplate` for `keyvalueinstances`
+
 ## [1.5.1] - 2026-06-26
 
 ### Added
