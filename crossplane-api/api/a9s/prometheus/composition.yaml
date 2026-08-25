@@ -15,49 +15,89 @@ spec:
         apiVersion: pt.fn.crossplane.io/v1beta1
         kind: Resources
         resources:
+          # The real ServiceInstance (dataservices.anynines.com/v1 ServiceInstance)
+          # and its admin credentials are hosted in an "-internal" namespace whose
+          # name is derived by suffixing the synced namespace (the one shared
+          # between the app cluster and the control plane cluster) with
+          # "-internal". klutch-bind's servicenamespace reconciler owns both
+          # namespaces' lifecycle end-to-end.
           - name: a9s-prometheus
             base:
-              apiVersion: dataservices.anynines.com/v1
-              kind: ServiceInstance
+              apiVersion: kubernetes.m.crossplane.io/v1alpha1
+              kind: Object
+              metadata:
+                labels:
+                  klutch.anynines.com/composition-resource: a9s-prometheus
               spec:
                 forProvider:
-                  # acceptsIncomplete indicates if the service broker can fulfill a
-                  # request asynchronously. Since the anynines-provider controller
-                  # reconciles the resources asynchronously, if 'acceptsIncomplete' is
-                  # not specified by the user, it will default to 'true'.
-                  acceptsIncomplete: true
-                  # OrganizationGUID is the platform GUID for the organization under
-                  # which the service is to be provisioned. This value is specific to
-                  # Cloud Foundry.
-                  organizationGuid: a1d46b5c-b639-4f43-85c7-e9a0e5f01f75
-                  # SpaceGUID is the identifier for the project space within the
-                  # platform organization. This value is specific to Cloud Foundry.
-                  spaceGuid: 1bf71cf3-9017-4846-bffc-b9b31872bfaf
+                  manifest:
+                    apiVersion: dataservices.anynines.com/v1
+                    kind: ServiceInstance
+                    spec:
+                      forProvider:
+                        # acceptsIncomplete indicates if the service broker can fulfill a
+                        # request asynchronously. Since the anynines-provider controller
+                        # reconciles the resources asynchronously, if 'acceptsIncomplete' is
+                        # not specified by the user, it will default to 'true'.
+                        acceptsIncomplete: true
+                        # OrganizationGUID is the platform GUID for the organization under
+                        # which the service is to be provisioned. This value is specific to
+                        # Cloud Foundry.
+                        organizationGuid: a1d46b5c-b639-4f43-85c7-e9a0e5f01f75
+                        # SpaceGUID is the identifier for the project space within the
+                        # platform organization. This value is specific to Cloud Foundry.
+                        spaceGuid: 1bf71cf3-9017-4846-bffc-b9b31872bfaf
+                      providerConfigRef:
+                        name: prometheus-service-broker
                 providerConfigRef:
-                  name: prometheus-service-broker
+                  name: kubernetes-provider
+                  kind: ClusterProviderConfig
+                readiness:
+                  policy: DeriveFromObject                  
             patches:
+              - fromFieldPath: metadata.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-internal"
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[crossplane.io/composite]
               - fromFieldPath: spec.service
-                toFieldPath: spec.forProvider.serviceName
+                toFieldPath: spec.forProvider.manifest.spec.forProvider.serviceName
               - fromFieldPath: spec.plan
-                toFieldPath: spec.forProvider.planName
+                toFieldPath: spec.forProvider.manifest.spec.forProvider.planName
               - fromFieldPath: spec.acceptsIncomplete
-                toFieldPath: spec.forProvider.acceptsIncomplete
+                toFieldPath: spec.forProvider.manifest.spec.forProvider.acceptsIncomplete
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.createdAt
+                fromFieldPath: status.atProvider.manifest.status.atProvider.createdAt
                 toFieldPath: status.managed.createdAt
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.provisionedAt
+                fromFieldPath: status.atProvider.manifest.status.atProvider.provisionedAt
                 toFieldPath: status.managed.provisionedAt
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.state
+                fromFieldPath: status.atProvider.manifest.status.atProvider.state
                 toFieldPath: status.managed.state
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.atProvider.updatedAt
+                fromFieldPath: status.atProvider.manifest.status.atProvider.updatedAt
                 toFieldPath: status.managed.updatedAt
+                policy:
+                  fromFieldPath: Optional
               - type: ToCompositeFieldPath
-                fromFieldPath: status.conditions
+                fromFieldPath: status.atProvider.manifest.status.conditions
                 toFieldPath: status.managed.conditions
+                policy:
+                  fromFieldPath: Optional
               - fromFieldPath: spec.parameters.mappingStrictMatch
-                toFieldPath: spec.forProvider.parameters.mapping_strict_match
+                toFieldPath: spec.forProvider.manifest.spec.forProvider.parameters.mapping_strict_match
               - fromFieldPath: spec.parameters.scrapeConfigs
-                toFieldPath: spec.forProvider.parameters.scrape_configs
+                toFieldPath: spec.forProvider.manifest.spec.forProvider.parameters.scrape_configs

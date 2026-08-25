@@ -44,7 +44,7 @@ func TestDecorated(t *testing.T) {
 func TestInternalError(t *testing.T) {
 	t.Parallel()
 
-	var internal error = errors.New("frobber is kalooning")
+	internal := errors.New("frobber is kalooning")
 
 	dec := logging.Decorator{
 		ExternalClient: managed.ExternalClientFns{
@@ -72,7 +72,7 @@ func (e withError) UserDisplay() error {
 func TestUserDisplayErr(t *testing.T) {
 	t.Parallel()
 
-	var internal error = errors.New("frobber is kalooning")
+	internal := errors.New("frobber is kalooning")
 	var userMessage = errors.New("Could not create resource")
 
 	dec := logging.Decorator{

@@ -24,12 +24,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	fakeosb "github.com/anynines/klutchio/clients/a9s-open-service-broker/fake"
@@ -649,7 +652,7 @@ func TestObserve(t *testing.T) {
 				},
 				Error: nil,
 			},
-			reconcileError: fmt.Errorf("Internal error in provider"),
+			reconcileError: fmt.Errorf("internal error in provider"),
 			expectedServiceBinding: serviceBinding("postgresql",
 				withServiceBindingParameters(defaultBindingParameters),
 				afterBindingCreation(),
@@ -1182,7 +1185,6 @@ func TestServiceBindingConnectionDetailsStatusPopulation(t *testing.T) {
 	}
 
 	for name, testCase := range cases {
-
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -2102,7 +2104,6 @@ func TestDeleteHappyPath(t *testing.T) {
 	}
 
 	for name, testCase := range testCases {
-
 		// Rebind testCase into this lexical scope. Details on the why at
 		// https://github.com/golang/go/wiki/CommonMistakes#using-goroutines-on-loop-iterator-variables
 		testCase := testCase
@@ -2230,6 +2231,199 @@ func TestDeleteClientErr(t *testing.T) {
 
 	if dif := cmp.Diff(expectedUnbindReq, unbindReq); dif != "" {
 		t.Errorf("UnbindRequest given to OSB client differs from expected one: -want, +got %s", dif)
+	}
+}
+
+func TestDeleteRemovesConnectionSecret(t *testing.T) {
+	t.Parallel()
+
+	sb := serviceBinding("postgresql",
+		withServiceBindingParameters(defaultBindingParameters),
+		afterBindingCreation(),
+		initializeSBStatus(
+			"6e2c036c-254f-11ee-be56-0242ac120002",
+			"63d05ec8-254e-11ee-be56-0242ac120002",
+			"76c0089e-254e-11ee-be56-0242ac120002",
+			nil,
+		),
+	)
+
+	unbindReaction := &UnbindReaction{
+		Response: &osbclient.UnbindResponse{Async: true},
+		Error:    nil,
+	}
+
+	kube := newKubeMock(
+		serviceInstance(
+			afterInstanceCreation(),
+			withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
+			withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
+			withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
+		),
+		[]client.Object{
+			a9stest.Secret(
+				a9stest.Name[corev1.Secret]("test-sb-creds"),
+				a9stest.Namespace[corev1.Secret]("test"),
+				a9stest.WithKey("username", "admin"),
+			),
+		},
+	)
+
+	external := utilerr.Decorator{
+		ExternalClient: &external{
+			kube:    kube,
+			service: fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{UnbindReaction: unbindReaction}),
+		},
+		Logger: a9stest.TestLogger(t),
+	}
+
+	_, err := external.Delete(context.TODO(), sb)
+	if err != nil {
+		t.Fatalf("Delete returned error: %v", err)
+	}
+
+	secret := &corev1.Secret{}
+	err = kube.Get(context.TODO(), types.NamespacedName{Name: "test-sb-creds", Namespace: "test"}, secret)
+	if err == nil {
+		t.Fatalf("expected connection secret to be deleted, but it still exists")
+	}
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected NotFound for deleted secret, got: %v", err)
+	}
+}
+
+// TestObserveDeletesSecretWhenStatusUnset covers the case where a ServiceBinding
+// is marked for deletion but its status fields were never initialised (state=="").
+// This was the root cause of Keyvalue `ServiceBinding_secret_is_deleted` failures:
+// initializeServiceBindingStatus returned errServiceBindingIsUnset causing Observe
+// to return early before any deletion logic ran, leaving the connection secret behind.
+func TestObserveDeletesSecretWhenStatusUnset(t *testing.T) {
+	t.Parallel()
+
+	sb := serviceBinding("keyvalue",
+		withServiceBindingParameters(defaultBindingParameters),
+		deletionTimestamp(),
+		// No afterBindingCreation(), no initializeSBStatus — status fields are empty.
+	)
+
+	kube := newKubeMock(
+		serviceInstance(
+			afterInstanceCreation(),
+			withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
+			withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
+			withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
+		),
+		[]client.Object{
+			a9stest.Secret(
+				a9stest.Name[corev1.Secret]("test-sb-creds"),
+				a9stest.Namespace[corev1.Secret]("test"),
+				a9stest.WithKey("valkey.port", "6379"),
+			),
+		},
+	)
+
+	e := utilerr.Decorator{
+		ExternalClient: &external{
+			kube:    kube,
+			service: fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{}),
+		},
+		Logger: a9stest.TestLogger(t),
+	}
+
+	got, err := e.Observe(context.TODO(), sb)
+	if err != nil {
+		t.Fatalf("Observe returned unexpected error: %v", err)
+	}
+
+	if got.ResourceExists {
+		t.Errorf("expected ResourceExists=false for a deleting SB with unset status, got true")
+	}
+
+	// The connection secret must have been deleted.
+	secret := &corev1.Secret{}
+	err = kube.Get(context.TODO(), types.NamespacedName{Name: "test-sb-creds", Namespace: "test"}, secret)
+	if err == nil {
+		t.Fatalf("expected connection secret to be deleted, but it still exists")
+	}
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected NotFound for deleted secret, got: %v", err)
+	}
+}
+
+// TestObserveRetriesOnTransientErrorDuringDeletion covers a ServiceBinding that
+// was already bound at the broker (AnnotationKeyServiceBindingCreated=="true")
+// but whose atProvider fields are missing, so Observe must refresh them via
+// initializeInstanceFields -> kube.List(ServiceInstance). If that List call
+// fails with a transient kube-apiserver error, Observe must propagate the
+// error (so Crossplane retries) instead of giving up on the binding, since
+// giving up would delete the connection secret and remove the finalizer
+// without ever calling Unbind, leaking the binding at the broker.
+func TestObserveRetriesOnTransientErrorDuringDeletion(t *testing.T) {
+	t.Parallel()
+
+	sb := serviceBinding("keyvalue",
+		withServiceBindingParameters(defaultBindingParameters),
+		afterBindingCreation(),
+		deletionTimestamp(),
+		// No initializeSBStatus — atProvider fields are missing, forcing a refresh.
+	)
+
+	transientErr := apierrors.NewServiceUnavailable("apiserver temporarily unavailable")
+
+	sc := runtime.NewScheme()
+	sc.AddKnownTypes(dsv1.SchemeGroupVersion, &dsv1.ServiceInstance{}, &dsv1.ServiceInstanceList{}, &corev1.Secret{})
+	kube := fake.NewClientBuilder().
+		WithRuntimeObjects(
+			serviceInstance(
+				afterInstanceCreation(),
+				withStatusInstanceID("6e2c036c-254f-11ee-be56-0242ac120002"),
+				withStatusServiceID("76c0089e-254e-11ee-be56-0242ac120002"),
+				withStatusPlanID("63d05ec8-254e-11ee-be56-0242ac120002"),
+			),
+			a9stest.Secret(
+				a9stest.Name[corev1.Secret]("test-sb-creds"),
+				a9stest.Namespace[corev1.Secret]("test"),
+				a9stest.WithKey("host", "keyvalue.example.com"),
+				a9stest.WithKey("valkey.port", "6379"),
+			),
+		).
+		WithScheme(sc).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(ctx context.Context, cl client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+				if _, ok := list.(*dsv1.ServiceInstanceList); ok {
+					return transientErr
+				}
+				return cl.List(ctx, list, opts...)
+			},
+		}).
+		Build()
+
+	e := utilerr.Decorator{
+		ExternalClient: &external{
+			kube:    kube,
+			service: fakeosb.NewFakeClient(fakeosb.FakeClientConfiguration{}),
+		},
+		Logger: a9stest.TestLogger(t),
+	}
+
+	got, err := e.Observe(context.TODO(), sb)
+	if err == nil {
+		t.Fatalf("expected Observe to propagate the transient error, got nil")
+	}
+	// The transient kube-apiserver error doesn't implement Userdisplayer, so the
+	// Decorator converts it to ErrInternal — the same as any other unexpected error.
+	if !errors.Is(err, utilerr.ErrInternal) {
+		t.Errorf("expected Observe error to be utilerr.ErrInternal, got: %v", err)
+	}
+	if got.ResourceExists {
+		t.Errorf("ResourceExists should be zero-value (false) on error, got true")
+	}
+
+	// The connection secret must NOT have been deleted, since we never
+	// confirmed there's nothing to unbind at the broker.
+	secret := &corev1.Secret{}
+	if err := kube.Get(context.TODO(), types.NamespacedName{Name: "test-sb-creds", Namespace: "test"}, secret); err != nil {
+		t.Fatalf("expected connection secret to still exist, got error: %v", err)
 	}
 }
 

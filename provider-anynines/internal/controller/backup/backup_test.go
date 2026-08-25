@@ -36,7 +36,6 @@ import (
 	fakebkpmgr "github.com/anynines/klutchio/clients/a9s-backup-manager/fake"
 	v1 "github.com/anynines/klutchio/provider-anynines/apis/backup/v1"
 	dsv1 "github.com/anynines/klutchio/provider-anynines/apis/serviceinstance/v1"
-	"github.com/anynines/klutchio/provider-anynines/internal/controller/backup"
 	bkpcontroller "github.com/anynines/klutchio/provider-anynines/internal/controller/backup"
 	a9stest "github.com/anynines/klutchio/provider-anynines/internal/controller/test"
 	utilerr "github.com/anynines/klutchio/provider-anynines/pkg/utilerr"
@@ -176,6 +175,12 @@ func serviceInstance(modifiers ...serviceInstanceOptions) *dsv1.ServiceInstance 
 func serviceInstanceWithName(name string) serviceInstanceOptions {
 	return func(serviceInstance *dsv1.ServiceInstance) {
 		serviceInstance.Name = name
+	}
+}
+
+func serviceInstanceWithNamespace(namespace string) serviceInstanceOptions {
+	return func(serviceInstance *dsv1.ServiceInstance) {
+		serviceInstance.Namespace = namespace
 	}
 }
 
@@ -511,7 +516,7 @@ func TestObserve(t *testing.T) {
 					)),
 			},
 			want: want{
-				err: backup.ErrServiceInstanceNotFound,
+				err: bkpcontroller.ErrServiceInstanceNotFound,
 			},
 		},
 		"errorMoreThanOneMatchingServiceInstanceExists": {
@@ -526,14 +531,17 @@ func TestObserve(t *testing.T) {
 						InstanceName: "postgres-1",
 					},
 					)),
-				serviceInstance: *serviceInstance(serviceInstanceWithStatus(
-					dsv1.ServiceInstanceObservation{
-						InstanceID: "23df2cf9-2ecc-414c-9333-6401f0c54365",
-					},
-				)),
+				serviceInstance: *serviceInstance(
+					serviceInstanceWithNamespace("-internal"),
+					serviceInstanceWithStatus(
+						dsv1.ServiceInstanceObservation{
+							InstanceID: "23df2cf9-2ecc-414c-9333-6401f0c54365",
+						},
+					)),
 				otherResources: []client.Object{
 					serviceInstance(
 						serviceInstanceWithName("postgres-1-sdjl"),
+						serviceInstanceWithNamespace("-internal"),
 						serviceInstanceWithStatus(
 							dsv1.ServiceInstanceObservation{
 								InstanceID: "23df2cf9-2ecc-414c-9333-6401f0c54365",
@@ -580,7 +588,7 @@ func TestObserve(t *testing.T) {
 					)),
 			},
 			want: want{
-				err: backup.ErrServiceInstanceNotFound,
+				err: bkpcontroller.ErrServiceInstanceNotFound,
 				managedResource: newBackup(
 					withLabels(
 						map[string]string{
@@ -609,7 +617,7 @@ func TestObserve(t *testing.T) {
 			sc := runtime.NewScheme()
 			sc.AddKnownTypes(dsv1.SchemeGroupVersion, &dsv1.ServiceInstance{}, &dsv1.ServiceInstanceList{})
 
-			var objs []runtime.Object
+			objs := make([]runtime.Object, 0, 1+len(tc.args.otherResources))
 			objs = append(objs, &tc.args.serviceInstance)
 
 			for _, resources := range tc.args.otherResources {
@@ -762,7 +770,6 @@ func TestCreate(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-
 		tc := tc
 
 		t.Run(name, func(t *testing.T) {
@@ -775,7 +782,7 @@ func TestCreate(t *testing.T) {
 			sc := runtime.NewScheme()
 			sc.AddKnownTypes(dsv1.SchemeGroupVersion, &dsv1.ServiceInstance{}, &dsv1.ServiceInstanceList{})
 
-			var objs []runtime.Object
+			objs := make([]runtime.Object, 0, 1+len(tc.args.otherResources))
 			objs = append(objs, &tc.args.serviceInstance)
 
 			for _, resources := range tc.args.otherResources {
@@ -882,7 +889,6 @@ func TestDelete(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-
 		tc := tc
 
 		t.Run(name, func(t *testing.T) {

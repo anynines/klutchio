@@ -18,12 +18,14 @@ package servicebinding
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
 	osbclient "github.com/anynines/klutchio/clients/a9s-open-service-broker"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -163,48 +165,98 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, err
 	}
 
-	err = c.initializeServiceBindingStatus(ctx, sb)
-	if err != nil {
-		return managed.ExternalObservation{}, err
+	if obs, done, err := c.observeInitialization(ctx, sb); done {
+		return obs, err
+	}
+
+	isDeleting := sb.DeletionTimestamp != nil
+
+	if obs, done, err := c.observeUnboundState(ctx, sb, isDeleting); done {
+		return obs, err
+	}
+
+	return c.observeBindingState(ctx, sb, isDeleting)
+}
+
+// resourceGoneDuringDeletion cleans up the servicebinding secret and reports
+// the external resource as gone. Used by Observe when a deletion-in-progress
+// resource can no longer be reconciled against the broker.
+func (c *external) resourceGoneDuringDeletion(ctx context.Context, sb *v1.ServiceBinding) (managed.ExternalObservation, error) {
+	if err := c.deleteServiceBindingSecret(ctx, sb); err != nil {
+		return managed.ExternalObservation{}, errDeleteServiceBinding.WithCause(err)
+	}
+	return managed.ExternalObservation{ResourceExists: false}, nil
+}
+
+// observeInitialization populates the servicebinding status if needed and
+// determines whether Observe should return immediately (done=true).
+func (c *external) observeInitialization(ctx context.Context, sb *v1.ServiceBinding) (obs managed.ExternalObservation, done bool, err error) {
+	if err := c.initializeServiceBindingStatus(ctx, sb); err != nil {
+		// While deleting, only treat the binding as gone once we're sure there's
+		// nothing left at the broker. Anything else (e.g. a transient kube-apiserver
+		// error) gets propagated so Crossplane retries instead of leaking the binding.
+		if sb.DeletionTimestamp != nil && confirmedNothingToUnbind(sb, err) {
+			obs, err := c.resourceGoneDuringDeletion(ctx, sb)
+			return obs, true, err
+		}
+		return managed.ExternalObservation{}, true, err
 	}
 
 	if sb.Annotations == nil || sb.Annotations[AnnotationKeyServiceBindingCreated] == "" {
 		// Initiate creation of SB
-		return managed.ExternalObservation{}, nil
+		return managed.ExternalObservation{}, true, nil
 	}
 
+	return managed.ExternalObservation{}, false, nil
+}
+
+// confirmedNothingToUnbind reports whether it's safe to give up on the broker
+// binding: either it was never created (no AnnotationKeyServiceBindingCreated,
+// so Bind() was never called), or the ServiceInstance/data service it depends
+// on is confirmed permanently gone. Any other error is unproven and must be
+// retried instead, or a still-live binding could be leaked at the broker.
+func confirmedNothingToUnbind(sb *v1.ServiceBinding, err error) bool {
+	if sb.Annotations[AnnotationKeyServiceBindingCreated] != "true" {
+		return true
+	}
+	return errors.Is(err, errServiceInstanceNotFound) || errors.Is(err, errNoSuchDataservice)
+}
+
+// observeUnboundState reports the resource as gone if Unbind was already
+// called (State==Unbound persisted via Status().Update()), so Crossplane
+// skips Delete() and proceeds to UnpublishConnection + RemoveFinalizer.
+func (c *external) observeUnboundState(ctx context.Context, sb *v1.ServiceBinding, isDeleting bool) (obs managed.ExternalObservation, done bool, err error) {
+	if isDeleting && sb.Status.AtProvider.State == serviceBindingStatusUnbound {
+		obs, err := c.resourceGoneDuringDeletion(ctx, sb)
+		return obs, true, err
+	}
+	return managed.ExternalObservation{}, false, nil
+}
+
+// observeBindingState retrieves the binding from the broker and reports
+// whether it exists and is up to date.
+func (c *external) observeBindingState(ctx context.Context, sb *v1.ServiceBinding, isDeleting bool) (managed.ExternalObservation, error) {
 	// set deletion condition if MR is marked for deletion
 	sb.SetDeletionStatusIfNotDeleted(serviceBindingStatusDeleting)
-	isDeleting := sb.DeletionTimestamp != nil
-
-	// If Unbind was already called (State==Unbound persisted via Status().Update()),
-	// return ResourceExists=false so Crossplane skips Delete() and proceeds to
-	// UnpublishConnection + RemoveFinalizer.
-	if isDeleting && sb.Status.AtProvider.State == serviceBindingStatusUnbound {
-		return managed.ExternalObservation{ResourceExists: false}, nil
-	}
 
 	// Get binding
 	bindResponse, err := c.service.GetBinding(&osbclient.GetBindingRequest{
 		InstanceID: sb.Status.AtProvider.InstanceID,
 		BindingID:  string(sb.UID),
 	})
-	if err != nil && isDeleting {
+	switch {
+	case err != nil && isDeleting:
 		// Resource does not exist and is marked for deletion
-		return managed.ExternalObservation{}, nil
-	} else if err != nil {
+		return c.resourceGoneDuringDeletion(ctx, sb)
+	case err != nil:
 		return managed.ExternalObservation{}, fmt.Errorf("failed to get service binding: %w", err)
 	}
 
-	exists := false
-	if bindResponse != nil && bindResponse.Credentials != nil {
-		exists = true
-
+	exists := bindResponse != nil && bindResponse.Credentials != nil
+	if exists && !isDeleting {
 		// do not set Available if servicebinding is being deleted
-		if !isDeleting {
-			sb.Status.SetConditions(xpv1.Available())
-			sb.Status.AtProvider.State = serviceBindingStatusCreated
-		}
+		sb.Status.SetConditions(xpv1.Available())
+		sb.Status.AtProvider.State = serviceBindingStatusCreated
 	}
 
 	return managed.ExternalObservation{
@@ -253,7 +305,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalCreation{ConnectionDetails: cd}, err
 }
 
-func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.ServiceBinding) (*dsv1.ServiceInstance, error) {
+func (c *external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.ServiceBinding) (*dsv1.ServiceInstance, error) {
 	// Get ServiceInstance Managed Resource
 	instances := &dsv1.ServiceInstanceList{}
 
@@ -269,7 +321,6 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 			"failed to create label selector for "+
 				"ServiceInstance managed resources: %w",
 			err)
-
 	}
 
 	err = c.kube.List(ctx, instances, &k8sclient.ListOptions{
@@ -287,7 +338,7 @@ func (c external) GetServiceInstanceManagedResource(ctx context.Context, sb v1.S
 
 // GetServiceBindingSecret retrieves the servicebinding secret whose location is
 // set by the composition via spec.writeConnectionSecretToRef.
-func (c external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBinding) (*corev1.Secret, error) {
+func (c *external) GetServiceBindingSecret(ctx context.Context, sb v1.ServiceBinding) (*corev1.Secret, error) {
 	secretRef := sb.Spec.WriteConnectionSecretToReference
 	if secretRef == nil {
 		return nil, fmt.Errorf("ServiceBinding has no writeConnectionSecretToRef set")
@@ -376,12 +427,41 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalDelete{}, errDeleteServiceBinding.WithCause(err)
 	}
 
+	if err := c.deleteServiceBindingSecret(ctx, sb); err != nil {
+		return managed.ExternalDelete{}, errDeleteServiceBinding.WithCause(err)
+	}
+
 	// Mark that Unbind was called. Setting AtProvider.State persists via the
 	// Status().Update() call that the managed reconciler makes after Delete() returns,
 	// so the next Observe() will see State==Unbound and return ResourceExists=false.
 	sb.Status.AtProvider.State = serviceBindingStatusUnbound
 
 	return managed.ExternalDelete{}, nil
+}
+
+func (c *external) deleteServiceBindingSecret(ctx context.Context, sb *v1.ServiceBinding) error {
+	if sb.Spec.WriteConnectionSecretToReference == nil {
+		return nil
+	}
+
+	secret := &corev1.Secret{}
+	err := c.kube.Get(ctx, types.NamespacedName{
+		Name:      sb.Spec.WriteConnectionSecretToReference.Name,
+		Namespace: sb.Spec.WriteConnectionSecretToReference.Namespace,
+	}, secret)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	err = c.kube.Delete(ctx, secret)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
 }
 
 func (c *external) Disconnect(ctx context.Context) error {
@@ -391,7 +471,7 @@ func (c *external) Disconnect(ctx context.Context) error {
 
 func generateConnectionDetails(res *osbclient.BindResponse) (managed.ConnectionDetails, error) {
 	if len(res.Credentials) == 0 {
-		return nil, fmt.Errorf("The service broker returned no credentials for service binding")
+		return nil, fmt.Errorf("the service broker returned no credentials for service binding")
 	}
 
 	connDetails := utils.FlattenMap(res.Credentials, "")
@@ -402,7 +482,7 @@ func generateConnectionDetails(res *osbclient.BindResponse) (managed.ConnectionD
 // parseHostAndPort parses an input string in the format "host:port".
 // It separates the host and port by finding the last occurrence of ':'.
 // Returns the extracted host and port as separate strings.
-func (c external) parseHostAndPort(input string) (host, port string, err error) {
+func (c *external) parseHostAndPort(input string) (host, port string, err error) {
 	if strings.Contains(input, ":") {
 		index := strings.LastIndex(input, ":")
 		host = input[:index]
@@ -412,7 +492,7 @@ func (c external) parseHostAndPort(input string) (host, port string, err error) 
 	return "", "", fmt.Errorf("invalid host:port format: %q", input)
 }
 
-func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key, label string) error {
+func (c *external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]byte, key, label string) error {
 	host, found := secret[key]
 	if !found {
 		return fmt.Errorf("%q field not found in secret", key)
@@ -429,7 +509,7 @@ func (c external) extractBracketHost(sb *v1.ServiceBinding, secret map[string][]
 	return nil
 }
 
-func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key, label string) error {
+func (c *external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]byte, key, label string) error {
 	host, found := secret[key]
 	if !found {
 		return fmt.Errorf("%q field not found in secret", key)
@@ -445,7 +525,7 @@ func (c external) extractPlainHost(sb *v1.ServiceBinding, secret map[string][]by
 	return nil
 }
 
-func (c external) extractPrometheusURL(sb *v1.ServiceBinding, secret map[string][]byte, key string, label string) error {
+func (c *external) extractPrometheusURL(sb *v1.ServiceBinding, secret map[string][]byte, key string, label string) error {
 	host, found := secret[key]
 	if !found {
 		return fmt.Errorf("%q field not found in secret", key)
@@ -464,7 +544,7 @@ func (c external) extractPrometheusURL(sb *v1.ServiceBinding, secret map[string]
 	return nil
 }
 
-func (c external) extractGraphiteExporter(sb *v1.ServiceBinding, secret map[string][]byte) error {
+func (c *external) extractGraphiteExporter(sb *v1.ServiceBinding, secret map[string][]byte) error {
 	host, found := secret["graphite_exporters"]
 	if !found {
 		return fmt.Errorf("graphite_exporters field not found in secret")
@@ -482,7 +562,7 @@ func (c external) extractGraphiteExporter(sb *v1.ServiceBinding, secret map[stri
 	return nil
 }
 
-func (c external) extractMessagingEndpoints(sb *v1.ServiceBinding, secret map[string][]byte) error {
+func (c *external) extractMessagingEndpoints(sb *v1.ServiceBinding, secret map[string][]byte) error {
 	// HTTP API endpoint
 	if httpAPI, found := secret["http_api_uri"]; found && len(httpAPI) > 0 {
 		if err := c.parseAndAddURI(sb, string(httpAPI), "HTTP API"); err != nil {
@@ -507,7 +587,7 @@ func (c external) extractMessagingEndpoints(sb *v1.ServiceBinding, secret map[st
 	return nil
 }
 
-func (c external) parseAndAddURI(sb *v1.ServiceBinding, uriStr string, label string) error {
+func (c *external) parseAndAddURI(sb *v1.ServiceBinding, uriStr string, label string) error {
 	parsedURL, err := url.Parse(uriStr)
 	if err != nil {
 		return err
@@ -518,79 +598,106 @@ func (c external) parseAndAddURI(sb *v1.ServiceBinding, uriStr string, label str
 	return nil
 }
 
+// serviceKind classifies an instance-type label into the connection-details
+// dispatch key used by initializeConnectionDetails.
+func serviceKind(instanceName string) string {
+	switch {
+	case strings.Contains(instanceName, "search"):
+		return "search"
+	case strings.Contains(instanceName, "logme2"):
+		return "logme2"
+	case strings.Contains(instanceName, "mongodb"):
+		return "mongodb"
+	case strings.Contains(instanceName, "prometheus"):
+		return "prometheus"
+	case strings.Contains(instanceName, "messaging"):
+		return "messaging"
+	case strings.Contains(instanceName, "keyvalue"):
+		return "keyvalue"
+	case strings.Contains(instanceName, "postgresql"), strings.Contains(instanceName, "mariadb"):
+		return "sql"
+	default:
+		return ""
+	}
+}
+
+// extractPrometheusDetails populates all Prometheus-related connection details
+// (Prometheus, Alertmanager, Grafana and the Graphite Exporter).
+func (c *external) extractPrometheusDetails(sb *v1.ServiceBinding, secret map[string][]byte) error {
+	if err := c.extractPrometheusURL(sb, secret, "prometheus_urls", "Prometheus"); err != nil {
+		return err
+	}
+	if err := c.extractPrometheusURL(sb, secret, "alertmanager_urls", "Alertmanager"); err != nil {
+		return err
+	}
+	if err := c.extractPrometheusURL(sb, secret, "grafana_urls", "Grafana"); err != nil {
+		return err
+	}
+	return c.extractGraphiteExporter(sb, secret)
+}
+
+// extractHostAndPort populates a connection detail pair from two flat secret
+// fields, used by the KeyValue and SQL data services.
+func (c *external) extractHostAndPort(sb *v1.ServiceBinding, secret map[string][]byte, hostKey, portKey, label string) error {
+	hostURL, hostFound := secret[hostKey]
+	if !hostFound {
+		return fmt.Errorf("%s field not found in secret", hostKey)
+	}
+	port, portFound := secret[portKey]
+	if !portFound {
+		return fmt.Errorf("%s field not found in secret", portKey)
+	}
+	sb.AddConnectionDetailsWithLabel(string(hostURL), string(port), label)
+	return nil
+}
+
+// connectionDetailsHandlers dispatches on the service kind (see serviceKind)
+// to populate connection details from the servicebinding secret.
+var connectionDetailsHandlers = map[string]func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error{
+	"search": func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error {
+		return c.extractBracketHost(sb, secret, "host", "Search")
+	},
+	"logme2": func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error {
+		return c.extractPlainHost(sb, secret, "host", "Logme2")
+	},
+	"mongodb": func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error {
+		return c.extractBracketHost(sb, secret, "hosts", "MongoDB")
+	},
+	"prometheus": func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error {
+		return c.extractPrometheusDetails(sb, secret)
+	},
+	"messaging": func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error {
+		return c.extractMessagingEndpoints(sb, secret)
+	},
+	"keyvalue": func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error {
+		return c.extractHostAndPort(sb, secret, "host", "valkey.port", "KeyValue")
+	},
+	"sql": func(c *external, sb *v1.ServiceBinding, secret map[string][]byte) error {
+		return c.extractHostAndPort(sb, secret, "host", "port", "SQL")
+	},
+}
+
 // initializeConnectionDetails populates the servicebinding status with connection details
 // mainly HostURl and Port.
-func (c external) initializeConnectionDetails(ctx context.Context, sb *v1.ServiceBinding) error {
+func (c *external) initializeConnectionDetails(ctx context.Context, sb *v1.ServiceBinding) error {
 	secret, err := c.GetServiceBindingSecret(ctx, *sb)
 	if err != nil {
 		return err
 	}
 
-	instanceName := sb.ObjectMeta.Labels["klutch.io/instance-type"]
+	instanceName := sb.Labels["klutch.io/instance-type"]
 
-	if strings.Contains(instanceName, "search") {
-		err = c.extractBracketHost(sb, secret.Data, "host", "Search")
-		if err != nil {
-			return err
-		}
-	} else if strings.Contains(instanceName, "logme2") {
-		err = c.extractPlainHost(sb, secret.Data, "host", "Logme2")
-		if err != nil {
-			return err
-		}
-	} else if strings.Contains(instanceName, "mongodb") {
-		err = c.extractBracketHost(sb, secret.Data, "hosts", "MongoDB")
-		if err != nil {
-			return err
-		}
-	} else if strings.Contains(instanceName, "prometheus") {
-		if err := c.extractPrometheusURL(sb, secret.Data, "prometheus_urls", "Prometheus"); err != nil {
-			return err
-		}
-		if err := c.extractPrometheusURL(sb, secret.Data, "alertmanager_urls", "Alertmanager"); err != nil {
-			return err
-		}
-		if err := c.extractPrometheusURL(sb, secret.Data, "grafana_urls", "Grafana"); err != nil {
-			return err
-		}
-		if err := c.extractGraphiteExporter(sb, secret.Data); err != nil {
-			return err
-		}
-	} else if strings.Contains(instanceName, "messaging") {
-		if err := c.extractMessagingEndpoints(sb, secret.Data); err != nil {
-			return err
-		}
-	} else if strings.Contains(instanceName, "keyvalue") {
-		hostURL, hostFound := secret.Data["host"]
-		if !hostFound {
-			return fmt.Errorf("host field not found in secret")
-		}
-		port, portFound := secret.Data["valkey.port"]
-		if !portFound {
-			return fmt.Errorf("valkey.port field not found in secret")
-		}
-		sb.AddConnectionDetailsWithLabel(string(hostURL), string(port), "KeyValue")
-	} else if strings.Contains(instanceName, "postgresql") ||
-		strings.Contains(instanceName, "mariadb") {
-		hostURL, hostFound := secret.Data["host"]
-		if !hostFound {
-			return fmt.Errorf("host field not found in secret")
-		}
-		port, portFound := secret.Data["port"]
-		if !portFound {
-			return fmt.Errorf("port field not found in secret")
-		}
-		sb.AddConnectionDetailsWithLabel(string(hostURL), string(port), "SQL")
-	} else {
+	handler, ok := connectionDetailsHandlers[serviceKind(instanceName)]
+	if !ok {
 		return errNoSuchDataservice
 	}
 
-	return nil
+	return handler(c, sb, secret.Data)
 }
 
 // initializeInstanceFields populates the servicebinding status with service instance
 // details like InstanceID, ServiceID and PlanID.
-func (c external) initializeInstanceFields(ctx context.Context, sb *v1.ServiceBinding) error {
+func (c *external) initializeInstanceFields(ctx context.Context, sb *v1.ServiceBinding) error {
 	serviceInstance, err := c.GetServiceInstanceManagedResource(ctx, *sb)
 	if err != nil {
 		return err

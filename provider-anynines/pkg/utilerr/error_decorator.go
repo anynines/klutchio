@@ -27,7 +27,7 @@ import (
 
 var _ managed.ExternalClient = &Decorator{}
 var _ managed.ExternalConnecter = &ConnectDecorator{}
-var ErrInternal = errors.New("Internal error in provider")
+var ErrInternal = errors.New("internal error in provider")
 
 type Userdisplayer interface {
 	error
@@ -91,7 +91,6 @@ func (cl Decorator) convertAndLog(operation string, err error) error {
 		cl.Logger.Info("error in "+operation, "error", err)
 
 		if errors.As(err, &ud) {
-
 			return ud.UserDisplay()
 		} else if err != nil {
 			return ErrInternal

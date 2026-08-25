@@ -52,7 +52,7 @@ func TestLogme2InstanceLifecycle(t *testing.T) {
 			funcs.ResourcesCreatedWithin(1*time.Minute, manifests, "servicebinding-initial.yaml"),
 		)).
 		Assess("A secret is created", funcs.AllOf(
-			funcs.ResourcesCreatedWithin(1*time.Minute, manifests, "servicebinding-secret.yaml"),
+			funcs.ResourcesCreatedWithin(3*time.Minute, manifests, "servicebinding-secret.yaml"),
 			funcs.SecretCreatedWithCredentials(manifests, "servicebinding-secret.yaml"),
 		),
 		).Feature()

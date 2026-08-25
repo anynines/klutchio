@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+
+	"github.com/anynines/klutchio/test/e2e/funcs"
 )
 
 // fieldManager is the server-side apply field manager used when applying
@@ -52,9 +54,11 @@ func TestMain(m *testing.M) {
 
 	testenv.Setup(
 		envfuncs.CreateNamespace("prometheus-lifecycle"),
+		funcs.CreateInternalNamespace("prometheus-lifecycle"),
 	)
 
 	testenv.Finish(
+		envfuncs.DeleteNamespace("prometheus-lifecycle-internal"),
 		envfuncs.DeleteNamespace("prometheus-lifecycle"),
 	)
 

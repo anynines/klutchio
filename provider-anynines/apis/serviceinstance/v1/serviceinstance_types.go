@@ -210,25 +210,35 @@ func (p *ServiceInstance) GetServiceID() (string, error) {
 }
 
 func (list *ServiceInstanceList) ToServiceInstance(name string) (*ServiceInstance, error) {
-	var err (error)
 	switch {
-	case len(list.Items) > 1:
-		err = fmt.Errorf(
-			"%s, expected 1 ServiceInstance managed resource for %s, but got %d",
-			errGetServiceInstance,
-			name,
-			len(list.Items),
-		)
 	case len(list.Items) == 0:
-		err = fmt.Errorf(
+		return nil, fmt.Errorf(
 			"%s, failed to list ServiceInstance managed resources for %s: %w",
 			errGetServiceInstance,
 			name,
 			ErrServiceInstanceNotFound,
 		)
-	default:
+	case len(list.Items) == 1:
 		return &list.Items[0], nil
+	default:
+		// Multiple ServiceInstances share the same composite label (e.g. during
+		// a plan upgrade Crossplane creates the new composed MR before removing
+		// the old one). Filter to non-deleting items to find the active one.
+		var active []*ServiceInstance
+		for i := range list.Items {
+			si := &list.Items[i]
+			if si.DeletionTimestamp == nil {
+				active = append(active, si)
+			}
+		}
+		if len(active) == 1 {
+			return active[0], nil
+		}
+		return nil, fmt.Errorf(
+			"%s, expected 1 ServiceInstance managed resource for %s, but got %d",
+			errGetServiceInstance,
+			name,
+			len(list.Items),
+		)
 	}
-
-	return nil, err
 }

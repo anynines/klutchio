@@ -32,7 +32,9 @@ import (
 	"github.com/anynines/klutchio/test/e2e/utils"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/fieldpath"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -42,6 +44,7 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
+	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/yaml"
@@ -411,10 +414,38 @@ func ManagedResourceOfClaimHasConditionWithin(d time.Duration, dir, pattern stri
 
 			for _, mref := range mrefs {
 				t.Logf("Waiting for %s (%s/%s)...", mref["name"], mref["apiVersion"], mref["kind"])
+				// In Crossplane v2, spec.crossplane.resourceRefs items carry no namespace
+				// field (CRD schema restriction). Composed MRs may live either in
+				// <claim-namespace>-internal (when the composition patches the namespace)
+				// or in <claim-namespace> itself (when no namespace patch is applied).
+				// Try both; use whichever namespace has the resource.
+				candidateNamespaces := []string{claimNamespace + "-internal", claimNamespace}
+				if mref["namespace"] != "" {
+					candidateNamespaces = []string{mref["namespace"]}
+				}
+				// Use the controller-runtime client directly so a not-found response
+				// returns (false, nil) and wait.For retries. Using rg.Get would call
+				// t.Fatal on the first miss, which triggers runtime.Goexit() and
+				// terminates the goroutine before any retries can happen.
+				cl := c.Client().Resources().GetControllerRuntimeClient()
 				err := wait.For(func(context.Context) (done bool, err error) {
-					mr := rg.Get(mref["name"], mref["namespace"], mref["apiVersion"], mref["kind"])
+					var mr *unstructured.Unstructured
+					for _, ns := range candidateNamespaces {
+						candidate := &unstructured.Unstructured{}
+						candidate.SetAPIVersion(mref["apiVersion"])
+						candidate.SetKind(mref["kind"])
+						if getErr := cl.Get(ctx, client.ObjectKey{Name: mref["name"], Namespace: ns}, candidate); getErr != nil {
+							if errors.IsNotFound(getErr) {
+								continue // try next candidate namespace
+							}
+							return false, getErr
+						}
+						mr = candidate
+						break
+					}
 					if mr == nil {
-						return false, nil
+						t.Logf("%s: MR not found in namespaces %v, retrying...", mref["name"], candidateNamespaces)
+						return false, nil // not created yet in any candidate namespace — retry
 					}
 
 					conditions, found, err := unstructured.NestedSlice(mr.Object, "status", "conditions")
@@ -422,6 +453,7 @@ func ManagedResourceOfClaimHasConditionWithin(d time.Duration, dir, pattern stri
 						return false, fmt.Errorf("failed to retrieve conditions: %w", err)
 					}
 					if !found {
+						t.Logf("%s: found in namespace=%s but no status.conditions yet", mref["name"], mr.GetNamespace())
 						return false, nil
 					}
 
@@ -437,6 +469,7 @@ func ManagedResourceOfClaimHasConditionWithin(d time.Duration, dir, pattern stri
 						}
 						if matching == nil {
 							// Condition type not yet present — retry until timeout
+							t.Logf("%s: condition type %v not yet present", mref["name"], want.Type)
 							return false, nil
 						}
 
@@ -446,6 +479,13 @@ func ManagedResourceOfClaimHasConditionWithin(d time.Duration, dir, pattern stri
 						t.Logf("%s: want.Type:%v want.Status:%s want.Reason:%s got.Status:%s got.Reason:%s", mref["name"], want.Type, string(want.Status), string(want.Reason), haveStatus, haveReason)
 
 						if string(want.Status) != haveStatus || string(want.Reason) != haveReason {
+							// If we are waiting for a transient "not-ready" state (Status=False,
+							// e.g. Creating) but the MR has already advanced to a completed state
+							// (Status=True, e.g. Available), the resource passed through the desired
+							// transient state — treat the condition as satisfied.
+							if string(want.Status) == "False" && haveStatus == "True" {
+								continue
+							}
 							return false, nil
 						}
 					}
@@ -634,6 +674,32 @@ func ShellCommand(name string, args ...string) features.Func {
 				name, args, err, errOutput)
 		}
 		return ctx
+	}
+}
+
+// CreateInternalNamespace creates the "<namespace>-internal" companion namespace that
+// klutch-bind's servicenamespace reconciler would normally create when a real
+// APIServiceNamespace binding exists. These e2e tests apply XRs directly, bypassing the
+// bind flow entirely, so without this the composed resources that Compositions place into
+// "<namespace>-internal" (see crossplane-api/api/anynines-dataservices/*/*/composition.yaml)
+// can never be created ("namespace not found"), and the Object managed resource wrapping them
+// retries forever, its finalizer never clearing, so the test namespace gets stuck Terminating on
+// cleanup. Call this as an env.Func in Setup(), right after envfuncs.CreateNamespace(namespace).
+func CreateInternalNamespace(namespace string) env.Func {
+	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		cl := c.Client().Resources().GetControllerRuntimeClient()
+		ns := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespace + "-internal",
+				Labels: map[string]string{
+					"klutch.anynines.com/namespace-type": "internal",
+				},
+			},
+		}
+		if err := cl.Create(ctx, ns); err != nil && !errors.IsAlreadyExists(err) {
+			return ctx, fmt.Errorf("failed to create internal namespace %q: %w", ns.Name, err)
+		}
+		return ctx, nil
 	}
 }
 

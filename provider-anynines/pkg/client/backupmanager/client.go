@@ -103,11 +103,21 @@ func IsDeleted(err error) bool {
 func GenerateObservation(in bkpmgrclient.GetBackupResponse, bkp v1.Backup) v1.BackupObservation {
 	return v1.BackupObservation{
 		BackupID:     in.BackupID,
-		SizeInBytes:  uint64(in.Size),
+		SizeInBytes:  safeIntToUint64(in.Size),
 		Status:       in.Status,
 		TriggeredAt:  in.TriggeredAt,
 		FinishedAt:   in.FinishedAt,
 		Downloadable: in.Downloadable,
 		InstanceID:   bkp.Status.AtProvider.InstanceID,
 	}
+}
+
+// safeIntToUint64 converts a size value reported by the Backup Manager API to
+// uint64, clamping negative values to 0 to avoid an integer overflow/underflow
+// conversion.
+func safeIntToUint64(size int) uint64 {
+	if size < 0 {
+		return 0
+	}
+	return uint64(size)
 }

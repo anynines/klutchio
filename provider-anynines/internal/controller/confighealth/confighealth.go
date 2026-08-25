@@ -179,13 +179,13 @@ func (r reconciler) performCheck(ctx context.Context, pc *v1.ProviderConfig) (bo
 	}
 
 	if pc.Spec.ServiceType == v1.ServiceTypeBackupManager {
-		return r.performBackupManagerCheck(ctx, pc, credentials)
+		return r.performBackupManagerCheck(pc, credentials)
 	}
 
-	return r.performOsbCheck(ctx, pc, credentials)
+	return r.performOsbCheck(pc, credentials)
 }
 
-func (r reconciler) performOsbCheck(ctx context.Context, pc *v1.ProviderConfig, credentials credhelp.Credentials) (bool, string) {
+func (r reconciler) performOsbCheck(pc *v1.ProviderConfig, credentials credhelp.Credentials) (bool, string) {
 	svc, err := r.newOsbServiceFn(credentials.Username, credentials.Password, pc.Spec.Url, credentials.InsecureSkipVerify, credentials.CABundle, credentials.OverrideServerName)
 	if err != nil {
 		return false, fmt.Sprintf("Constructing OSB service client: %v", err)
@@ -198,7 +198,7 @@ func (r reconciler) performOsbCheck(ctx context.Context, pc *v1.ProviderConfig, 
 	return true, "Available"
 }
 
-func (r reconciler) performBackupManagerCheck(ctx context.Context, pc *v1.ProviderConfig, credentials credhelp.Credentials) (bool, string) {
+func (r reconciler) performBackupManagerCheck(pc *v1.ProviderConfig, credentials credhelp.Credentials) (bool, string) {
 	svc, err := r.newBackupManagerFn(
 		credentials.Username,
 		credentials.Password,

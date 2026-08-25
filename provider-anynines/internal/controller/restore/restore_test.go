@@ -88,7 +88,7 @@ func withStatus(state, triggeredAt, finishedAt string, conditions []cmnv1.Condit
 		rst.Status.AtProvider.State = state
 		rst.Status.AtProvider.TriggeredAt = triggeredAt
 		rst.Status.AtProvider.FinishedAt = finishedAt
-		rst.Status.ConditionedStatus.Conditions = conditions
+		rst.Status.Conditions = conditions
 		rst.Status.AtProvider.InstanceID = "40a5148f-dba2-41f2-b1b7-0ca90e1501c5"
 		rst.Status.AtProvider.BackupID = ptr.To[int](29)
 	}

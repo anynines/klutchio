@@ -4,8 +4,8 @@ metadata:
   name: example-a9s-prometheus
   namespace: default  
 spec:
+  backupRef: example-a9s-prometheus
+  serviceInstanceType: prometheus
   crossplane:
     compositionRef:
       name: a9s-restore
-    backupRef: example-a9s-prometheus
-    serviceInstanceType: prometheus
