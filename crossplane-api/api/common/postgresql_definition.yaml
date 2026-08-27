@@ -35,6 +35,13 @@ spec:
                     || (self.compositionRef.name == 'a8s-postgresql' &&
                     (self.service == 'a9s-postgresql13' || self.service == 'a9s-postgresql14'))"
                   message: "Unsupported service used for postgresql"
+                # Only allow a9s-postgresql13 for the a8s operator or existing a9s DSF instances but prohibit it for new instances
+                - rule: "self.compositionRef.name != 'a8s-postgresql' || self.service != 'a9s-postgresql13' || oldSelf.hasValue()"
+                  message: "PostgreSQL 13 with the a8s operator is only supported for existing instances, not for new instances. Please use a9s-postgresql14 instead."
+                  optionalOldSelf: true
+                - rule: "self.compositionRef.name != 'a9s-postgresql' || self.service != 'a9s-postgresql13' || oldSelf.hasValue()"
+                  message: "PostgreSQL 13 with the a9s DSF is only supported for existing instances, not for new instances. Please use a9s-postgresql15 or a9s-postgresql17 instead."
+                  optionalOldSelf: true
                 # Validation for postgresql plans.
                 - rule: "(self.compositionRef.name == 'a9s-postgresql' &&
                     (self.plan == 'postgresql-single-nano' || self.plan == 'postgresql-single-nano-bionic' ||
@@ -115,7 +122,7 @@ spec:
                       message: "Service is an immutable field"
                   description:
                     Service specifies the type and version of the Data
-                    Service Instance (e.g. a9s-postgresql13). There is a list of
+                    Service Instance (e.g. a9s-postgresql15). There is a list of
                     supported services and supported plans for each service.
                   type: string
                 plan:

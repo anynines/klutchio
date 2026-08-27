@@ -4,7 +4,7 @@ metadata:
   name: sample-pg-cluster
   namespace: pg-lifecycle
 spec:
-  service: a9s-postgresql13
+  service: a9s-postgresql15
   plan: postgresql-replica-big
   compositionRef:
     name: a9s-postgresql

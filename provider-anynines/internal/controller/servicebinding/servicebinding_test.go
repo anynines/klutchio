@@ -2515,7 +2515,7 @@ func serviceInstance(modifiers ...ServiceInstanceOption) *dsv1.ServiceInstance {
 		Spec: dsv1.ServiceInstanceSpec{
 			ForProvider: dsv1.ServiceInstanceParameters{
 				AcceptsIncomplete: ptr.To[bool](true),
-				ServiceName:       ptr.To[string]("a9s-postgresql13"),
+				ServiceName:       ptr.To[string]("a9s-postgresql15"),
 				PlanName:          ptr.To[string]("postgresql-replica-small"),
 				OrganizationGUID:  ptr.To[string]("a1612e60-3042-4bf2-bd7c-fa600a4f66b9"),
 				SpaceGUID:         ptr.To[string]("009dbe05-925d-4f2a-ac0d-8d44dd723a11"),

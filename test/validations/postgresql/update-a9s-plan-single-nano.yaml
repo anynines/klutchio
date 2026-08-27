@@ -5,7 +5,7 @@ base:
     # This must be UNIQUE among the `update-*` tests!
     name: update-a9s-plan-single-nano
   spec:
-    service: a9s-postgresql13
+    service: a9s-postgresql15
     plan: postgresql-single-nano
     compositionRef:
       name: a9s-postgresql
