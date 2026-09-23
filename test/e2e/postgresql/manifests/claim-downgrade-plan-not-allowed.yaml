@@ -1,10 +1,9 @@
-apiVersion: anynines.com/v1
-kind: PostgresqlInstance
+apiVersion: klutch.io/v1beta1
+kind: ServiceInstance
 metadata:
   name: sample-pg-cluster
   namespace: pg-lifecycle
 spec:
   service: a9s-postgresql15
   plan: postgresql-replica-small
-  compositionRef:
-    name: a9s-postgresql
+  klutchConfigRef: klutch-config

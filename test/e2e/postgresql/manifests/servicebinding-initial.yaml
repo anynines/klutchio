@@ -1,10 +1,8 @@
-apiVersion: anynines.com/v1
+apiVersion: klutch.io/v1beta1
 kind: ServiceBinding
 metadata:
   name: sample-pg-servicebinding
   namespace: pg-lifecycle
 spec:
   instanceRef: sample-pg-cluster
-  serviceInstanceType: postgresql
-  compositionRef:
-    name: a9s-servicebinding
+  klutchConfigRef: klutch-config

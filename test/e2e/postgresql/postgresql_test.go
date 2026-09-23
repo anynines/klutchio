@@ -112,8 +112,8 @@ func TestPostgresSQLInstanceLifecycle(t *testing.T) {
 			// returns a false positive that the ServiceInstance is ready.
 			// To address this, before assessing that the updated Service Instance
 			// is ready, we first check if it is non-ready due to being updated.
-			funcs.ResourcesHaveConditionWithin(5*time.Minute, manifests, "claim-upgrade-plan.yaml", xpv1.ReconcileSuccess(), xpv1.Creating()),
-			funcs.ResourcesHaveConditionWithin(30*time.Minute, manifests, "claim-upgrade-plan.yaml", xpv1.ReconcileSuccess(), xpv1.Available()),
+			funcs.ResourcesHaveConditionWithin(5*time.Minute, manifests, "claim-upgrade-plan.yaml", xpv1.Creating()),
+			funcs.ResourcesHaveConditionWithin(30*time.Minute, manifests, "claim-upgrade-plan.yaml", xpv1.Available()),
 		)).
 		Feature()
 
