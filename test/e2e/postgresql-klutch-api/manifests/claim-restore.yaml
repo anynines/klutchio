@@ -1,0 +1,9 @@
+apiVersion: klutch.io/v1beta1
+kind: Restore
+metadata:
+  name: restore-postgresql-sample
+  namespace: pg-lifecycle
+spec:
+  backupRef: backup-postgresql-sample
+  # If no compositionRef is provided, the default choice will be a8s-restore.
+  klutchConfigRef: klutch-api-config

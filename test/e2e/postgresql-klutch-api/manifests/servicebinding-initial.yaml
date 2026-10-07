@@ -5,5 +5,5 @@ metadata:
   namespace: pg-lifecycle
 spec:
   instanceRef: sample-pg-cluster
-  klutchConfigRef: klutch-config
+  klutchConfigRef: klutch-api-config
   acceptsIncomplete: true

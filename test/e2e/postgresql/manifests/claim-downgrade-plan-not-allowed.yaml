@@ -4,6 +4,6 @@ metadata:
   name: sample-pg-cluster
   namespace: pg-lifecycle
 spec:
-  service: a9s-postgresql15
-  plan: postgresql-replica-small
+  service: a9s-postgresql13
+  plan: postgresql-single-nano
   klutchConfigRef: klutch-config

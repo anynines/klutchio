@@ -177,5 +177,8 @@ func TestPostgresSQLInstanceLifecycle(t *testing.T) {
 		).
 		Feature()
 
+		// testenv.Test(t, provisionPostgreSQL, createServiceBinding, upgradePostgreSQL, deprovisionPostgreSQLServiceBinding, deprovisionPostgreSQL)
+		// if false {
 	testenv.Test(t, provisionPostgreSQL, createServiceBinding, takeBackup, restoreBackup, upgradePostgreSQL, deleteBackup, deprovisionPostgreSQLServiceBinding, deleteRestore, deprovisionPostgreSQL)
+	// }
 }
