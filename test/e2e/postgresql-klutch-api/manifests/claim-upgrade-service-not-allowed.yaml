@@ -2,7 +2,7 @@ apiVersion: klutch.io/v1beta1
 kind: ServiceInstance
 metadata:
   name: sample-pg-cluster
-  namespace: pg-lifecycle
+  namespace: pg-klutch-api-lifecycle
 spec:
   service: a9s-postgresql17
   plan: postgresql-single-small

@@ -51,11 +51,11 @@ func TestMain(m *testing.M) {
 	testenv = env.NewWithConfig(cfg)
 
 	testenv.Setup(
-		envfuncs.CreateNamespace("pg-lifecycle"),
+		envfuncs.CreateNamespace("pg-klutch-api-lifecycle"),
 	)
 
 	testenv.Finish(
-		envfuncs.DeleteNamespace("pg-lifecycle"),
+		envfuncs.DeleteNamespace("pg-klutch-api-lifecycle"),
 	)
 
 	os.Exit(testenv.Run(m))

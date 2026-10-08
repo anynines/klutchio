@@ -150,7 +150,7 @@ func TestPostgresSQLInstanceLifecycle(t *testing.T) {
 			funcs.ResourcesDeletedWithin(3*time.Minute, manifests, "servicebinding-initial.yaml"),
 		).
 		Assess("ServiceBinding secret is deleted",
-			funcs.ResourceDoesNotExist("sample-pg-servicebinding-creds", "pg-lifecycle", "v1", "Secret"),
+			funcs.ResourceDoesNotExist("sample-pg-servicebinding-creds", "pg-klutch-api-lifecycle", "v1", "Secret"),
 		).
 		Feature()
 

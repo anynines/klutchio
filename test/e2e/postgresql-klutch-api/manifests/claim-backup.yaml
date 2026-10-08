@@ -2,7 +2,7 @@ apiVersion: klutch.io/v1beta1
 kind: Backup
 metadata:
   name: backup-postgresql-sample
-  namespace: pg-lifecycle
+  namespace: pg-klutch-api-lifecycle
 spec:
   instanceRef: sample-pg-cluster
   klutchConfigRef: klutch-api-config
