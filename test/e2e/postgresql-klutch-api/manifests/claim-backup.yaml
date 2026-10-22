@@ -4,5 +4,6 @@ metadata:
   name: backup-postgresql-sample
   namespace: pg-klutch-api-lifecycle
 spec:
-  instanceRef: sample-pg-cluster
+  instanceRef:
+    name: sample-pg-cluster
   klutchConfigRef: klutch-api-config
