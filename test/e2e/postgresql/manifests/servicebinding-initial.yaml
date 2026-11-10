@@ -7,4 +7,3 @@ spec:
   instanceRef:
     name: sample-pg-cluster
   klutchConfigRef: klutch-config
-  acceptsIncomplete: true
